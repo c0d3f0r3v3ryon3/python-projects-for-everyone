@@ -1,0 +1,124 @@
+/* Темная тема для PyQt5 */
+QWidget {
+    background-color: #333;
+    color: #eee;
+}
+
+QMainWindow {
+    border: none;
+}
+
+QMenuBar {
+    background-color: #222;
+    color: #eee;
+}
+
+QMenuBar::item {
+    background-color: transparent;
+}
+
+QMenuBar::item:selected {
+    background-color: #444;
+}
+
+QMenu {
+    background-color: #222;
+    border: 1px solid #444;
+}
+
+QMenu::item {
+    padding: 4px 20px;
+}
+
+QMenu::item:selected {
+    background-color: #444;
+}
+
+QPushButton {
+    background-color: #444;
+    border: 1px solid #555;
+    color: #eee;
+    padding: 5px;
+    border-radius: 3px;
+}
+
+QPushButton:hover {
+    background-color: #555;
+}
+
+QPushButton:pressed {
+    background-color: #666;
+}
+
+QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox {
+    background-color: #222;
+    border: 1px solid #555;
+    color: #eee;
+    padding: 3px;
+}
+
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 20px;
+    border-left-width: 1px;
+    border-left-color: #555;
+    border-left-style: solid;
+}
+
+QHeaderView::section {
+    background-color: #444;
+    color: #eee;
+    padding: 4px;
+    border: 1px solid #555;
+}
+
+QTableWidget {
+    gridline-color: #444;
+}
+
+QTableWidget::item {
+    border: none;
+}
+
+QTabWidget::pane {
+    border: 1px solid #444;
+}
+
+QTabBar::tab {
+    background: #333;
+    border: 1px solid #444;
+    border-bottom-color: #333;
+    padding: 5px;
+    color: #eee;
+}
+
+QTabBar::tab:selected {
+    background: #444;
+    border-bottom-color: #444;
+}
+
+QProgressBar {
+    border: 1px solid #444;
+    border-radius: 5px;
+    text-align: center;
+    background-color: #222;
+    color: #eee;
+}
+
+QProgressBar::chunk {
+    background-color: #00AAFF;
+    width: 20px;
+}
+
+QDockWidget::title {
+    background-color: #444;
+    text-align: left;
+    padding: 4px;
+}
+
+QTextEdit {
+    background-color: #222;
+    border: 1px solid #444;
+    color: #eee;
+}

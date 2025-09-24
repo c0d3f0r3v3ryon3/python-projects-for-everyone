@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-selfcheck.json
+
+# IDE and Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Logs and temporary files
+*.log
+temp_*.csv
+autosave_*.csv
+*.bin
+*.wav
+*.tmp
+*.out
+
+# OS
+Thumbs.db
+ehthumbs_vista.db
+
+# Project-specific
+SpectrumAnalyzerPro_v3.0.zip
+SpectrumAnalyzerPro_v3.0.tar.gz

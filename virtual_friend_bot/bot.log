@@ -1,0 +1,59 @@
+2025-09-10 13:36:11,697 - aiogram.dispatcher - INFO - Start polling
+2025-09-10 13:36:11,699 - aiogram.dispatcher - INFO - Start polling
+2025-09-10 13:36:11,829 - aiogram.dispatcher - INFO - Run polling for bot @VirtGirlEvgBot id=8141152293 - 'Евгения'
+2025-09-10 13:36:11,834 - aiogram.dispatcher - INFO - Run polling for bot @DamonStilinskiBot id=8451597931 - 'Деймон Стилински'
+2025-09-10 13:37:34,465 - aiogram.event - INFO - Update id=390847853 is handled. Duration 829 ms by bot id=8451597931
+2025-09-10 13:38:16,241 - aiogram.event - INFO - Update id=390847854 is handled. Duration 578 ms by bot id=8451597931
+2025-09-10 13:38:46,502 - httpx - INFO - HTTP Request: POST https://api.intelligence.io.solutions/api/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-10 13:38:47,205 - aiogram.event - INFO - Update id=390847855 is handled. Duration 14608 ms by bot id=8451597931
+2025-09-10 13:39:03,946 - aiogram.event - INFO - Update id=390847856 is handled. Duration 858 ms by bot id=8451597931
+2025-09-10 13:39:07,380 - aiogram.event - INFO - Update id=390847857 is handled. Duration 139 ms by bot id=8451597931
+2025-09-10 13:50:01,466 - aiogram.event - INFO - Update id=118138698 is handled. Duration 2859 ms by bot id=8141152293
+2025-09-10 13:50:48,161 - httpx - INFO - HTTP Request: POST https://api.intelligence.io.solutions/api/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-10 13:50:48,711 - aiogram.event - INFO - Update id=118138699 is handled. Duration 6391 ms by bot id=8141152293
+2025-09-10 13:51:23,284 - httpx - INFO - HTTP Request: POST https://api.intelligence.io.solutions/api/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-10 13:51:24,269 - aiogram.event - INFO - Update id=118138700 is handled. Duration 9483 ms by bot id=8141152293
+2025-09-10 13:51:46,015 - httpx - INFO - HTTP Request: POST https://api.intelligence.io.solutions/api/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-10 13:51:46,253 - aiogram.event - INFO - Update id=118138701 is handled. Duration 6172 ms by bot id=8141152293
+2025-09-10 14:08:23,429 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - Request timeout error
+2025-09-10 14:08:23,503 - aiogram.dispatcher - WARNING - Sleep for 1.000000 seconds and try again... (tryings = 0, bot id = 8141152293)
+2025-09-10 14:08:23,511 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - Request timeout error
+2025-09-10 14:08:23,518 - aiogram.dispatcher - WARNING - Sleep for 1.000000 seconds and try again... (tryings = 0, bot id = 8451597931)
+2025-09-10 14:08:35,060 - aiogram.dispatcher - INFO - Connection established (tryings = 1, bot id = 8141152293)
+2025-09-10 14:08:35,063 - aiogram.dispatcher - INFO - Connection established (tryings = 1, bot id = 8451597931)
+2025-09-10 14:20:24,696 - aiogram.event - INFO - Update id=118138702 is handled. Duration 406 ms by bot id=8141152293
+2025-09-10 14:20:42,579 - aiogram.event - INFO - Update id=118138703 is handled. Duration 358 ms by bot id=8141152293
+2025-09-10 14:20:47,053 - aiogram.event - INFO - Update id=118138704 is handled. Duration 140 ms by bot id=8141152293
+2025-09-10 14:20:49,809 - aiogram.event - INFO - Update id=118138705 is handled. Duration 125 ms by bot id=8141152293
+2025-09-10 14:23:06,804 - aiogram.dispatcher - INFO - Polling stopped for bot @VirtGirlEvgBot id=8141152293 - 'Евгения'
+2025-09-10 14:23:06,806 - aiogram.dispatcher - INFO - Polling stopped
+2025-09-10 14:23:06,807 - aiogram.dispatcher - INFO - Polling stopped
+2025-09-10 14:23:06,808 - aiogram.dispatcher - INFO - Polling stopped for bot @DamonStilinskiBot id=8451597931 - 'Деймон Стилински'
+2025-09-10 14:23:22,367 - aiogram.dispatcher - INFO - Start polling
+2025-09-10 14:23:22,370 - aiogram.dispatcher - INFO - Start polling
+2025-09-10 14:23:22,576 - aiogram.dispatcher - INFO - Run polling for bot @DamonStilinskiBot id=8451597931 - 'Деймон Стилински'
+2025-09-10 14:23:22,580 - aiogram.dispatcher - INFO - Run polling for bot @VirtGirlEvgBot id=8141152293 - 'Евгения'
+2025-09-10 14:23:54,569 - aiogram.event - INFO - Update id=118138706 is handled. Duration 577 ms by bot id=8141152293
+2025-09-10 14:23:57,419 - aiogram.event - INFO - Update id=118138707 is handled. Duration 141 ms by bot id=8141152293
+2025-09-10 14:24:01,168 - aiogram.event - INFO - Update id=118138708 is handled. Duration 202 ms by bot id=8141152293
+2025-09-10 14:24:06,336 - aiogram.event - INFO - Update id=118138709 is handled. Duration 250 ms by bot id=8141152293
+2025-09-10 14:24:12,333 - httpx - INFO - HTTP Request: POST https://api.intelligence.io.solutions/api/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-10 14:24:12,518 - aiogram.event - INFO - Update id=118138710 is handled. Duration 2686 ms by bot id=8141152293
+2025-09-10 14:24:29,226 - httpx - INFO - HTTP Request: POST https://api.intelligence.io.solutions/api/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-10 14:24:29,428 - aiogram.event - INFO - Update id=118138711 is handled. Duration 3281 ms by bot id=8141152293
+2025-09-10 14:31:17,394 - httpx - INFO - HTTP Request: POST https://api.intelligence.io.solutions/api/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-10 14:31:17,580 - aiogram.event - INFO - Update id=118138712 is handled. Duration 5297 ms by bot id=8141152293
+2025-09-10 14:34:46,725 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - Request timeout error
+2025-09-10 14:34:46,726 - aiogram.dispatcher - WARNING - Sleep for 1.000000 seconds and try again... (tryings = 0, bot id = 8141152293)
+2025-09-10 14:34:51,721 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - Request timeout error
+2025-09-10 14:34:51,723 - aiogram.dispatcher - WARNING - Sleep for 1.000000 seconds and try again... (tryings = 0, bot id = 8451597931)
+2025-09-10 14:34:58,035 - aiogram.dispatcher - INFO - Connection established (tryings = 1, bot id = 8141152293)
+2025-09-10 14:35:03,163 - aiogram.dispatcher - INFO - Connection established (tryings = 1, bot id = 8451597931)
+2025-09-10 14:35:20,385 - httpx - INFO - HTTP Request: POST https://api.intelligence.io.solutions/api/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-10 14:35:20,553 - aiogram.event - INFO - Update id=118138713 is handled. Duration 4781 ms by bot id=8141152293
+2025-09-10 14:47:40,738 - httpx - INFO - HTTP Request: POST https://api.intelligence.io.solutions/api/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-10 14:47:42,273 - aiogram.event - INFO - Update id=118138714 is handled. Duration 7891 ms by bot id=8141152293
+2025-09-10 14:56:33,669 - aiogram.dispatcher - INFO - Polling stopped for bot @VirtGirlEvgBot id=8141152293 - 'Евгения'
+2025-09-10 14:56:33,671 - aiogram.dispatcher - INFO - Polling stopped
+2025-09-10 14:56:33,673 - aiogram.dispatcher - INFO - Polling stopped for bot @DamonStilinskiBot id=8451597931 - 'Деймон Стилински'
+2025-09-10 14:56:33,673 - aiogram.dispatcher - INFO - Polling stopped
