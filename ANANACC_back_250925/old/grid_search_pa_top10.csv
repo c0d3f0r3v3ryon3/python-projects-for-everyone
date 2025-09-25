@@ -1,0 +1,11 @@
+﻿mean_test_score,std_test_score,params
+0.6491677889429884,0.010448534890149757,"{'C': 0.1, 'average': True, 'fit_intercept': True, 'loss': 'squared_hinge', 'max_iter': 1000, 'tol': 0.001}"
+0.6491677889429884,0.010448534890149757,"{'C': 0.1, 'average': True, 'fit_intercept': True, 'loss': 'squared_hinge', 'max_iter': 2000, 'tol': 0.001}"
+0.6474757415656618,0.00978582700989262,"{'C': 0.1, 'average': True, 'fit_intercept': True, 'loss': 'hinge', 'max_iter': 1000, 'tol': 0.001}"
+0.6474757415656618,0.00978582700989262,"{'C': 0.1, 'average': True, 'fit_intercept': True, 'loss': 'hinge', 'max_iter': 2000, 'tol': 0.001}"
+0.6474757415656618,0.00978582700989262,"{'C': 1.0, 'average': True, 'fit_intercept': True, 'loss': 'hinge', 'max_iter': 1000, 'tol': 0.001}"
+0.6474757415656618,0.00978582700989262,"{'C': 1.0, 'average': True, 'fit_intercept': True, 'loss': 'hinge', 'max_iter': 2000, 'tol': 0.001}"
+0.6474757415656618,0.00978582700989262,"{'C': 1.0, 'average': True, 'fit_intercept': True, 'loss': 'squared_hinge', 'max_iter': 1000, 'tol': 0.001}"
+0.6474757415656618,0.00978582700989262,"{'C': 1.0, 'average': True, 'fit_intercept': True, 'loss': 'squared_hinge', 'max_iter': 2000, 'tol': 0.001}"
+0.6474757415656618,0.00978582700989262,"{'C': 10.0, 'average': True, 'fit_intercept': True, 'loss': 'hinge', 'max_iter': 1000, 'tol': 0.001}"
+0.6474757415656618,0.00978582700989262,"{'C': 10.0, 'average': True, 'fit_intercept': True, 'loss': 'hinge', 'max_iter': 2000, 'tol': 0.001}"

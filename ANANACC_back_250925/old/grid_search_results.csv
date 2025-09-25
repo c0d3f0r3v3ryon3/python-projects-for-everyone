@@ -1,0 +1,2 @@
+﻿best_params,cv_accuracy,test_accuracy
+"{'alpha': 0.001, 'eta0': 0.1, 'learning_rate': 'constant', 'loss': 'hinge'}",0.6831295970164716,0.6554054054054054

@@ -1,0 +1,2 @@
+﻿best_params,cv_accuracy,test_accuracy,search_duration_seconds,model_type,timestamp
+"{'C': 0.1, 'average': True, 'fit_intercept': True, 'loss': 'squared_hinge', 'max_iter': 1000, 'random_state': 42, 'shuffle': True, 'tol': 0.001}",0.6491677889429884,0.6148648648648649,25.15596604347229,PassiveAggressiveClassifier,2025-09-25 12:06:16

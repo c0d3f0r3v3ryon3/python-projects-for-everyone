@@ -1,0 +1,2 @@
+﻿best_params,cv_accuracy,test_accuracy,search_duration_seconds,model_type,timestamp
+"{'alpha': 0.001, 'eta0': 0.1, 'learning_rate': 'constant', 'loss': 'hinge', 'max_iter': 1000, 'penalty': 'l2', 'tol': 0.001}",0.6831295970164716,0.6554054054054054,127.89036870002747,SGDClassifier,2025-09-25 11:21:48

@@ -1,0 +1,2485 @@
+# Структура папки: E:\OTHER\python-projects-for-everyone\ANANACC_back_250925
+
+## Дерево каталогов
+
+```
+ANANACC_back_250925/
+  combine_datasets.py
+  combine_datasets_all_targets.py
+  find_currency_pairs.py
+  find_indices.py
+  find_oil_futures.py
+  get_currency_history.py
+  get_currency_history_cets.py
+  get_historical_data.py
+  get_index_history.py
+  get_key_rate_history.py
+  get_moex_stocks.py
+  get_oil_future_history.py
+  grid_search_sgd.py
+  plot_incremental_learning.py
+  predict_and_learn.py
+  train_all_models.py
+```
+
+## Содержимое файлов
+
+### combine_datasets.py
+
+```py```
+import pandas as pd
+import numpy as np
+import os
+from datetime import datetime
+
+# --- Конфигурация ---
+HISTORICAL_DATA_DIR = {
+    'stocks': 'historical_data_full',
+    'indices': 'historical_data_indices',
+    'currency': 'historical_data_currency',
+    'oil': 'historical_data_oil',
+    'other': 'historical_data_other' # Для ключевой ставки и других макро данных
+}
+OUTPUT_FILE = 'combined_dataset.csv'
+
+def load_csv_files_from_dir(directory):
+    """Загружает все CSV-филы из директории."""
+    files = []
+    for filename in os.listdir(directory):
+        if filename.lower().endswith('.csv'):
+            filepath = os.path.join(directory, filename)
+            files.append(filepath)
+    return files
+
+def load_and_standardize_data(filepath, source_type):
+    """
+    Загружает CSV-файл и приводит его к стандартному формату.
+    Для 'other' применяется особая логика.
+    """
+    try:
+        df = pd.read_csv(filepath, encoding='utf-8-sig')
+        print(f"  Загружен файл: {filepath}, строки: {len(df)}")
+    except Exception as e:
+        print(f"  Ошибка при загрузке {filepath}: {e}")
+        return pd.DataFrame()
+
+    # Убедимся, что TRADEDATE - это datetime
+    if 'TRADEDATE' not in df.columns:
+        print(f"  Ошибка: TRADEDATE не найден в {filepath}")
+        return pd.DataFrame()
+    df['TRADEDATE'] = pd.to_datetime(df['TRADEDATE'], format='%Y-%m-%d', errors='coerce')
+    df = df.dropna(subset=['TRADEDATE']) # Убираем строки с неправильной датой
+
+    filename = os.path.basename(filepath)
+    if filename.endswith('_history.csv'):
+        asset_name = filename.replace('_history.csv', '')
+    elif filename.endswith('.csv'):
+        asset_name = filename.replace('.csv', '')
+    else:
+        asset_name = filename
+
+    # --- Особая обработка для 'other' (например, ключевая ставка) ---
+    if source_type == 'other':
+        print(f"  Обработка файла 'other': {asset_name} из {filepath}")
+        # Предполагаем, что файл 'other' имеет формат: TRADEDATE, ИНДИКАТОР
+        # Например: TRADEDATE, KEY_RATE или TRADEDATE, CBR_KEY_RATE
+        # Найдем столбец с индикатором (второй столбец)
+        if len(df.columns) >= 2:
+            indicator_col_original = df.columns[1] # Второй столбец
+            # Переименуем его в стандартный формат ASSETNAME_INDICATOR
+            indicator_col_new = f"{asset_name}_{indicator_col_original}"
+            df_renamed = df.rename(columns={indicator_col_original: indicator_col_new})
+
+            # Оставляем только TRADEDATE и переименованный столбец
+            df_final = df_renamed[['TRADEDATE', indicator_col_new]].copy()
+            print(f"    Обработан индикатор: {indicator_col_new}")
+            return df_final
+        else:
+            print(f"    Ошибка: Файл 'other' {filepath} не содержит столбца с индикатором.")
+            return pd.DataFrame()
+
+    # --- Стандартная обработка для stocks, indices, currency, oil ---
+    required_cols = ['OPEN', 'HIGH', 'LOW', 'CLOSE']
+    if not all(col in df.columns for col in required_cols):
+        print(f"  Ошибка: Не все стандартные столбцы (OPEN, HIGH, LOW, CLOSE) найдены в {filepath}")
+        print(f"  Найденные столбцы: {df.columns.tolist()}")
+        return pd.DataFrame()
+
+    print(f"  Обработка актива: {asset_name} (тип: {source_type})")
+
+    # Если VOLUME нет, заполним 0
+    if 'VOLUME' not in df.columns:
+        df['VOLUME'] = 0
+        print(f"  Внимание: VOLUME не найден в {filepath}, заполнен нулями.")
+
+    # Переименование столбцов
+    df = df.rename(columns={
+        'OPEN': f'{asset_name}_OPEN',
+        'HIGH': f'{asset_name}_HIGH',
+        'LOW': f'{asset_name}_LOW',
+        'CLOSE': f'{asset_name}_CLOSE',
+        'VOLUME': f'{asset_name}_VOLUME'
+    })
+
+    # Оставляем только TRADEDATE и переименованные столбцы
+    cols_to_keep = ['TRADEDATE'] + [col for col in df.columns if col != 'TRADEDATE']
+    df = df[cols_to_keep]
+
+    return df
+
+def main():
+    """Основная функция объединения."""
+    print("Начинаю объединение исторических данных...")
+    all_dataframes = []
+
+    for source_type, directory in HISTORICAL_DATA_DIR.items():
+        print(f"\n--- Обработка {source_type} из {directory} ---")
+        if not os.path.exists(directory):
+            print(f"Директория {directory} не существует, пропускаю.")
+            continue
+
+        files = load_csv_files_from_dir(directory)
+        if not files:
+            print(f"В директории {directory} не найдено CSV-файлов.")
+            continue
+
+        for filepath in files:
+            # Пропускаем файл ошибок, если он есть
+            if 'failed' in filepath.lower() and 'ticker' in filepath.lower():
+                print(f"  Пропущен файл ошибок: {filepath}")
+                continue
+
+            df = load_and_standardize_data(filepath, source_type)
+            if not df.empty:
+                all_dataframes.append(df)
+            else:
+                print(f"  Пропущен файл (не содержит данных или не подходит): {filepath}")
+
+    if not all_dataframes:
+        print("\nНе удалось загрузить ни одного подходящего CSV-файла. Завершение.")
+        return
+
+    print(f"\nОбъединение {len(all_dataframes)} DataFrame'ов...")
+    # Объединяем все по TRADEDATE
+    # Используем 'outer' join, чтобы сохранить все даты из всех источников
+    combined_df = all_dataframes[0]
+    for df in all_dataframes[1:]:
+        combined_df = pd.merge(combined_df, df, on='TRADEDATE', how='outer')
+
+    combined_df = combined_df.sort_values(by='TRADEDATE').reset_index(drop=True)
+    print(f"Итоговый датасет: {len(combined_df)} строк, {len(combined_df.columns)} столбцов.")
+    # print(f"Столбцы: {combined_df.columns.tolist()}") # Для отладки
+
+    # --- Обработка пропущенных значений ---
+    print("\nОбработка пропущенных значений...")
+    # Для цен (CLOSE, OPEN, HIGH, LOW) используем forward fill
+    price_cols = [col for col in combined_df.columns if any(suffix in col for suffix in ['_OPEN', '_HIGH', '_LOW', '_CLOSE'])]
+    volume_cols = [col for col in combined_df.columns if '_VOLUME' in col]
+    other_cols = [col for col in combined_df.columns if col not in ['TRADEDATE'] + price_cols + volume_cols]
+
+    print(f"  Заполнение цен (forward fill): {len(price_cols)} столбцов.")
+    combined_df[price_cols] = combined_df[price_cols].ffill().bfill()
+
+    print(f"  Заполнение объемов (0): {len(volume_cols)} столбцов.")
+    combined_df[volume_cols] = combined_df[volume_cols].fillna(0)
+
+    print(f"  Заполнение других (0 или ffill): {len(other_cols)} столбцов.")
+    # Для CBR_KEY_RATE (или других макроиндикаторов) используем ffill
+    # Исправленная строка - правильное закрытие скобок
+    macro_indicator_cols = [col for col in other_cols if any(indicator in col for indicator in ['KEY_RATE', 'RATE', 'INFLATION', 'GDP'])] # Можно расширить список
+    if macro_indicator_cols:
+        print(f"    Заполнение макроиндикаторов (ffill): {macro_indicator_cols}")
+        combined_df[macro_indicator_cols] = combined_df[macro_indicator_cols].ffill()
+        other_cols = [col for col in other_cols if col not in macro_indicator_cols]
+
+    if other_cols:
+        print(f"    Заполнение остальных (0): {other_cols}")
+        combined_df[other_cols] = combined_df[other_cols].fillna(0)
+
+    # --- Создание целевой переменной ---
+    target_ticker = 'GAZP' # Выбери целевую акцию
+    target_close_col = f'{target_ticker}_CLOSE'
+    if target_close_col in combined_df.columns:
+        print(f"\nСоздание целевой переменной для {target_ticker}...")
+        target_close_series = combined_df[target_close_col].shift(-1)
+        target_direction_series = np.where(
+            target_close_series > combined_df[target_close_col], 1,
+            np.where(target_close_series < combined_df[target_close_col], -1, 0)
+        )
+        # Удаляем последнюю строку, где TARGET_CLOSE - NaN
+        combined_df = combined_df.iloc[:-1].copy() # .copy() создаёт новый DataFrame, устраняя фрагментацию
+        combined_df['TARGET_CLOSE'] = target_close_series.iloc[:-1].values
+        combined_df['TARGET_DIRECTION'] = target_direction_series[:-1]
+        print(f"  Создано {len(combined_df)} строк с целевой переменной.")
+    else:
+        print(f"\nЦелевая акция {target_ticker} не найдена в объединенном датасете. Целевая переменная не создана.")
+
+    # --- Сохранение ---
+    print(f"\nСохранение объединенного датасета в {OUTPUT_FILE}...")
+    combined_df.to_csv(OUTPUT_FILE, index=False, encoding='utf-8-sig')
+    print("Объединение данных завершено.")
+
+if __name__ == "__main__":
+    main()
+
+```
+
+### combine_datasets_all_targets.py
+
+```py```
+# combine_datasets_all_targets.py
+import pandas as pd
+import numpy as np
+import os
+from datetime import datetime
+
+# --- Конфигурация ---
+INPUT_DATASET_FILE = 'combined_dataset.csv' # Входной файл
+OUTPUT_DATASET_FILE = 'combined_dataset_all_targets.csv' # Выходной файл
+
+def load_dataset(filename):
+    """Загружает датасет из CSV файла."""
+    print(f"Загружаю датасет из {filename}...")
+    if not os.path.exists(filename):
+        print(f"Файл {filename} не найден.")
+        return pd.DataFrame()
+
+    df = pd.read_csv(filename, encoding='utf-8-sig')
+    print(f"Датасет загружен: {len(df)} строк, {len(df.columns)} столбцов.")
+    return df
+
+def add_target_directions_for_all_tickers(df):
+    """Добавляет колонки TARGET_DIRECTION для всех тикеров."""
+    print("\n--- Добавление TARGET_DIRECTION для всех тикеров ---")
+
+    # Находим все колонки, заканчивающиеся на _CLOSE
+    close_cols = [col for col in df.columns if col.endswith('_CLOSE')]
+    print(f"Найдено {len(close_cols)} колонок с ценами закрытия (_CLOSE).")
+
+    # Извлекаем тикеры из названий колонок
+    tickers = [col.replace('_CLOSE', '') for col in close_cols]
+    print(f"Извлечены тикеры: {tickers[:10]}... (первые 10)")
+
+    added_targets = 0
+    for ticker in tickers:
+        close_col = f"{ticker}_CLOSE"
+        target_col = f"TARGET_DIRECTION_{ticker}"
+
+        if close_col in df.columns:
+            print(f"  Создание целевой переменной для {ticker}...")
+            # Сдвигаем цену закрытия на один день вперед
+            shifted_close = df[close_col].shift(-1)
+            # Сравниваем с текущей ценой закрытия
+            target_direction = np.where(
+                shifted_close > df[close_col], 1,
+                np.where(shifted_close < df[close_col], -1, 0)
+            )
+            # Добавляем новую колонку
+            df[target_col] = target_direction
+            added_targets += 1
+        else:
+            print(f"  Предупреждение: Колонка {close_col} не найдена. Пропущено.")
+
+    print(f"Добавлено {added_targets} целевых переменных TARGET_DIRECTION_*.")
+    return df
+
+def save_dataset(df, filename):
+    """Сохраняет датасет в CSV файл."""
+    if df.empty:
+        print("DataFrame пуст, файл не будет создан.")
+        return
+
+    print(f"\nСохранение обновленного датасета в {filename}...")
+    try:
+        df.to_csv(filename, index=False, encoding='utf-8-sig')
+        print("Обновленный датасет сохранен.")
+    except IOError as e:
+        print(f"Ошибка при сохранении файла: {e}")
+
+def main():
+    """Основная функция."""
+    print("Начинаю создание датасета с TARGET_DIRECTION для ВСЕХ акций...")
+
+    # 1. Загрузка данных
+    df = load_dataset(INPUT_DATASET_FILE)
+    if df.empty:
+        print("Не удалось загрузить датасет. Завершение.")
+        return
+
+    # 2. Добавление целевых переменных
+    df_with_targets = add_target_directions_for_all_tickers(df)
+
+    # 3. Сохранение
+    save_dataset(df_with_targets, OUTPUT_DATASET_FILE)
+
+    print("Создание датасета с TARGET_DIRECTION для ВСЕХ акций завершено.")
+
+if __name__ == "__main__":
+    main()
+
+```
+
+### find_currency_pairs.py
+
+```py```
+import requests
+import pandas as pd
+
+MOEX_BASE_URL = "https://iss.moex.com/iss"
+MARKET = "selt" # Рынок Selt (валютный)
+ENGINE = "currency" # Торговая система валютного рынка
+
+def get_currency_list():
+    """Получает список валютных инструментов с MOEX ISS."""
+    url = f"{MOEX_BASE_URL}/engines/{ENGINE}/markets/{MARKET}/securities.json"
+    print(f"Запрашиваю список валютных инструментов с {url}")
+    try:
+        response = requests.get(url, params={"iss.meta": "off", "iss.only": "securities"})
+        response.raise_for_status()
+        data = response.json()
+        return data
+    except requests.exceptions.RequestException as e:
+        print(f"Ошибка при запросе списка валютных инструментов: {e}")
+        return None
+    except ValueError as e:
+        print(f"Ошибка при парсинге JSON ответа списка валютных инструментов: {e}")
+        return None
+
+def find_currency_pairs(data, target_specific_pairs):
+    """Находит конкретные валютные пары в полученном списке."""
+    if not data or 'securities' not in data:
+        print("Нет данных о валютных инструментах.")
+        return pd.DataFrame()
+
+    securities_df = pd.DataFrame(data['securities']['data'], columns=data['securities']['columns'])
+    print(f"Всего инструментов на рынке '{MARKET}': {len(securities_df)}")
+    print("Первые несколько строк:")
+    print(securities_df.head(10))
+
+    # Фильтруем DataFrame по списку целевых пар
+    found_pairs_df = securities_df[securities_df['SECID'].isin(target_specific_pairs)]
+    print(f"\nНайдены валютные пары, соответствующие {target_specific_pairs}:")
+    print(found_pairs_df[['SECID', 'SHORTNAME', 'BOARDID']])
+    return found_pairs_df
+
+def main():
+    # Ищем конкретные ожидаемые тикеры
+    target_specific_pairs = ['USD000UTSTOM', 'EUR_RUB__TOM']
+
+    data = get_currency_list()
+    if data:
+        found_df = find_currency_pairs(data, target_specific_pairs)
+        if not found_df.empty:
+            print("\nКонкретные тикеры валютных пар найдены. Можно приступать к сбору истории.")
+            # Сохраним найденные тикеры и их BOARDID для дальнейшего использования
+            found_df[['SECID', 'BOARDID']].to_csv('moex_currency_pairs_list.csv', index=False, encoding='utf-8-sig')
+            print("Список валютных пар сохранен в 'moex_currency_pairs_list.csv'.")
+        else:
+            print(f"\nКонкретные тикеры {target_specific_pairs} не найдены. Проверьте список всех инструментов выше.")
+            # Попробуем найти по общим частям
+            target_parts = ['USD', 'EUR', 'RUB']
+            mask = securities_df['SECID'].str.contains('|'.join(target_parts), case=False, na=False)
+            found_by_parts_df = securities_df[mask]
+            if not found_by_parts_df.empty:
+                 found_by_parts_df[['SECID', 'BOARDID']].to_csv('moex_currency_pairs_list.csv', index=False, encoding='utf-8-sig')
+                 print("Список валютных пар (по частям) сохранен в 'moex_currency_pairs_list.csv'.")
+            else:
+                 print("Не найдено инструментов, содержащих 'USD', 'EUR', 'RUB'.")
+    else:
+        print("Не удалось получить список валютных инструментов.")
+
+if __name__ == "__main__":
+    main()
+
+```
+
+### find_indices.py
+
+```py```
+import requests
+import pandas as pd
+
+MOEX_BASE_URL = "https://iss.moex.com/iss"
+MARKET = "index" # Рынок индексов
+ENGINE = "stock" # Торговая система фондового рынка
+
+def get_index_list():
+    """Получает список индексов с MOEX ISS."""
+    url = f"{MOEX_BASE_URL}/engines/{ENGINE}/markets/{MARKET}/securities.json"
+    print(f"Запрашиваю список индексов с {url}")
+    try:
+        response = requests.get(url, params={"iss.meta": "off", "iss.only": "securities"})
+        response.raise_for_status()
+        data = response.json()
+        return data
+    except requests.exceptions.RequestException as e:
+        print(f"Ошибка при запросе списка индексов: {e}")
+        return None
+    except ValueError as e:
+        print(f"Ошибка при парсинге JSON ответа списка индексов: {e}")
+        return None
+
+def find_indices(data, target_indices):
+    """Находит конкретные индексы в полученном списке."""
+    if not data or 'securities' not in data:
+        print("Нет данных о индексах.")
+        return pd.DataFrame()
+
+    securities_df = pd.DataFrame(data['securities']['data'], columns=data['securities']['columns'])
+    print(f"Всего инструментов на рынке '{MARKET}': {len(securities_df)}")
+    print("Первые несколько строк:")
+    print(securities_df.head())
+
+    # Фильтруем DataFrame по списку целевых индексов
+    found_indices_df = securities_df[securities_df['SECID'].isin(target_indices)]
+    print(f"\nНайдены индексы {target_indices}:")
+    print(found_indices_df[['SECID', 'SHORTNAME', 'BOARDID']])
+    return found_indices_df
+
+def main():
+    target_indices = ['IMOEX', 'RTSI']
+    data = get_index_list()
+    if data:
+        found_df = find_indices(data, target_indices)
+        if not found_df.empty:
+            print("\nТикеры индексов найдены. Можно приступать к сбору истории.")
+            # Сохраним найденные тикеры и их BOARDID для дальнейшего использования
+            found_df[['SECID', 'BOARDID']].to_csv('moex_indices_list.csv', index=False, encoding='utf-8-sig')
+            print("Список индексов сохранен в 'moex_indices_list.csv'.")
+        else:
+            print(f"\nИндексы {target_indices} не найдены на рынке '{MARKET}'.")
+
+if __name__ == "__main__":
+    main()
+
+```
+
+### find_oil_futures.py
+
+```py```
+import requests
+import pandas as pd
+from datetime import datetime, timedelta
+
+MOEX_BASE_URL = "https://iss.moex.com/iss"
+MARKET = "forts" # Рынок срочной торговли
+ENGINE = "futures" # Торговая система срочного рынка
+
+def get_futures_list():
+    """Получает список фьючерсов с MOEX ISS."""
+    url = f"{MOEX_BASE_URL}/engines/{ENGINE}/markets/{MARKET}/securities.json"
+    print(f"Запрашиваю список фьючерсов с {url}")
+    try:
+        response = requests.get(url, params={"iss.meta": "off", "iss.only": "securities"})
+        response.raise_for_status()
+        data = response.json()
+        return data
+    except requests.exceptions.RequestException as e:
+        print(f"Ошибка при запросе списка фьючерсов: {e}")
+        return None
+    except ValueError as e:
+        print(f"Ошибка при парсинге JSON ответа списка фьючерсов: {e}")
+        return None
+
+def find_oil_futures(data, oil_symbol='BR'):
+    """Находит фьючерсы на нефть в полученном списке."""
+    if not data or 'securities' not in data: # Исправленная строка
+        print("Нет данных о фьючерсах.")
+        return pd.DataFrame()
+
+    securities_df = pd.DataFrame(data['securities']['data'], columns=data['securities']['columns'])
+    print(f"Всего фьючерсов на рынке '{MARKET}': {len(securities_df)}")
+    # print("Первые несколько строк:") # Закомментируем, так как список может быть большим
+    # print(securities_df.head(10))
+
+    # Фильтруем DataFrame по символу нефти (например, 'BR')
+    oil_futures_df = securities_df[securities_df['SECID'].str.contains(oil_symbol, case=False, na=False)]
+    print(f"\nНайдены фьючерсы на нефть ({oil_symbol}):")
+    # Используем LASTDELDATE как дату экспирации
+    print(oil_futures_df[['SECID', 'SHORTNAME', 'BOARDID', 'LASTDELDATE']].head())
+    return oil_futures_df
+
+def get_current_and_next_oil_futures(oil_futures_df):
+    """Определяет текущий и следующий фьючерсный контракт на нефть."""
+    if oil_futures_df.empty:
+        print("Нет доступных фьючерсов на нефть для определения текущего/следующего.")
+        return None, None
+
+    # Преобразуем LASTDELDATE в datetime для сортировки
+    oil_futures_df = oil_futures_df.copy() # Чтобы избежать SettingWithCopyWarning
+    oil_futures_df['LASTDELDATE_DT'] = pd.to_datetime(oil_futures_df['LASTDELDATE'], format='%Y-%m-%d', errors='coerce')
+
+    # Убираем строки, где LASTDELDATE не удалось преобразовать
+    oil_futures_df = oil_futures_df.dropna(subset=['LASTDELDATE_DT'])
+
+    if oil_futures_df.empty:
+        print("Нет корректных дат экспирации (LASTDELDATE) для фьючерсов на нефть.")
+        return None, None
+
+    # Сортируем по дате экспирации
+    oil_futures_df = oil_futures_df.sort_values(by='LASTDELDATE_DT')
+
+    # Текущий контракт - это первый (ближайший срок) с датой экспирации >= сегодня
+    today = pd.Timestamp.today().normalize() # Нормализуем, чтобы убрать время
+    current_contract_df = oil_futures_df[oil_futures_df['LASTDELDATE_DT'] >= today]
+
+    if current_contract_df.empty:
+        print("Не найдено фьючерсных контрактов с экспирацией >= сегодня.")
+        return None, None
+
+    current_contract = current_contract_df.iloc[0]
+    current_contract_secid = current_contract['SECID']
+    current_contract_matdate = current_contract['LASTDELDATE_DT']
+
+    # Следующий контракт - это следующий после текущего в отсортированном списке
+    all_sorted_matdates = oil_futures_df['LASTDELDATE_DT'].unique()
+    current_idx = None
+    for i, date in enumerate(all_sorted_matdates):
+        if date == current_contract_matdate:
+            current_idx = i
+            break
+
+    next_contract_secid = None
+    if current_idx is not None and current_idx + 1 < len(all_sorted_matdates):
+        next_matdate = all_sorted_matdates[current_idx + 1]
+        next_contract_df = oil_futures_df[oil_futures_df['LASTDELDATE_DT'] == next_matdate]
+        if not next_contract_df.empty:
+            next_contract_secid = next_contract_df.iloc[0]['SECID']
+
+    print(f"Текущий фьючерс на нефть (ближайший >= сегодня): {current_contract_secid} (экспирация: {current_contract_matdate.strftime('%Y-%m-%d')})")
+    if next_contract_secid:
+        print(f"Следующий фьючерс на нефть: {next_contract_secid}")
+    else:
+        print("Следующий фьючерс на нефть не найден (возможно, только один активен).")
+
+    return current_contract_secid, next_contract_secid
+
+def main():
+    oil_symbol = 'BR' # Символ фьючерса на нефть Brent
+    data = get_futures_list()
+    if data: # Исправленная строка
+        oil_futures_df = find_oil_futures(data, oil_symbol)
+        if not oil_futures_df.empty:
+            print("\n--- Определение текущего и следующего контрактов ---")
+            current_secid, next_secid = get_current_and_next_oil_futures(oil_futures_df)
+            if current_secid:
+                print(f"\nДля дальнейшего сбора истории будет использован текущий контракт: {current_secid}")
+                # Сохраним текущий контракт в файл для использования в следующем скрипте
+                with open('current_oil_future_contract.txt', 'w') as f:
+                    f.write(current_secid)
+                print("Текущий тикер фьючерса сохранен в 'current_oil_future_contract.txt'.")
+            else:
+                print("\nНе удалось определить текущий фьючерсный контракт на нефть.")
+        else:
+            print(f"\nФьючерсы на нефть с символом '{oil_symbol}' не найдены.")
+    else:
+        print("Не удалось получить список фьючерсов.")
+
+if __name__ == "__main__":
+    main()
+
+```
+
+### get_currency_history.py
+
+```py```
+import pandas as pd
+import requests
+import time
+import os
+from datetime import datetime
+
+# --- Конфигурация ---
+INPUT_CSV_FILE = "moex_currency_pairs_list.csv"
+OUTPUT_DIR = "historical_data_currency"
+START_DATE = "2023-01-01" # Используем ту же дату, что и для акций и индексов
+MOEX_BASE_URL = "https://iss.moex.com/iss"
+MARKET = "selt" # Рынок Selt (валютный)
+ENGINE = "currency"
+REQUEST_PARAMS = {
+    "from": START_DATE,
+    "iss.meta": "off",
+    # Попробуем получить историю через /history/engines/.../markets/.../boards/.../securities/[SECID]
+    # Предполагаемые столбцы: TRADEDATE, OPEN, CLOSE, HIGH, LOW, VOLRUR (объем в рублях)
+}
+# Увеличиваем задержку и таймаут для стабильности
+REQUEST_DELAY = 1.0
+REQUEST_TIMEOUT = 45
+
+def load_currency_tickers_from_csv(filename):
+    """Загружает список валютных пар из CSV файла."""
+    try:
+        df = pd.read_csv(filename, encoding='utf-8-sig')
+        print(f"Загружено {len(df)} валютных пар из {filename}")
+        return df
+    except FileNotFoundError:
+        print(f"Файл {filename} не найден.")
+        return pd.DataFrame()
+    except Exception as e:
+        print(f"Ошибка при чтении файла {filename}: {e}")
+        return pd.DataFrame()
+
+def get_currency_history(secid, boardid):
+    """Получает исторические данные для одной валютной пары с указанного режима."""
+    # Используем endpoint для истории с указанием BOARDID
+    url = f"{MOEX_BASE_URL}/history/engines/{ENGINE}/markets/{MARKET}/boards/{boardid}/securities/{secid}.json"
+    print(f"  Запрашиваю историю для валютной пары {secid} ({boardid}) с {url}")
+    try:
+        response = requests.get(url, params=REQUEST_PARAMS, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        data = response.json()
+        return data
+    except requests.exceptions.Timeout:
+        print(f"    Таймаут при запросе истории для валютной пары {secid} ({boardid}). Пропускаю.")
+        return None
+    except requests.exceptions.ConnectionError as e: # Обработка ConnectionError, включая NewConnectionError
+        print(f"    Ошибка подключения при запросе истории для валютной пары {secid} ({boardid}): {e}")
+        return None
+    except requests.exceptions.RequestException as e:
+        if isinstance(e, KeyboardInterrupt):
+            print(f"\n    Запрос прерван пользователем (Ctrl+C) для валютной пары {secid} ({boardid}).")
+            raise
+        print(f"    Ошибка при запросе истории для валютной пары {secid} ({boardid}): {e}")
+        return None
+    except ValueError as e: # Ошибка при парсинге JSON
+        print(f"    Ошибка при парсинге JSON ответа для валютной пары {secid} ({boardid}): {e}")
+        return None
+
+def save_currency_history_to_csv(data, secid, output_dir):
+    """Сохраняет исторические данные валютной пары в CSV файл."""
+    if not data or 'history' not in data or not data['history']['data']:
+        print(f"    Нет исторических данных для валютной пары {secid}, файл не создан.")
+        return
+
+    # Создаем директорию, если её нет
+    os.makedirs(output_dir, exist_ok=True)
+
+    df = pd.DataFrame(data['history']['data'], columns=data['history']['columns'])
+    print(f"    Получено {len(df)} строк истории для {secid}. Столбцы: {df.columns.tolist()}")
+
+    # Основные ожидаемые столбцы для валютной пары из истории: TRADEDATE, OPEN, CLOSE, HIGH, LOW, VOLRUR
+    # VOLRUR - объем в рублях, соответствует VOLUME
+    required_cols = ['TRADEDATE', 'OPEN', 'CLOSE', 'HIGH', 'LOW', 'VOLRUR']
+    # Проверим, есть ли все нужные столбцы
+    if all(col in df.columns for col in required_cols):
+        df = df[required_cols]
+        # Переименуем VOLRUR в VOLUME для единообразия с другими данными
+        df = df.rename(columns={'VOLRUR': 'VOLUME'})
+        filename = os.path.join(output_dir, f"{secid}_history.csv")
+        try:
+            df.to_csv(filename, index=False, encoding='utf-8-sig')
+            print(f"    История для валютной пары {secid} сохранена в {filename}")
+        except IOError as e:
+            print(f"    Ошибка при сохранении файла для валютной пары {secid}: {e}")
+    else:
+        print(f"    Некорректные столбцы в данных для валютной пары {secid}: {df.columns.tolist()}. Пропущено.")
+
+def main():
+    """Основная функция."""
+    print("Начинаю сбор исторических данных по валютным парам...")
+    tickers_df = load_currency_tickers_from_csv(INPUT_CSV_FILE)
+    if tickers_df.empty:
+        print("Не удалось загрузить список валютных пар. Завершение.")
+        return
+
+    # Убедимся, что в DataFrame есть нужные колонки
+    if not all(col in tickers_df.columns for col in ['SECID', 'BOARDID']):
+        print(f"Файл {INPUT_CSV_FILE} не содержит колонок 'SECID' и 'BOARDID'. Завершение.")
+        return
+
+    total_pairs = len(tickers_df)
+    print(f"Начинаю обработку {total_pairs} валютных пар...")
+
+    for index, row in tickers_df.iterrows():
+        secid = row['SECID']
+        boardid = row['BOARDID']
+        print(f"Обработка {index + 1}/{total_pairs}: {secid} ({boardid})")
+        data = get_currency_history(secid, boardid)
+        if data: # Сохраняем только если данные успешно получены
+            save_currency_history_to_csv(data, secid, OUTPUT_DIR)
+        # Задержка между запросами
+        time.sleep(REQUEST_DELAY)
+
+    print("Сбор исторических данных по валютным парам завершен.")
+
+if __name__ == "__main__":
+    main()
+
+```
+
+### get_currency_history_cets.py
+
+```py```
+import pandas as pd
+import requests
+import time
+import os
+from datetime import datetime
+
+# --- Конфигурация ---
+INPUT_CSV_FILE = "moex_currency_pairs_list.csv" # Входной файл со списком пар и BOARDID
+FILTER_BOARDID = "CETS" # Используем только CETS
+OUTPUT_DIR = "historical_data_currency" # Сохраняем в ту же директорию
+START_DATE = "2023-01-01" # Используем ту же дату, что и для акций и индексов
+MOEX_BASE_URL = "https://iss.moex.com/iss"
+MARKET = "selt" # Рынок Selt (валютный)
+ENGINE = "currency"
+REQUEST_PARAMS = {
+    "from": START_DATE,
+    "iss.meta": "off",
+    # Используем endpoint для истории
+}
+REQUEST_DELAY = 1.0
+REQUEST_TIMEOUT = 45
+
+def load_filtered_currency_tickers_from_csv(filename, filter_boardid):
+    """Загружает список валютных пар из CSV файла, фильтруя по BOARDID."""
+    try:
+        df = pd.read_csv(filename, encoding='utf-8-sig')
+        print(f"Загружено {len(df)} записей из {filename}")
+        # Фильтруем по BOARDID
+        filtered_df = df[df['BOARDID'] == filter_boardid]
+        print(f"После фильтрации по BOARDID='{filter_boardid}': {len(filtered_df)} записей")
+        return filtered_df
+    except FileNotFoundError:
+        print(f"Файл {filename} не найден.")
+        return pd.DataFrame()
+    except Exception as e:
+        print(f"Ошибка при чтении файла {filename}: {e}")
+        return pd.DataFrame()
+
+def get_currency_history(secid, boardid):
+    """Получает исторические данные для одной валютной пары с указанного режима."""
+    # Используем endpoint для истории с указанием BOARDID
+    url = f"{MOEX_BASE_URL}/history/engines/{ENGINE}/markets/{MARKET}/boards/{boardid}/securities/{secid}.json"
+    print(f"  Запрашиваю историю для валютной пары {secid} ({boardid}) с {url}")
+    try:
+        response = requests.get(url, params=REQUEST_PARAMS, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        data = response.json()
+        return data
+    except requests.exceptions.Timeout:
+        print(f"    Таймаут при запросе истории для валютной пары {secid} ({boardid}). Пропускаю.")
+        return None
+    except requests.exceptions.ConnectionError as e: # Обработка ConnectionError, включая NewConnectionError
+        print(f"    Ошибка подключения при запросе истории для валютной пары {secid} ({boardid}): {e}")
+        return None
+    except requests.exceptions.RequestException as e:
+        if isinstance(e, KeyboardInterrupt):
+            print(f"\n    Запрос прерван пользователем (Ctrl+C) для валютной пары {secid} ({boardid}).")
+            raise
+        print(f"    Ошибка при запросе истории для валютной пары {secid} ({boardid}): {e}")
+        return None
+    except ValueError as e: # Ошибка при парсинге JSON
+        print(f"    Ошибка при парсинге JSON ответа для валютной пары {secid} ({boardid}): {e}")
+        return None
+
+def save_currency_history_to_csv(data, secid, output_dir):
+    """Сохраняет исторические данные валютной пары в CSV файл, адаптируя столбцы."""
+    if not data or 'history' not in data or not data['history']['data']:
+        print(f"    Нет исторических данных для валютной пары {secid}, файл не создан.")
+        return
+
+    os.makedirs(output_dir, exist_ok=True)
+
+    df = pd.DataFrame(data['history']['data'], columns=data['history']['columns'])
+    print(f"    Получено {len(df)} строк истории для {secid}. Столбцы: {df.columns.tolist()}")
+
+    # Столбцы, возвращаемые API для валют (на CETS): ['BOARDID', 'TRADEDATE', 'SHORTNAME', 'SECID', 'OPEN', 'LOW', 'HIGH', 'CLOSE', 'NUMTRADES', 'VOLRUR', 'WAPRICE']
+    # Нам нужны: TRADEDATE, OPEN, HIGH, LOW, CLOSE, VALUE, VOLUME
+    # VOLRUR -> VALUE (объем в рублях)
+    # NUMTRADES != VOLUME (кол-во сделок), VOLUME отсутствует. Будем использовать 0 или NUMTRADES как приближение.
+    # Если NUMTRADES тоже отсутствует, заполним 0.
+
+    required_input_cols = ['TRADEDATE', 'OPEN', 'CLOSE', 'HIGH', 'LOW', 'VOLRUR']
+    if all(col in df.columns for col in required_input_cols):
+        # Переименовываем и выбираем нужные столбцы
+        df_renamed = df[['TRADEDATE', 'OPEN', 'HIGH', 'LOW', 'CLOSE', 'VOLRUR']].copy()
+        df_renamed = df_renamed.rename(columns={'VOLRUR': 'VALUE'}) # VOLRUR -> VALUE
+
+        # Создаем столбец VOLUME
+        if 'NUMTRADES' in df.columns:
+            df_renamed['VOLUME'] = df['NUMTRADES']
+        else:
+            df_renamed['VOLUME'] = 0
+            print(f"    Внимание: NUMTRADES не найден для {secid}, VOLUME заполнен 0.")
+
+        # Убираем лишние столбцы, если они есть, оставляем только нужные
+        df_final = df_renamed[['TRADEDATE', 'OPEN', 'HIGH', 'LOW', 'CLOSE', 'VALUE', 'VOLUME']]
+
+        filename = os.path.join(output_dir, f"{secid}_history.csv")
+        try:
+            df_final.to_csv(filename, index=False, encoding='utf-8-sig')
+            print(f"    История для валютной пары {secid} (адаптирована) сохранена в {filename}")
+        except IOError as e:
+            print(f"    Ошибка при сохранении файла для валютной пары {secid}: {e}")
+    else:
+        print(f"    Некорректные столбцы в данных для валютной пары {secid}: {df.columns.tolist()}. Пропущено.")
+
+def main():
+    """Основная функция."""
+    print(f"Начинаю сбор исторических данных по валютным парам (BOARDID={FILTER_BOARDID})...")
+    tickers_df = load_filtered_currency_tickers_from_csv(INPUT_CSV_FILE, FILTER_BOARDID)
+    if tickers_df.empty:
+        print("Не удалось загрузить список валютных пар для указанного BOARDID. Завершение.")
+        return
+
+    if not all(col in tickers_df.columns for col in ['SECID', 'BOARDID']):
+        print(f"Файл {INPUT_CSV_FILE} не содержит колонок 'SECID' и 'BOARDID'. Завершение.")
+        return
+
+    total_pairs = len(tickers_df)
+    print(f"Начинаю обработку {total_pairs} валютных пар...")
+
+    for index, row in tickers_df.iterrows():
+        secid = row['SECID']
+        boardid = row['BOARDID'] # Будет всегда FILTER_BOARDID=CETS
+        print(f"Обработка {index + 1}/{total_pairs}: {secid} ({boardid})")
+        data = get_currency_history(secid, boardid)
+        if data: # Сохраняем только если данные успешно получены
+            save_currency_history_to_csv(data, secid, OUTPUT_DIR)
+        # Задержка между запросами
+        time.sleep(REQUEST_DELAY)
+
+    print("Сбор исторических данных по валютным парам завершен.")
+
+if __name__ == "__main__":
+    main()
+
+```
+
+### get_historical_data.py
+
+```py```
+import pandas as pd
+import requests
+import time
+import os
+from datetime import datetime
+
+# --- Конфигурация ---
+INPUT_CSV_FILE = "moex_stocks_liquid_boards.csv"
+OUTPUT_DIR = "historical_data_full"
+START_DATE = "2023-01-01"
+MOEX_BASE_URL = "https://iss.moex.com/iss"
+MARKET = "shares"
+ENGINE = "stock"
+REQUEST_PARAMS = {
+    "from": START_DATE,
+    "interval": 24,
+    "iss.meta": "off",
+    "iss.only": "candles",
+    "candles.columns": "begin,end,open,high,low,close,volume"
+}
+REQUEST_DELAY = 1.0
+REQUEST_TIMEOUT = 45
+# MAX_RETRIES для основного цикла не нужен, но можно добавить для внутреннего цикла
+MAX_CONNECTION_RETRY_ATTEMPTS = 5 # Максимальное количество попыток для тикеров с ошибками соединения
+
+def load_tickers_from_csv(filename):
+    """Загружает список тикеров из CSV файла."""
+    try:
+        df = pd.read_csv(filename, encoding='utf-8-sig')
+        print(f"Загружено {len(df)} тикеров из {filename}")
+        return df
+    except FileNotFoundError:
+        print(f"Файл {filename} не найден.")
+        return pd.DataFrame()
+    except Exception as e:
+        print(f"Ошибка при чтении файла {filename}: {e}")
+        return pd.DataFrame()
+
+def get_historical_data_for_ticker(secid, boardid):
+    """Получает исторические данные для одного тикера с указанного режима."""
+    url = f"{MOEX_BASE_URL}/engines/{ENGINE}/markets/{MARKET}/boards/{boardid}/securities/{secid}/candles.json"
+    # print(f"  Запрашиваю историю для {secid} ({boardid}) с {url}") # Закомментируем для краткости лога при большом количестве
+    try:
+        response = requests.get(url, params=REQUEST_PARAMS, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        data = response.json()
+        return data
+    except requests.exceptions.Timeout:
+        print(f"    Таймаут при запросе истории для {secid} ({boardid}).")
+        return 'CONNECTION_ERROR' # Возвращаем специальный маркер
+    except requests.exceptions.ConnectionError as e: # Обработка ConnectionError, включая NewConnectionError
+        print(f"    Ошибка подключения при запросе истории для {secid} ({boardid}): {e}")
+        return 'CONNECTION_ERROR' # Возвращаем специальный маркер
+    except requests.exceptions.RequestException as e:
+        if isinstance(e, KeyboardInterrupt):
+            print(f"\n    Запрос прерван пользователем (Ctrl+C) для {secid} ({boardid}).")
+            raise # Передаем исключение наверх
+        print(f"    Ошибка при запросе истории для {secid} ({boardid}): {e}")
+        return 'CONNECTION_ERROR' # Считаем любую другую RequestException ошибкой соединения
+    except ValueError as e: # Ошибка при парсинге JSON
+        print(f"    Ошибка при парсинге JSON ответа для {secid} ({boardid}): {e}")
+        return 'CONNECTION_ERROR' # Считаем ошибкой соединения, если JSON сломан
+
+def save_historical_data_to_csv(data, secid, output_dir):
+    """Сохраняет исторические данные в CSV файл для конкретного тикера."""
+    # Проверяем, был ли возвращен специальный маркер ошибки
+    if data == 'CONNECTION_ERROR':
+        return False, 'CONNECTION_ERROR' # Возвращаем False и маркер ошибки
+
+    if not data or 'candles' not in data or not data['candles']['data']:
+        print(f"    Нет исторических данных для {secid}, файл не создан.")
+        return False, 'NO_DATA' # Возвращаем False и маркер отсутствия данных
+
+    # Создаем директорию, если её нет
+    os.makedirs(output_dir, exist_ok=True)
+
+    df = pd.DataFrame(data['candles']['data'], columns=data['candles']['columns'])
+    # print(f"    Отладка: Столбцы до обработки для {secid}: {df.columns.tolist()}") # Для отладки
+
+    # Преобразуем 'begin' или 'end' в формат даты и переименуем в 'TRADEDATE'
+    if 'begin' in df.columns:
+        df['TRADEDATE'] = pd.to_datetime(df['begin']).dt.date
+        df = df.drop(columns=['begin'])
+    elif 'end' in df.columns:
+        df['TRADEDATE'] = pd.to_datetime(df['end']).dt.date
+        df = df.drop(columns=['end'])
+    else:
+        print(f"    Ошибка: Ни 'begin', ни 'end' не найдены в данных для {secid}. Пропускаю.")
+        return False, 'PARSE_ERROR' # Возвращаем False и маркер ошибки парсинга
+
+    # Переименуем остальные столбцы
+    expected_col_mapping = {'open': 'OPEN', 'high': 'HIGH', 'low': 'LOW', 'close': 'CLOSE', 'volume': 'VOLUME'}
+    missing_cols = [col for col in expected_col_mapping.keys() if col not in df.columns]
+    if missing_cols:
+        print(f"    Некорректные столбцы в данных для {secid}: {df.columns.tolist()}. Отсутствуют: {missing_cols}. Пропущено.")
+        return False, 'PARSE_ERROR' # Возвращаем False и маркер ошибки парсинга
+
+    df = df.rename(columns=expected_col_mapping)
+
+    required_cols = ['TRADEDATE', 'OPEN', 'HIGH', 'LOW', 'CLOSE', 'VOLUME']
+    if all(col in df.columns for col in required_cols):
+        df = df[required_cols]
+        filename = os.path.join(output_dir, f"{secid}_history.csv")
+        try:
+            df.to_csv(filename, index=False, encoding='utf-8-sig')
+            print(f"    История для {secid} сохранена в {filename} ({len(df)} строк)")
+            return True, 'SUCCESS' # Возвращаем True и маркер успеха
+        except IOError as e:
+            print(f"    Ошибка при сохранении файла для {secid}: {e}")
+            return False, 'SAVE_ERROR' # Возвращаем False и маркер ошибки сохранения
+    else:
+        print(f"    Некорректные столбцы в данных для {secid} после обработки: {df.columns.tolist()}. Пропущено.")
+        return False, 'PARSE_ERROR' # Возвращаем False и маркер ошибки парсинга
+
+
+def main():
+    """Основная функция."""
+    print("Начинаю сбор исторических данных (полный список, циклически только ошибки соединения)...")
+    tickers_df = load_tickers_from_csv(INPUT_CSV_FILE)
+    if tickers_df.empty:
+        print("Не удалось загрузить список тикеров. Завершение.")
+        return
+
+    if not all(col in tickers_df.columns for col in ['SECID', 'BOARDID']):
+        print(f"Файл {INPUT_CSV_FILE} не содержит колонок 'SECID' и 'BOARDID'. Завершение.")
+        return
+
+    total_tickers = len(tickers_df)
+    print(f"Начинаю обработку {total_tickers} тикеров...")
+
+    # Инициализируем список тикеров для обработки
+    remaining_tickers_df = tickers_df.copy()
+
+    # --- Первый основной проход ---
+    print(f"\n--- Основной проход ---")
+    failed_connection_tickers = [] # Список тикеров с ошибками соединения
+    failed_other_tickers = []      # Список тикеров с другими ошибками (нет данных и т.д.)
+
+    for index, row in remaining_tickers_df.iterrows():
+        secid = row['SECID']
+        boardid = row['BOARDID']
+        print(f"Обработка: {secid} ({boardid})")
+        try:
+            data = get_historical_data_for_ticker(secid, boardid)
+            success, status = save_historical_data_to_csv(data, secid, OUTPUT_DIR)
+            if success:
+                print(f"    Успешно обработан: {secid}")
+            else:
+                if status == 'CONNECTION_ERROR':
+                    print(f"    Ошибка соединения для {secid}, добавлен в список повторных попыток.")
+                    failed_connection_tickers.append({'SECID': secid, 'BOARDID': boardid})
+                else: # NO_DATA, PARSE_ERROR, SAVE_ERROR
+                    print(f"    Окончательная ошибка для {secid} (причина: {status}), добавлен в список окончательно неудачных.")
+                    failed_other_tickers.append({'SECID': secid, 'BOARDID': boardid})
+        except KeyboardInterrupt:
+            print(f"\nОбработка прервана пользователем на тикере {secid}.")
+            # Сохраняем промежуточные результаты
+            if failed_connection_tickers:
+                pd.DataFrame(failed_connection_tickers).to_csv(os.path.join(OUTPUT_DIR, "failed_connection_tickers_on_interrupt.csv"), index=False, encoding='utf-8-sig')
+            if failed_other_tickers:
+                pd.DataFrame(failed_other_tickers).to_csv(os.path.join(OUTPUT_DIR, "failed_other_tickers_on_interrupt.csv"), index=False, encoding='utf-8-sig')
+            return # Выходим из функции main
+
+    print(f"Основной проход завершен.")
+    print(f"  Успешно обработано: {total_tickers - len(failed_connection_tickers) - len(failed_other_tickers)}")
+    print(f"  Ошибки соединения: {len(failed_connection_tickers)}")
+    print(f"  Окончательные ошибки (нет данных и др.): {len(failed_other_tickers)}")
+
+    # --- Циклическая обработка ошибок соединения ---
+    connection_retry_df = pd.DataFrame(failed_connection_tickers)
+    attempt = 1
+    max_attempts = MAX_CONNECTION_RETRY_ATTEMPTS
+
+    while not connection_retry_df.empty and attempt <= max_attempts:
+        print(f"\n--- Повторная попытка соединения - Проход {attempt} ---")
+        print(f"Осталось обработать {len(connection_retry_df)} тикеров с ошибками соединения.")
+        next_failed_connection_tickers = [] # Список для следующей итерации
+
+        for _, row in connection_retry_df.iterrows():
+            secid = row['SECID']
+            boardid = row['BOARDID']
+            print(f"Повторная попытка для: {secid} ({boardid})")
+            try:
+                data = get_historical_data_for_ticker(secid, boardid)
+                success, status = save_historical_data_to_csv(data, secid, OUTPUT_DIR)
+                if success:
+                    print(f"    Успешно обработан: {secid}")
+                    # Не добавляем в список повторных попыток
+                else:
+                    if status == 'CONNECTION_ERROR':
+                        print(f"    Ошибка соединения для {secid}, остается в списке повторных попыток.")
+                        next_failed_connection_tickers.append({'SECID': secid, 'BOARDID': boardid})
+                    else: # NO_DATA, PARSE_ERROR, SAVE_ERROR
+                        print(f"    Окончательная ошибка для {secid} (причина: {status}), переносится в окончательно неудачные.")
+                        failed_other_tickers.append({'SECID': secid, 'BOARDID': boardid}) # Добавляем в список окончательных ошибок
+            except KeyboardInterrupt:
+                print(f"\nОбработка прервана пользователем на тикере {secid}.")
+                # Сохраняем промежуточные результаты
+                if next_failed_connection_tickers:
+                    pd.DataFrame(next_failed_connection_tickers).to_csv(os.path.join(OUTPUT_DIR, "failed_connection_tickers_on_interrupt.csv"), index=False, encoding='utf-8-sig')
+                if failed_other_tickers:
+                    pd.DataFrame(failed_other_tickers).to_csv(os.path.join(OUTPUT_DIR, "failed_other_tickers_on_interrupt.csv"), index=False, encoding='utf-8-sig')
+                return # Выходим из функции main
+
+        connection_retry_df = pd.DataFrame(next_failed_connection_tickers)
+        attempt += 1
+        if not connection_retry_df.empty and attempt <= max_attempts:
+            print(f"После прохода {attempt - 1}, осталось {len(connection_retry_df)} тикеров с ошибками соединения.")
+            print(f"Ждем перед следующим проходом... ({REQUEST_DELAY} секунд)")
+            time.sleep(REQUEST_DELAY)
+
+    # --- Вывод итогов ---
+    final_success_count = total_tickers - len(connection_retry_df) - len(failed_other_tickers)
+    print(f"\n--- Итоги ---")
+    print(f"Все тикеры обработаны (или достигнут лимит попыток).")
+    print(f"  Всего тикеров: {total_tickers}")
+    print(f"  Успешно обработано: {final_success_count}")
+    print(f"  Ошибки соединения (не устранены за {max_attempts} попыток): {len(connection_retry_df)}")
+    print(f"  Окончательные ошибки (нет данных и др.): {len(failed_other_tickers)}")
+
+    if not connection_retry_df.empty:
+        print(f"  Не удалось обработать следующие тикеры из-за повторяющихся ошибок соединения:")
+        print(connection_retry_df)
+        # Сохраняем список неудачных тикеров (ошибки соединения) в файл
+        failed_con_file = os.path.join(OUTPUT_DIR, "failed_connection_tickers_final.csv")
+        connection_retry_df.to_csv(failed_con_file, index=False, encoding='utf-8-sig')
+        print(f"Список неудачных тикеров (ошибки соединения) сохранен в {failed_con_file}")
+
+    if failed_other_tickers:
+        failed_other_file = os.path.join(OUTPUT_DIR, "failed_other_tickers_final.csv")
+        pd.DataFrame(failed_other_tickers).to_csv(failed_other_file, index=False, encoding='utf-8-sig')
+        print(f"Список тикеров с окончательными ошибками (нет данных и др.) сохранен в {failed_other_file}")
+
+    print("Сбор исторических данных (полный список) завершен (или прерван).")
+
+if __name__ == "__main__":
+    main()
+
+```
+
+### get_index_history.py
+
+```py```
+import pandas as pd
+import requests
+import time
+import os
+from datetime import datetime
+
+# --- Конфигурация ---
+INPUT_CSV_FILE = "moex_indices_list.csv"
+OUTPUT_DIR = "historical_data_indices"
+START_DATE = "2023-01-01" # Используем ту же дату, что и для акций
+MOEX_BASE_URL = "https://iss.moex.com/iss"
+MARKET = "index" # Рынок индексов
+ENGINE = "stock"
+REQUEST_PARAMS = {
+    "from": START_DATE,
+    "iss.meta": "off",
+    # Попробуем получить историю через /history/engines/.../markets/.../securities/[SECID]
+    # Проверим сначала, какие столбцы возвращает API для истории индекса.
+    # Предполагаемые столбцы: TRADEDATE, OPEN, CLOSE, HIGH, LOW, WAPRICE, VALUE, VOLUME
+}
+# Увеличиваем задержку и таймаут для стабильности
+REQUEST_DELAY = 1.0
+REQUEST_TIMEOUT = 45
+
+def load_index_tickers_from_csv(filename):
+    """Загружает список индексов из CSV файла."""
+    try:
+        df = pd.read_csv(filename, encoding='utf-8-sig')
+        print(f"Загружено {len(df)} индексов из {filename}")
+        return df
+    except FileNotFoundError:
+        print(f"Файл {filename} не найден.")
+        return pd.DataFrame()
+    except Exception as e:
+        print(f"Ошибка при чтении файла {filename}: {e}")
+        return pd.DataFrame()
+
+def get_index_history(secid):
+    """Получает исторические данные для одного индекса с рынка индексов."""
+    # Используем endpoint для истории без BOARDID, как в примере из Pasted_Text_1758710699004.txt
+    # https://iss.moex.com/iss/history/engines/stock/markets/index/securities/[SECID].json
+    # Пример из справки: https://iss.moex.com/iss/history/engines/stock/markets/index/securities.xml?date=2010-11-22
+    # Но мы хотим историю с 'from' и до текущей даты.
+    # Попробуем сначала /history/engines/.../markets/.../securities/[SECID].json
+    url = f"{MOEX_BASE_URL}/history/engines/{ENGINE}/markets/{MARKET}/securities/{secid}.json"
+    print(f"  Запрашиваю историю для индекса {secid} с {url}")
+    try:
+        response = requests.get(url, params=REQUEST_PARAMS, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        data = response.json()
+        return data
+    except requests.exceptions.Timeout:
+        print(f"    Таймаут при запросе истории для индекса {secid}. Пропускаю.")
+        return None
+    except requests.exceptions.ConnectionError as e: # Обработка ConnectionError, включая NewConnectionError
+        print(f"    Ошибка подключения при запросе истории для индекса {secid}: {e}")
+        return None
+    except requests.exceptions.RequestException as e:
+        if isinstance(e, KeyboardInterrupt):
+            print(f"\n    Запрос прерван пользователем (Ctrl+C) для индекса {secid}.")
+            raise
+        print(f"    Ошибка при запросе истории для индекса {secid}: {e}")
+        return None
+    except ValueError as e: # Ошибка при парсинге JSON
+        print(f"    Ошибка при парсинге JSON ответа для индекса {secid}: {e}")
+        return None
+
+def save_index_history_to_csv(data, secid, output_dir):
+    """Сохраняет исторические данные индекса в CSV файл."""
+    if not data or 'history' not in data or not data['history']['data']:
+        print(f"    Нет исторических данных для индекса {secid}, файл не создан.")
+        return
+
+    # Создаем директорию, если её нет
+    os.makedirs(output_dir, exist_ok=True)
+
+    df = pd.DataFrame(data['history']['data'], columns=data['history']['columns'])
+    print(f"    Получено {len(df)} строк истории для {secid}. Столбцы: {df.columns.tolist()}")
+
+    # Основные ожидаемые столбцы для индекса из истории: TRADEDATE, OPEN, CLOSE, HIGH, LOW
+    # Также могут быть: WAPRICE, VALUE, VOLUME
+    required_cols = ['TRADEDATE', 'OPEN', 'CLOSE', 'HIGH', 'LOW']
+    # Проверим, есть ли все нужные столбцы
+    if all(col in df.columns for col in required_cols):
+        df = df[required_cols]
+        filename = os.path.join(output_dir, f"{secid}_history.csv")
+        try:
+            df.to_csv(filename, index=False, encoding='utf-8-sig')
+            print(f"    История для индекса {secid} сохранена в {filename}")
+        except IOError as e:
+            print(f"    Ошибка при сохранении файла для индекса {secid}: {e}")
+    else:
+        print(f"    Некорректные столбцы в данных для индекса {secid}: {df.columns.tolist()}. Пропущено.")
+
+def main():
+    """Основная функция."""
+    print("Начинаю сбор исторических данных по индексам...")
+    tickers_df = load_index_tickers_from_csv(INPUT_CSV_FILE)
+    if tickers_df.empty:
+        print("Не удалось загрузить список индексов. Завершение.")
+        return
+
+    # Убедимся, что в DataFrame есть нужные колонки
+    if not all(col in tickers_df.columns for col in ['SECID', 'BOARDID']):
+        print(f"Файл {INPUT_CSV_FILE} не содержит колонок 'SECID' и 'BOARDID'. Завершение.")
+        return
+
+    total_indices = len(tickers_df)
+    print(f"Начинаю обработку {total_indices} индексов...")
+
+    for index, row in tickers_df.iterrows():
+        secid = row['SECID']
+        # boardid = row['BOARDID'] # Больше не используем BOARDID в URL
+        print(f"Обработка {index + 1}/{total_indices}: {secid}")
+        data = get_index_history(secid)
+        if data: # Сохраняем только если данные успешно получены
+            save_index_history_to_csv(data, secid, OUTPUT_DIR)
+        # Задержка между запросами
+        time.sleep(REQUEST_DELAY)
+
+    print("Сбор исторических данных по индексам завершен.")
+
+if __name__ == "__main__":
+    main()
+
+```
+
+### get_key_rate_history.py
+
+```py```
+import requests
+from bs4 import BeautifulSoup
+import pandas as pd
+import os
+from datetime import datetime
+
+# --- Конфигурация ---
+CBR_KEY_RATE_URL = "https://www.cbr.ru/hd_base/KeyRate/"
+OUTPUT_DIR = "historical_data_other"
+OUTPUT_FILE = "cbr_key_rate_history_html.csv"
+
+def get_key_rate_html():
+    """Получает HTML-страницу с историей ключевой ставки ЦБ РФ."""
+    print(f"Запрашиваю HTML-страницу с историей ключевой ставки с {CBR_KEY_RATE_URL}")
+    try:
+        # Отправляем GET-запрос
+        response = requests.get(CBR_KEY_RATE_URL, timeout=60)
+        response.raise_for_status() # Проверяем на HTTP ошибки
+        print("HTML-страница успешно получена.")
+        return response.text
+    except requests.exceptions.RequestException as e:
+        print(f"Ошибка при запросе HTML-страницы: {e}")
+        return None
+
+def parse_key_rate_html(html_content):
+    """Парсит HTML и извлекает таблицу с ключевой ставкой."""
+    if not html_content:
+        print("Нет HTML-контента для парсинга.")
+        return pd.DataFrame()
+
+    try:
+        soup = BeautifulSoup(html_content, 'html.parser')
+
+        # Ищем таблицу. Обычно это первая таблица с классом 'data'
+        # Проверим сначала по классу 'data'
+        table = soup.find('table', class_='data')
+
+        # Если не нашли, попробуем найти первую таблицу вообще
+        if not table:
+             tables = soup.find_all('table')
+             if tables:
+                  table = tables[0] # Берем первую найденную таблицу
+                  print("Таблица с классом 'data' не найдена, использую первую таблицу на странице.")
+             else:
+                  print("На странице не найдено ни одной таблицы.")
+                  return pd.DataFrame()
+        else:
+             print("Найдена таблица с классом 'data'.")
+
+        # Извлекаем строки таблицы
+        rows = table.find_all('tr')
+        if not rows:
+            print("В найденной таблице нет строк (<tr>).")
+            return pd.DataFrame()
+
+        # Предполагаем, что первая строка - заголовок
+        header_row = rows[0]
+        headers = [th.get_text(strip=True) for th in header_row.find_all(['th', 'td'])]
+        print(f"Заголовки таблицы: {headers}")
+
+        # Проверим, есть ли ожидаемые заголовки
+        expected_headers_ru = ['Дата', 'Ставка']
+        expected_headers_en = ['Date', 'Rate']
+        if not (all(h in headers for h in expected_headers_ru) or all(h in headers for h in expected_headers_en)):
+             print(f"Заголовки таблицы не соответствуют ожидаемым ({expected_headers_ru} или {expected_headers_en}).")
+             print("Возможно, структура страницы изменилась.")
+             # Попробуем продолжить, используя индексы 0 и 1
+
+        data_rows = rows[1:] # Все строки, кроме заголовка
+        parsed_data = []
+        for row in data_rows:
+            cols = row.find_all(['td', 'th']) # Ищем и ячейки данных, и заголовочные ячейки
+            cols_text = [col.get_text(strip=True) for col in cols]
+            if len(cols_text) >= 2: # Убедимся, что есть хотя бы 2 столбца
+                 # Ожидаем: [Дата, Ставка, ...]
+                 date_str = cols_text[0]
+                 rate_str = cols_text[1]
+                 # Очистка и преобразование
+                 # Дата обычно в формате dd.mm.yyyy
+                 # Ставка может содержать % или просто число
+                 try:
+                      # Попробуем преобразовать дату
+                      date_obj = datetime.strptime(date_str, '%d.%m.%Y')
+                      # Попробуем преобразовать ставку, убрав символ %
+                      rate_clean = rate_str.replace('%', '').replace(',', '.').strip()
+                      rate_val = float(rate_clean)
+                      parsed_data.append([date_obj.strftime('%Y-%m-%d'), rate_val])
+                 except ValueError as e:
+                      # Если не удалось преобразовать, пропускаем строку
+                      print(f"  Предупреждение: Не удалось преобразовать строку данных: {cols_text}. Ошибка: {e}")
+                      continue
+            else:
+                 # Пропускаем строки с недостаточным количеством столбцов
+                 continue
+
+        if not parsed_data:
+             print("После парсинга таблицы не удалось извлечь данные.")
+             return pd.DataFrame()
+
+        # Создаем DataFrame
+        df = pd.DataFrame(parsed_data, columns=['TRADEDATE', 'KEY_RATE'])
+        print(f"Извлечено {len(df)} строк данных из HTML-таблицы.")
+        # Сортируем по дате
+        df = df.sort_values(by='TRADEDATE').reset_index(drop=True)
+        return df
+
+    except Exception as e:
+        print(f"Ошибка при парсинге HTML: {e}")
+        return pd.DataFrame()
+
+
+def save_key_rate_history_to_csv(df, output_dir, output_file):
+    """Сохраняет историю ключевой ставки в CSV файл."""
+    if df.empty:
+        print("DataFrame с историей ключевой ставки пуст, файл не будет создан.")
+        return
+
+    # Создаем директорию, если её нет
+    os.makedirs(output_dir, exist_ok=True)
+
+    filename = os.path.join(output_dir, output_file)
+    try:
+        df.to_csv(filename, index=False, encoding='utf-8-sig') # utf-8-sig для корректного отображения в Excel
+        print(f"История ключевой ставки ЦБ РФ сохранена в {filename}")
+    except IOError as e:
+        print(f"Ошибка при сохранении файла: {e}")
+
+def main():
+    """Основная функция."""
+    print("Начинаю сбор исторических данных по ключевой ставке ЦБ РФ через HTML-парсинг...")
+
+    html_content = get_key_rate_html()
+    if html_content:
+        df = parse_key_rate_html(html_content)
+        save_key_rate_history_to_csv(df, OUTPUT_DIR, OUTPUT_FILE)
+    else:
+        print("Не удалось получить HTML-страницу с данными.")
+
+    print("Сбор исторических данных по ключевой ставке ЦБ РФ (через HTML) завершен (или прерван).")
+
+if __name__ == "__main__":
+    main()
+
+```
+
+### get_moex_stocks.py
+
+```py```
+import requests
+import pandas as pd
+import time
+
+# --- Конфигурация ---
+MOEX_BASE_URL = "https://iss.moex.com/iss"
+MARKET = "shares"
+ENGINE = "stock"
+# Параметры для запроса, чтобы получить данные marketdata
+REQUEST_PARAMS = {
+    "iss.meta": "off",  # Отключить метаданные ISS, чтобы упростить парсинг
+    "iss.only": "securities,marketdata", # Запрашивать только нужные таблицы
+    "securities.columns": "SECID,BOARDID,SHORTNAME,INSTRID,MARKETCODE",
+    "marketdata.columns": "SECID,BOARDID,VALTODAY" # Используем VALTODAY как индикатор ликвидности
+}
+CSV_OUTPUT_FILE = "moex_stocks_liquid_boards.csv"
+
+def get_all_securities_with_marketdata():
+    """Получает данные о всех инструментах и рыночной информации с MOEX ISS."""
+    url = f"{MOEX_BASE_URL}/engines/{ENGINE}/markets/{MARKET}/securities.json"
+    print(f"Запрашиваю данные с {url}")
+    try:
+        response = requests.get(url, params=REQUEST_PARAMS)
+        response.raise_for_status() # Проверить на HTTP ошибки
+        data = response.json()
+        return data
+    except requests.exceptions.RequestException as e:
+        print(f"Ошибка при запросе к MOEX API: {e}")
+        return None
+    except ValueError as e: # Ошибка при парсинге JSON
+        print(f"Ошибка при парсинге JSON ответа: {e}")
+        return None
+
+def process_data_to_liquid_stocks_list(data):
+    """Обрабатывает полученные данные, фильтрует акции и находит самый ликвидный режим."""
+    if not data or 'securities' not in data or 'marketdata' not in data:
+        print("Ошибка: Полученные данные не содержат ожидаемых таблиц 'securities' или 'marketdata'.")
+        return pd.DataFrame()
+
+    securities_df = pd.DataFrame(data['securities']['data'], columns=data['securities']['columns'])
+    marketdata_df = pd.DataFrame(data['marketdata']['data'], columns=data['marketdata']['columns'])
+
+    print(f"Всего инструментов в 'securities': {len(securities_df)}")
+    print(f"Всего записей в 'marketdata': {len(marketdata_df)}")
+
+    # 1. Фильтрация: оставить только инструменты фондового рынка (MARKETCODE == 'FNDT') и тип INSTRID, начинающийся на 'EQ'
+    # Убираем строки, где INSTRID или MARKETCODE NaN
+    securities_df = securities_df.dropna(subset=['INSTRID', 'MARKETCODE'])
+    # Фильтр: MARKETCODE == 'FNDT' И INSTRID начинается с 'EQ'
+    equity_stocks_df = securities_df[
+        (securities_df['MARKETCODE'] == 'FNDT') &
+        (securities_df['INSTRID'].str.startswith('EQ', na=False)) # na=False: NaN значения дают False
+    ]
+
+    print(f"После фильтрации по MARKETCODE='FNDT' и INSTRID.startswith('EQ'): {len(equity_stocks_df)}")
+
+    if equity_stocks_df.empty:
+        print("После фильтрации не найдено обыкновенных акций (MARKETCODE='FNDT', INSTRID начинается с 'EQ').")
+        # Попробуем вывести уникальные INSTRID и MARKETCODE для диагностики
+        print("Уникальные значения INSTRID и MARKETCODE в исходных данных:")
+        print(securities_df[['INSTRID', 'MARKETCODE']].drop_duplicates())
+        return pd.DataFrame()
+
+    # 2. Объединение с marketdata по SECID и BOARDID
+    # Убираем строки marketdata, где VALTODAY NaN (нет торгов)
+    marketdata_df = marketdata_df.dropna(subset=['VALTODAY'])
+    merged_df = equity_stocks_df[['SECID', 'BOARDID', 'SHORTNAME']].merge(
+        marketdata_df[['SECID', 'BOARDID', 'VALTODAY']], on=['SECID', 'BOARDID'], how='inner'
+    )
+
+    print(f"После объединения с marketdata и фильтрации по VALTODAY: {len(merged_df)}")
+
+    if merged_df.empty:
+        print("После объединения с рыночными данными и фильтрации по VALTODAY не осталось данных.")
+        return pd.DataFrame()
+
+    # 3. Найти самый ликвидный режим для каждой акции (SECID)
+    # Сортируем по VALTODAY (по убыванию) и берем первую строку для каждого SECID
+    merged_df = merged_df.sort_values(by=['SECID', 'VALTODAY'], ascending=[True, False])
+    liquid_stocks_df = merged_df.groupby('SECID').first().reset_index()
+
+    # 4. Выбираем нужные колонки
+    final_df = liquid_stocks_df[['SECID', 'BOARDID', 'SHORTNAME']].copy()
+    final_df.rename(columns={'SHORTNAME': 'NAME'}, inplace=True)
+
+    print(f"Найдено {len(final_df)} обыкновенных акций с самым ликвидным режимом.")
+    return final_df
+
+def save_to_csv(df, filename):
+    """Сохраняет DataFrame в CSV файл."""
+    if df.empty:
+        print("DataFrame пуст, файл не будет создан.")
+        return
+    try:
+        df.to_csv(filename, index=False, encoding='utf-8-sig') # utf-8-sig для корректного отображения в Excel
+        print(f"Список акций успешно сохранен в {filename}")
+    except IOError as e:
+        print(f"Ошибка при сохранении файла: {e}")
+
+def main():
+    """Основная функция."""
+    print("Начинаю сбор списка обыкновенных акций с MOEX...")
+    data = get_all_securities_with_marketdata()
+    if data:
+        print("Данные успешно получены. Обрабатываю...")
+        liquid_stocks_df = process_data_to_liquid_stocks_list(data)
+        print("Обработка завершена. Сохраняю результат...")
+        save_to_csv(liquid_stocks_df, CSV_OUTPUT_FILE)
+    else:
+        print("Не удалось получить данные с MOEX API.")
+
+if __name__ == "__main__":
+    main()
+
+```
+
+### get_oil_future_history.py
+
+```py```
+import pandas as pd
+import requests
+import time
+import os
+
+# --- Конфигурация ---
+INPUT_CONTRACT_FILE = "current_oil_future_contract.txt"
+OUTPUT_DIR = "historical_data_oil"
+START_DATE = "2023-01-01" # Используем ту же дату, что и для других активов
+MOEX_BASE_URL = "https://iss.moex.com/iss"
+MARKET = "forts" # Рынок срочной торговли
+ENGINE = "futures" # Торговая система срочного рынка
+REQUEST_PARAMS = {
+    "from": START_DATE,
+    "iss.meta": "off",
+    # Используем правильный endpoint для истории: /history/engines/.../markets/.../boards/.../securities/[SECID]
+    # Предполагаемые столбцы: TRADEDATE, OPEN, CLOSE, HIGH, LOW, VALUE, VOLUME
+    # Проверим сначала, какие столбцы возвращает API для истории фьючерса.
+}
+# Увеличиваем задержку и таймаут для стабильности
+REQUEST_DELAY = 1.0
+REQUEST_TIMEOUT = 45
+
+def load_current_contract_from_file(filename):
+    """Загружает тикер текущего фьючерсного контракта из файла."""
+    try:
+        with open(filename, 'r') as f:
+            secid = f.read().strip()
+        print(f"Загружен тикер фьючерсного контракта: {secid}")
+        return secid
+    except FileNotFoundError:
+        print(f"Файл {filename} не найден.")
+        return None
+    except Exception as e:
+        print(f"Ошибка при чтении файла {filename}: {e}")
+        return None
+
+def get_oil_future_history(secid):
+    """Получает исторические данные для фьючерсного контракта с указанного режима."""
+    # Используем endpoint для истории с указанием BOARDID, как для акций/валют
+    # Ищем BOARDID для BRV5 в предыдущем ответе или устанавливаем по умолчанию
+    # Из предыдущего запроса к /securities/ мы знаем, что BOARDID для BRV5 - RFUD
+    boardid = "RFUD" # Устанавливаем вручную, так как он известен из спецификации
+    url = f"{MOEX_BASE_URL}/history/engines/{ENGINE}/markets/{MARKET}/boards/{boardid}/securities/{secid}.json"
+    print(f"  Запрашиваю историю для фьючерса {secid} ({boardid}) с {url}")
+    try:
+        response = requests.get(url, params=REQUEST_PARAMS, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        data = response.json()
+        return data
+    except requests.exceptions.Timeout:
+        print(f"    Таймаут при запросе истории для фьючерса {secid} ({boardid}). Пропускаю.")
+        return None
+    except requests.exceptions.ConnectionError as e: # Обработка ConnectionError, включая NewConnectionError
+        print(f"    Ошибка подключения при запросе истории для фьючерса {secid} ({boardid}): {e}")
+        return None
+    except requests.exceptions.RequestException as e:
+        if isinstance(e, KeyboardInterrupt):
+            print(f"\n    Запрос прерван пользователем (Ctrl+C) для фьючерса {secid} ({boardid}).")
+            raise
+        print(f"    Ошибка при запросе истории для фьючерса {secid} ({boardid}): {e}")
+        return None
+    except ValueError as e: # Ошибка при парсинге JSON
+        print(f"    Ошибка при парсинге JSON ответа для фьючерса {secid} ({boardid}): {e}")
+        return None
+
+def save_oil_future_history_to_csv(data, secid, output_dir):
+    """Сохраняет исторические данные фьючерса в CSV файл."""
+    if not data or 'history' not in data or not data['history']['data']:
+        print(f"    Нет исторических данных для фьючерса {secid}, файл не создан.")
+        return
+
+    # Создаем директорию, если её нет
+    os.makedirs(output_dir, exist_ok=True)
+
+    df = pd.DataFrame(data['history']['data'], columns=data['history']['columns'])
+    print(f"    Получено {len(df)} строк истории для {secid}. Столбцы: {df.columns.tolist()}")
+
+    # Основные ожидаемые столбцы для фьючерса из истории: TRADEDATE, OPEN, CLOSE, HIGH, LOW, VALUE, VOLUME
+    # Также могут быть: WAPRICE (средневзвешенная цена), SETTLEPRICE (цена расчета), и др.
+    required_cols = ['TRADEDATE', 'OPEN', 'CLOSE', 'HIGH', 'LOW', 'VALUE', 'VOLUME']
+    # Проверим, есть ли все нужные столбцы
+    if all(col in df.columns for col in required_cols):
+        df = df[required_cols]
+        filename = os.path.join(output_dir, f"{secid}_history.csv")
+        try:
+            df.to_csv(filename, index=False, encoding='utf-8-sig')
+            print(f"    История для фьючерса {secid} сохранена в {filename}")
+        except IOError as e:
+            print(f"    Ошибка при сохранении файла для фьючерса {secid}: {e}")
+    else:
+        print(f"    Некорректные столбцы в данных для фьючерса {secid}: {df.columns.tolist()}. Пропущено.")
+
+def main():
+    """Основная функция."""
+    print("Начинаю сбор исторических данных по фьючерсу на нефть...")
+    secid = load_current_contract_from_file(INPUT_CONTRACT_FILE)
+    if secid is None:
+        print("Не удалось загрузить тикер фьючерсного контракта. Завершение.")
+        return
+
+    data = get_oil_future_history(secid)
+    if data: # Сохраняем только если данные успешно получены
+        save_oil_future_history_to_csv(data, secid, OUTPUT_DIR)
+    else:
+        print(f"Не удалось получить исторические данные для фьючерса {secid}.")
+
+    print("Сбор исторических данных по фьючерсу на нефть завершен (или прерван).")
+
+if __name__ == "__main__":
+    main()
+
+```
+
+### grid_search_sgd.py
+
+```py```
+# grid_search_sgd.py
+import pandas as pd
+import numpy as np
+from sklearn.linear_model import SGDClassifier
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import GridSearchCV, train_test_split
+from sklearn.metrics import accuracy_score
+import os
+
+# --- Конфигурация ---
+DATASET_FILE = 'combined_dataset.csv'
+TARGET_COLUMN = 'TARGET_DIRECTION'
+DATE_COLUMN = 'TRADEDATE'
+TEST_SIZE = 0.2
+RANDOM_STATE = 42
+
+# --- Гиперпараметры для GridSearch ---
+# Определим сетку параметров для поиска
+PARAM_GRID = {
+    'alpha': [0.0001, 0.001, 0.01],  # Коэффициент регуляризации
+    'learning_rate': ['constant', 'optimal', 'adaptive'], # Тип скорости обучения
+    'eta0': [0.01, 0.1, 1.0],       # Начальная скорость обучения (важна для 'constant', 'adaptive')
+    # 'penalty': ['l2', 'l1', 'elasticnet'], # Тип регуляризации (убираем elasticnet для простоты, требует l1_ratio)
+    'loss': ['hinge', 'log_loss', 'modified_huber'], # Функция потерь
+    # max_iter и tol оставим стандартными для GridSearchCV
+    # tol по умолчанию 1e-4, max_iter по умолчанию 1000 в SGDClassifier
+}
+
+# Количество фолдов для кросс-валидации
+CV_FOLDS = 3 # Используем 3, так как данные временные, 5 может быть много
+
+def load_and_prepare_data(filename):
+    """Загружает и подготавливает датасет для обучения."""
+    print(f"Загружаю датасет из {filename}...")
+    if not os.path.exists(filename):
+        print(f"Файл {filename} не найден.")
+        return None, None, None, None, None
+
+    df = pd.read_csv(filename, encoding='utf-8-sig')
+    print(f"Датасет загружен: {len(df)} строк, {len(df.columns)} столбцов.")
+
+    if TARGET_COLUMN not in df.columns:
+        print(f"Целевая переменная '{TARGET_COLUMN}' не найдена в датасете.")
+        return None, None, None, None, None
+
+    feature_columns = [col for col in df.columns if col not in [DATE_COLUMN, TARGET_COLUMN]]
+    X = df[feature_columns]
+    y = df[TARGET_COLUMN]
+
+    # --- Обработка пропусков в y ---
+    y_not_nan_mask = ~y.isnull()
+    X_filtered = X[y_not_nan_mask]
+    y_filtered = y[y_not_nan_mask]
+
+    # --- Обработка пропусков в X ---
+    price_cols = [col for col in X_filtered.columns if any(suffix in col for suffix in ['_OPEN', '_HIGH', '_LOW', '_CLOSE'])]
+    volume_cols = [col for col in X_filtered.columns if '_VOLUME' in col]
+    other_cols = [col for col in X_filtered.columns if col not in price_cols + volume_cols]
+
+    X_filtered[price_cols] = X_filtered[price_cols].ffill().bfill()
+    X_filtered[volume_cols] = X_filtered[volume_cols].fillna(0)
+    cbr_key_rate_cols = [col for col in other_cols if 'CBR_KEY_RATE' in col]
+    if cbr_key_rate_cols:
+        X_filtered[cbr_key_rate_cols] = X_filtered[cbr_key_rate_cols].ffill()
+        other_cols = [col for col in other_cols if col not in cbr_key_rate_cols]
+    X_filtered[other_cols] = X_filtered[other_cols].fillna(0)
+
+    # --- Удаление строк с оставшимися NaN в X ---
+    mask_after_fill = ~X_filtered.isnull().any(axis=1)
+    X_clean = X_filtered[mask_after_fill]
+    y_clean = y_filtered[mask_after_fill]
+
+    print(f"После обработки пропусков: {len(X_clean)} строк.")
+
+    if len(X_clean) == 0:
+        print("После очистки данных не осталось строк для обучения.")
+        return None, None, None, None, None
+
+    # --- Разделение данных ---
+    X_train, X_test, y_train, y_test, dates_train, dates_test = train_test_split(
+        X_clean, y_clean, df.loc[X_clean.index, [DATE_COLUMN]], # Используем df.loc для получения дат
+        test_size=TEST_SIZE, random_state=RANDOM_STATE, stratify=y_clean
+    )
+
+    print(f"Размер обучающей выборки: {len(X_train)}")
+    print(f"Размер тестовой выборки: {len(X_test)}")
+
+    return X_train, X_test, y_train, y_test, dates_test.reset_index(drop=True)
+
+def perform_grid_search(X_train, y_train):
+    """Выполняет GridSearchCV для SGDClassifier."""
+    print("\n--- Запуск GridSearchCV для SGDClassifier ---")
+    print(f"Сетка параметров: {PARAM_GRID}")
+    print(f"Количество фолдов CV: {CV_FOLDS}")
+
+    # --- Масштабирование ---
+    print("  Масштабирование обучающей выборки...")
+    scaler = StandardScaler()
+    X_train_scaled = scaler.fit_transform(X_train)
+    print("  Масштабирование завершено.")
+
+    # --- Инициализация модели и GridSearch ---
+    # Используем базовые параметры, которые точно работают
+    base_model = SGDClassifier(random_state=RANDOM_STATE, max_iter=1000, tol=1e-3)
+
+    # GridSearchCV
+    # cv=CV_FOLDS для временных рядов может не быть идеальным, но для начала сойдет
+    # scoring='accuracy' - метрика для оптимизации
+    # n_jobs=1 - использовать 1 ядро CPU
+    # verbose=1 - показывать прогресс
+    grid_search = GridSearchCV(
+        estimator=base_model,
+        param_grid=PARAM_GRID,
+        cv=CV_FOLDS,
+        scoring='accuracy',
+        n_jobs=1, # Используем 1 ядро, чтобы избежать проблем с памятью
+        verbose=1
+    )
+
+    # --- Поиск ---
+    print("  Начинаю поиск лучших параметров...")
+    grid_search.fit(X_train_scaled, y_train)
+    print("  Поиск лучших параметров завершен.")
+
+    # --- Результаты ---
+    print("\n--- Результаты GridSearchCV ---")
+    print(f"Лучшие параметры: {grid_search.best_params_}")
+    print(f"Лучший средний скор (accuracy) на CV: {grid_search.best_score_:.4f}")
+
+    # Возвращаем grid_search целиком, чтобы получить доступ к best_score_
+    return grid_search, scaler
+
+def evaluate_best_model(best_model, scaler, X_test, y_test):
+    """Оценивает лучшую модель на тестовой выборке."""
+    print("\n--- Оценка лучшей модели на тестовой выборке ---")
+    X_test_scaled = scaler.transform(X_test) # Используем тот же scaler
+    y_pred = best_model.predict(X_test_scaled)
+    test_accuracy = accuracy_score(y_test, y_pred)
+    print(f"Точность лучшей модели на тестовой выборке: {test_accuracy:.4f}")
+    return test_accuracy
+
+def main():
+    """Основная функция."""
+    print("Начинаю поиск лучших гиперпараметров для SGDClassifier с GridSearchCV...")
+
+    # 1. Загрузка и подготовка данных
+    X_train, X_test, y_train, y_test, test_dates = load_and_prepare_data(DATASET_FILE)
+    if X_train is None:
+        print("Не удалось загрузить или подготовить данные. Завершение.")
+        return
+
+    # 2. GridSearchCV
+    grid_search_result, scaler = perform_grid_search(X_train, y_train)
+    # Извлекаем нужные объекты из результата
+    best_params = grid_search_result.best_params_
+    best_model = grid_search_result.best_estimator_
+    best_cv_score = grid_search_result.best_score_
+
+    # 3. Оценка лучшей модели
+    test_acc = evaluate_best_model(best_model, scaler, X_test, y_test)
+
+    # 4. Сохранение результатов (опционально)
+    results_df = pd.DataFrame([{
+        'best_params': str(best_params),
+        'cv_accuracy': best_cv_score, # Используем сохраненное значение
+        'test_accuracy': test_acc
+    }])
+    results_df.to_csv('grid_search_results.csv', index=False, encoding='utf-8-sig')
+    print("\nРезультаты GridSearchCV сохранены в 'grid_search_results.csv'.")
+
+    print("\nПоиск лучших гиперпараметров завершен.")
+
+if __name__ == "__main__":
+    main()
+
+```
+
+### plot_incremental_learning.py
+
+```py```
+import pandas as pd
+import matplotlib.pyplot as plt
+import os
+
+# --- Конфигурация ---
+LOG_FILE = 'incremental_learning_log.csv'
+OUTPUT_PLOT_FILE = 'incremental_learning_accuracy_plot.png'
+FIGURE_SIZE = (12, 6) # Ширина, Высота в дюймах
+DPI = 150 # Разрешение изображения
+
+def plot_accuracy_over_time(log_filename, output_plot_filename):
+    """Строит график нарастающей точности от даты."""
+    print(f"Загружаю лог инкрементального обучения из {log_filename}...")
+    if not os.path.exists(log_filename):
+        print(f"Файл {log_filename} не найден.")
+        return
+
+    try:
+        df = pd.read_csv(log_filename, encoding='utf-8-sig')
+        print(f"Лог загружен: {len(df)} строк.")
+    except Exception as e:
+        print(f"Ошибка при загрузке {log_filename}: {e}")
+        return
+
+    if df.empty:
+        print("Лог пуст.")
+        return
+
+    # Проверим наличие необходимых столбцов
+    required_columns = ['TRADEDATE', 'ACCURACY_CUMULATIVE']
+    if not all(col in df.columns for col in required_columns):
+        print(f"В файле {log_filename} отсутствуют необходимые столбцы: {required_columns}")
+        print(f"Найденные столбцы: {df.columns.tolist()}")
+        return
+
+    # Преобразуем TRADEDATE в datetime
+    print("Преобразование столбца TRADEDATE в формат datetime...")
+    df['TRADEDATE'] = pd.to_datetime(df['TRADEDATE'], format='%Y-%m-%d', errors='coerce')
+
+    # Проверим на NaT (Not a Time) после преобразования
+    nat_count = df['TRADEDATE'].isna().sum()
+    if nat_count > 0:
+        print(f"Предупреждение: {nat_count} строк имеют некорректный формат даты и будут удалены.")
+        df = df.dropna(subset=['TRADEDATE'])
+
+    if df.empty:
+        print("После очистки некорректных дат лог пуст.")
+        return
+
+    # Сортируем по дате
+    print("Сортировка данных по дате...")
+    df = df.sort_values(by='TRADEDATE').reset_index(drop=True)
+    print(f"Данные отсортированы. Диапазон дат: {df['TRADEDATE'].min()} - {df['TRADEDATE'].max()}")
+
+    # Создаем график
+    print("Построение графика...")
+    plt.figure(figsize=FIGURE_SIZE, dpi=DPI)
+    plt.plot(df['TRADEDATE'], df['ACCURACY_CUMULATIVE'], marker='o', linestyle='-', linewidth=1, markersize=3, color='blue')
+    plt.title('Изменение точности модели в процессе инкрементального обучения')
+    plt.xlabel('Дата (TRADEDATE)')
+    plt.ylabel('Нарастающая точность (ACCURACY_CUMULATIVE)')
+    plt.grid(True, linestyle='--', alpha=0.5)
+
+    # Автоматическое форматирование дат на оси X для лучшей читаемости
+    plt.gcf().autofmt_xdate() # Поворачивает метки дат
+
+    # Добавим немного места по краям
+    plt.tight_layout()
+
+    # Сохраняем график
+    print(f"Сохранение графика в {output_plot_filename}...")
+    plt.savefig(output_plot_filename)
+    print("График сохранен.")
+    plt.show() # Открываем окно с графиком (опционально)
+    plt.close() # Закрываем фигуру, чтобы освободить память
+
+def main():
+    """Основная функция."""
+    print("Начинаю построение графика инкрементального обучения...")
+    plot_accuracy_over_time(LOG_FILE, OUTPUT_PLOT_FILE)
+    print("Построение графика завершено.")
+
+if __name__ == "__main__":
+    main()
+
+```
+
+### predict_and_learn.py
+
+```py```
+# predict_and_learn.py
+import pandas as pd
+import numpy as np
+import joblib
+import os
+from datetime import datetime, timedelta
+from sklearn.linear_model import PassiveAggressiveClassifier # Импортируем модель, которую мы использовали
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import accuracy_score
+
+# --- Конфигурация ---
+MODELS_DIR = 'models'
+SCALERS_DIR = 'scalers'
+DATASET_FILE = 'combined_dataset_all_targets.csv' # Используем для получения "новых" данных и признаков
+PREDICTIONS_LOG_FILE = 'predictions_log.csv'
+MODEL_UPDATE_LOG_FILE = 'model_updates_log.csv'
+# FEATURE_COLUMNS_FILE = 'feature_columns_order.txt' # Файл с порядком столбцов признаков (если нужно)
+TODAY = datetime.today().strftime('%Y-%m-%d')
+YESTERDAY = (datetime.today() - timedelta(days=1)).strftime('%Y-%m-%d')
+
+def load_models_and_scalers(models_dir, scalers_dir):
+    """Загружает все модели и scaler'ы из директорий."""
+    print(f"Загружаю модели из {models_dir} и scaler'ы из {scalers_dir}...")
+    models = {}
+    scalers = {}
+
+    if not os.path.exists(models_dir) or not os.path.exists(scalers_dir):
+        print(f"Директории {models_dir} или {scalers_dir} не существуют.")
+        return models, scalers
+
+    model_files = [f for f in os.listdir(models_dir) if f.startswith('model_') and f.endswith('.joblib')]
+    scaler_files = [f for f in os.listdir(scalers_dir) if f.startswith('scaler_') and f.endswith('.joblib')]
+
+    print(f"Найдено {len(model_files)} файлов моделей.")
+    print(f"Найдено {len(scaler_files)} файлов scaler'ов.")
+
+    for model_file in model_files:
+        ticker = model_file.replace('model_', '').replace('.joblib', '')
+        model_path = os.path.join(models_dir, model_file)
+        try:
+            model = joblib.load(model_path)
+            models[ticker] = model
+            print(f"  Загружена модель для {ticker} из {model_path}")
+        except Exception as e:
+            print(f"  Ошибка при загрузке модели для {ticker} из {model_path}: {e}")
+
+    for scaler_file in scaler_files:
+        ticker = scaler_file.replace('scaler_', '').replace('.joblib', '')
+        scaler_path = os.path.join(scalers_dir, scaler_file)
+        try:
+            scaler = joblib.load(scaler_path)
+            scalers[ticker] = scaler
+            print(f"  Загружен scaler для {ticker} из {scaler_path}")
+        except Exception as e:
+            print(f"  Ошибка при загрузке scaler'а для {ticker} из {scaler_path}: {e}")
+
+    print(f"Успешно загружено {len(models)} моделей и {len(scalers)} scaler'ов.")
+    return models, scalers
+
+def load_latest_data(dataset_file, num_days=1):
+    """Загружает последние N строк из датасета как "новые" данные."""
+    print(f"Загружаю последние {num_days} строк из {dataset_file} как новые данные...")
+    if not os.path.exists(dataset_file):
+        print(f"Файл {dataset_file} не найден.")
+        return pd.DataFrame(), pd.DataFrame()
+
+    try:
+        df = pd.read_csv(dataset_file, encoding='utf-8-sig')
+        print(f"Датасет загружен: {len(df)} строк, {len(df.columns)} столбцов.")
+
+        # Берем последние num_days строк
+        latest_df = df.tail(num_days).reset_index(drop=True)
+        print(f"Последние {num_days} строк загружены.")
+
+        # Извлекаем даты
+        dates_df = latest_df[['TRADEDATE']].copy()
+
+        # Извлекаем признаки (все, кроме TRADEDATE и TARGET_DIRECTION_*)
+        feature_columns = [col for col in df.columns if col not in ['TRADEDATE'] and not col.startswith('TARGET_DIRECTION_')]
+        features_df = latest_df[feature_columns].copy()
+
+        print(f"Размер признаков (X): {features_df.shape}")
+        print(f"Размер дат: {dates_df.shape}")
+
+        return features_df, dates_df
+    except Exception as e:
+        print(f"Ошибка при загрузке последних данных из {dataset_file}: {e}")
+        return pd.DataFrame(), pd.DataFrame()
+
+def prepare_features(features_df, scaler, ticker):
+    """Подготавливает (масштабирует) признаки для прогноза."""
+    print(f"  Подготовка признаков для {ticker}...")
+    try:
+        # Масштабируем признаки с помощью загруженного scaler'а
+        # ВАЖНО: scaler уже обучен, используем transform
+        features_scaled = scaler.transform(features_df)
+        print(f"    Признаки масштабированы. Форма: {features_scaled.shape}")
+        return features_scaled
+    except Exception as e:
+        print(f"    Ошибка при масштабировании признаков для {ticker}: {e}")
+        return None
+
+def make_predictions(models, scalers, features_df, dates_df):
+    """Делает прогнозы для всех моделей."""
+    print("\n--- Делаем прогнозы для всех моделей ---")
+    predictions = {}
+
+    for ticker, model in models.items():
+        scaler = scalers.get(ticker)
+        if scaler is None:
+            print(f"  Предупреждение: Scaler для {ticker} не найден. Пропускаю прогноз.")
+            continue
+
+        features_scaled = prepare_features(features_df, scaler, ticker)
+        if features_scaled is None:
+            continue
+
+        try:
+            # Делаем прогноз
+            y_pred = model.predict(features_scaled)
+            # Получаем вероятности (если модель поддерживает predict_proba)
+            # y_proba = model.predict_proba(features_scaled) if hasattr(model, 'predict_proba') else None
+
+            predictions[ticker] = {
+                'prediction': y_pred[0], # Берем первый (и единственный) прогноз
+                # 'probability': y_proba[0] if y_proba is not None else None,
+                'date': dates_df.iloc[0]['TRADEDATE'] # Берем дату из первой (и единственной) строки
+            }
+            print(f"  Прогноз для {ticker}: {y_pred[0]} (дата: {dates_df.iloc[0]['TRADEDATE']})")
+        except Exception as e:
+            print(f"  Ошибка при прогнозе для {ticker}: {e}")
+
+    return predictions
+
+def save_predictions(predictions, log_file):
+    """Сохраняет прогнозы в лог-файл."""
+    if not predictions:
+        print("Нет прогнозов для сохранения.")
+        return
+
+    print(f"\n--- Сохранение прогнозов в {log_file} ---")
+    try:
+        # Создаем DataFrame из словаря прогнозов
+        log_data = []
+        for ticker, pred_info in predictions.items():
+            log_data.append({
+                'TICKER': ticker,
+                'TRADEDATE': pred_info['date'],
+                'PREDICTED_DIRECTION': pred_info['prediction'],
+                # 'PREDICTED_PROBABILITY': pred_info.get('probability', None),
+                'TIMESTAMP': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            })
+
+        log_df = pd.DataFrame(log_data)
+
+        # Если файл существует, добавляем новые строки, иначе создаем новый
+        if os.path.exists(log_file):
+            log_df.to_csv(log_file, mode='a', header=False, index=False, encoding='utf-8-sig')
+            print(f"  Прогнозы добавлены в существующий лог {log_file}.")
+        else:
+            log_df.to_csv(log_file, index=False, encoding='utf-8-sig')
+            print(f"  Прогнозы сохранены в новый лог {log_file}.")
+
+    except Exception as e:
+        print(f"  Ошибка при сохранении прогнозов в {log_file}: {e}")
+
+def simulate_get_real_target_directions(dataset_file, tickers, prediction_date):
+    """
+    Симулирует получение реальных TARGET_DIRECTION для всех тикеров.
+    В реальном боевом скрипте здесь будет запрос к API MOEX для получения цен закрытия.
+    """
+    print(f"\n--- Симуляция получения реальных TARGET_DIRECTION для {len(tickers)} тикеров на дату {prediction_date} ---")
+    if not os.path.exists(dataset_file):
+        print(f"Файл {dataset_file} не найден для симуляции.")
+        return {}
+
+    try:
+        df = pd.read_csv(dataset_file, encoding='utf-8-sig')
+        # Преобразуем TRADEDATE в datetime для поиска
+        df['TRADEDATE'] = pd.to_datetime(df['TRADEDATE'], format='%Y-%m-%d', errors='coerce')
+        prediction_date_dt = pd.to_datetime(prediction_date, format='%Y-%m-%d', errors='coerce')
+
+        if pd.isna(prediction_date_dt):
+            print(f"Некорректная дата прогноза для симуляции: {prediction_date}")
+            return {}
+
+        # Находим строку с датой прогноза
+        target_row = df[df['TRADEDATE'] == prediction_date_dt]
+        if target_row.empty:
+            print(f"Дата {prediction_date} не найдена в {dataset_file} для симуляции.")
+            return {}
+
+        real_targets = {}
+        for ticker in tickers:
+            target_col = f"TARGET_DIRECTION_{ticker}"
+            if target_col in target_row.columns:
+                real_value = target_row[target_col].iloc[0]
+                if not pd.isna(real_value):
+                    real_targets[ticker] = real_value
+                    print(f"  Реальная TARGET_DIRECTION для {ticker} на {prediction_date}: {real_value}")
+                else:
+                    print(f"  Реальная TARGET_DIRECTION для {ticker} на {prediction_date} отсутствует (NaN).")
+            else:
+                print(f"  Столбец {target_col} не найден в {dataset_file} для симуляции.")
+
+        return real_targets
+    except Exception as e:
+        print(f"Ошибка при симуляции получения реальных TARGET_DIRECTION: {e}")
+        return {}
+
+def perform_incremental_learning(models, scalers, features_df, real_targets, update_log_file):
+    """Выполняет инкрементальное обучение для всех моделей, где есть реальная метка."""
+    print(f"\n--- Выполнение инкрементального обучения для моделей с реальными метками ---")
+    updated_models = []
+    correct_predictions = 0
+    total_predictions = 0
+
+    for ticker, y_true in real_targets.items():
+        model = models.get(ticker)
+        scaler = scalers.get(ticker)
+
+        if model is None or scaler is None:
+            print(f"  Модель или scaler для {ticker} не найдены. Пропускаю дообучение.")
+            continue
+
+        features_scaled = prepare_features(features_df, scaler, ticker)
+        if features_scaled is None:
+            continue
+
+        try:
+            # Делаем прогноз до дообучения (для сравнения)
+            y_pred_before = model.predict(features_scaled)[0]
+            is_correct = (y_pred_before == y_true)
+            correct_predictions += int(is_correct)
+            total_predictions += 1
+
+            # Дообучаем модель
+            model.partial_fit(features_scaled, [y_true], classes=np.array([-1, 0, 1]))
+            print(f"  Модель для {ticker} дообучена на реальной метке {y_true}. Прогноз был {y_pred_before} ({'Правильно' if is_correct else 'Неправильно'}).")
+            updated_models.append(ticker)
+        except Exception as e:
+            print(f"  Ошибка при дообучении модели для {ticker}: {e}")
+
+    if total_predictions > 0:
+        accuracy = correct_predictions / total_predictions
+        print(f"\nТочность прогнозов перед дообучением: {accuracy:.4f} ({correct_predictions}/{total_predictions})")
+
+        # Сохраняем лог обновления модели
+        try:
+            update_log_entry = pd.DataFrame([{
+                'UPDATE_DATE': datetime.now().strftime('%Y-%m-%d'),
+                'ACCURACY_BEFORE_UPDATE': accuracy,
+                'UPDATED_MODELS_COUNT': len(updated_models),
+                'UPDATED_MODELS': ', '.join(updated_models),
+                'TIMESTAMP': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            }])
+            if os.path.exists(update_log_file):
+                update_log_entry.to_csv(update_log_file, mode='a', header=False, index=False, encoding='utf-8-sig')
+            else:
+                update_log_entry.to_csv(update_log_file, index=False, encoding='utf-8-sig')
+            print(f"Лог обновления моделей сохранен в {update_log_file}.")
+        except Exception as e:
+            print(f"Ошибка при сохранении лога обновления моделей: {e}")
+    else:
+        print("Нет моделей для дообучения (нет реальных меток).")
+
+def save_updated_models(models, scalers, models_dir, scalers_dir):
+    """Сохраняет обновленные модели и scaler'ы."""
+    print(f"\n--- Сохранение обновленных моделей и scaler'ов ---")
+    for ticker, model in models.items():
+        model_path = os.path.join(models_dir, f'model_{ticker}.joblib')
+        try:
+            joblib.dump(model, model_path)
+            print(f"  Обновленная модель для {ticker} сохранена в {model_path}")
+        except Exception as e:
+            print(f"  Ошибка при сохранении обновленной модели для {ticker}: {e}")
+
+    # Scaler'ы не изменяются, поэтому их перезаписывать не обязательно
+    # Но если бы они тоже обновлялись (например, через partial_fit или online scaling),
+    # их тоже нужно было бы сохранить.
+    print("Сохранение обновленных моделей завершено.")
+
+def main():
+    """Основная функция."""
+    print("=== ЗАПУСК БОЕВОГО СКРИПТА ДЛЯ ПРОГНОЗА И ИНКРЕМЕНТАЛЬНОГО ОБУЧЕНИЯ ===")
+    print(f"Дата запуска: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+
+    # 1. Загрузка моделей и scaler'ов
+    models, scalers = load_models_and_scalers(MODELS_DIR, SCALERS_DIR)
+    if not models or not scalers:
+        print("Не удалось загрузить модели или scaler'ы. Завершение.")
+        return
+
+    # 2. Получение "новых" данных (в реальном боевом скрипте здесь будет запрос к API)
+    # Пока используем последние 1 строки из датасета как "новые" данные
+    features_df, dates_df = load_latest_data(DATASET_FILE, num_days=1)
+    if features_df.empty or dates_df.empty:
+        print("Не удалось загрузить новые данные. Завершение.")
+        return
+
+    prediction_date = dates_df.iloc[0]['TRADEDATE']
+    print(f"Дата прогноза: {prediction_date}")
+
+    # 3. Прогнозирование
+    predictions = make_predictions(models, scalers, features_df, dates_df)
+    if not predictions:
+        print("Не удалось сделать ни одного прогноза. Завершение.")
+        return
+
+    # 4. Сохранение прогнозов
+    save_predictions(predictions, PREDICTIONS_LOG_FILE)
+
+    # 5. (Симуляция) Получение реальных TARGET_DIRECTION
+    # В реальном боевом скрипте здесь будет запрос к API MOEX через день
+    # Пока симулируем на основе данных из датасета
+    real_targets = simulate_get_real_target_directions(DATASET_FILE, list(predictions.keys()), prediction_date)
+    if not real_targets:
+        print("Не удалось получить реальные TARGET_DIRECTION. Дообучение невозможно.")
+        return
+
+    # 6. Инкрементальное обучение
+    perform_incremental_learning(models, scalers, features_df, real_targets, MODEL_UPDATE_LOG_FILE)
+
+    # 7. Сохранение обновленных моделей
+    save_updated_models(models, scalers, MODELS_DIR, SCALERS_DIR)
+
+    print("\n=== БОЕВОЙ СКРИПТ ЗАВЕРШЕН ===")
+
+if __name__ == "__main__":
+    main()
+
+```
+
+### train_all_models.py
+
+```py```
+# train_all_models.py
+import pandas as pd
+import numpy as np
+from sklearn.linear_model import PassiveAggressiveClassifier
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from sklearn.model_selection import train_test_split
+import os
+import joblib
+from datetime import datetime
+
+# --- Конфигурация ---
+DATASET_FILE = 'combined_dataset_all_targets.csv'
+OUTPUT_MODELS_DIR = 'models'
+OUTPUT_SCALERS_DIR = 'scalers'
+OUTPUT_RESULTS_FILE = 'model_training_results.csv'
+TEST_SIZE = 0.2
+RANDOM_STATE = 42
+
+# --- Лучшие гиперпараметры для PassiveAggressiveClassifier ---
+# Используем те же параметры, что и раньше
+BEST_PARAMS = {
+    'C': 1.0,
+    'loss': 'hinge',
+    'average': False,
+    'random_state': RANDOM_STATE,
+    'max_iter': 1000,
+    'tol': 1e-3,
+    'fit_intercept': True,
+    'shuffle': True,
+}
+# -------------------------------
+
+def load_dataset(filename):
+    """Загружает датасет из CSV файла."""
+    print(f"Загружаю датасет из {filename}...")
+    if not os.path.exists(filename):
+        print(f"Файл {filename} не найден.")
+        return pd.DataFrame()
+
+    df = pd.read_csv(filename, encoding='utf-8-sig')
+    print(f"Датасет загружен: {len(df)} строк, {len(df.columns)} столбцов.")
+    return df
+
+def prepare_features_and_target(df, target_col):
+    """Готовит признаки (X) и целевую переменную (y) для одной модели."""
+    print(f"  Подготовка признаков и целевой переменной для {target_col}...")
+
+    if target_col not in df.columns:
+        print(f"    Ошибка: Целевая переменная '{target_col}' не найдена.")
+        return None, None, None
+
+    # --- Выбор признаков ---
+    # Пока используем все признаки, кроме даты и всех целевых переменных
+    target_cols_all = [col for col in df.columns if col.startswith('TARGET_DIRECTION_')]
+    feature_columns = [col for col in df.columns if col not in ['TRADEDATE'] + target_cols_all]
+    X = df[feature_columns]
+    y = df[target_col]
+
+    print(f"    Размер X до обработки пропусков: {X.shape}")
+    print(f"    Размер y до обработки пропусков: {y.shape}")
+
+    # --- Обработка пропусков ---
+    y_not_nan_mask = ~y.isnull()
+    print(f"    Количество строк, где {target_col} НЕ NaN: {y_not_nan_mask.sum()}")
+    X_filtered = X[y_not_nan_mask]
+    y_filtered = y[y_not_nan_mask]
+
+    # Заполнение пропусков в признаках (аналогично предыдущим скриптам)
+    price_cols = [col for col in X_filtered.columns if any(suffix in col for suffix in ['_OPEN', '_HIGH', '_LOW', '_CLOSE'])]
+    volume_cols = [col for col in X_filtered.columns if '_VOLUME' in col]
+    other_cols = [col for col in X_filtered.columns if col not in price_cols + volume_cols]
+
+    print(f"    Заполнение цен (ffill/bfill): {len(price_cols)} столбцов.")
+    X_filtered[price_cols] = X_filtered[price_cols].ffill().bfill()
+    print(f"    Заполнение объемов (0): {len(volume_cols)} столбцов.")
+    X_filtered[volume_cols] = X_filtered[volume_cols].fillna(0)
+    print(f"    Заполнение других (0 или ffill): {len(other_cols)} столбцов.")
+    cbr_key_rate_cols = [col for col in other_cols if 'CBR_KEY_RATE' in col]
+    if cbr_key_rate_cols:
+        print(f"      Заполнение CBR_KEY_RATE (ffill): {cbr_key_rate_cols}")
+        X_filtered[cbr_key_rate_cols] = X_filtered[cbr_key_rate_cols].ffill()
+        other_cols = [col for col in other_cols if col not in cbr_key_rate_cols]
+    if other_cols:
+        print(f"      Заполнение остальных (0): {other_cols}")
+        X_filtered[other_cols] = X_filtered[other_cols].fillna(0)
+
+    mask_after_fill = ~X_filtered.isnull().any(axis=1)
+    X_clean = X_filtered[mask_after_fill]
+    y_clean = y_filtered[mask_after_fill]
+
+    print(f"    После удаления строк с пропусками в X после обработки: {len(X_clean)} строк.")
+
+    if len(X_clean) == 0:
+        print(f"    После очистки данных не осталось строк для обучения {target_col}.")
+        return None, None, None
+
+    # --- Разделение данных ---
+    try:
+        X_train, X_test, y_train, y_test = train_test_split(
+            X_clean, y_clean, test_size=TEST_SIZE, random_state=RANDOM_STATE, stratify=y_clean
+        )
+        print(f"    Размер обучающей выборки: {len(X_train)}")
+        print(f"    Размер тестовой выборки: {len(X_test)}")
+        print(f"    Классы в y_train: {y_train.value_counts().sort_index()}")
+        print(f"    Классы в y_test: {y_test.value_counts().sort_index()}")
+        return X_train, X_test, y_train, y_test
+    except ValueError as e:
+        print(f"    Ошибка при разделении данных для {target_col}: {e}")
+        return None, None, None, None
+
+def initialize_model(params=None):
+    """Инициализирует PassiveAggressiveClassifier с заданными параметрами."""
+    if params is None:
+        params = BEST_PARAMS
+    model_params = params.copy()
+    model_params.pop('early_stopping', None)
+    model_params.pop('validation_fraction', None)
+    model_params.pop('n_iter_no_change', None)
+    model = PassiveAggressiveClassifier(**model_params)
+    print(f"    Инициализирован PassiveAggressiveClassifier с параметрами: {model.get_params()}")
+    return model
+
+def train_and_save_model(model, scaler, X_train, y_train, ticker):
+    """Обучает модель и сохраняет её вместе со scaler'ом."""
+    print(f"  Обучение модели для {ticker}...")
+    if len(np.unique(y_train)) < 2:
+        print(f"    В обучающей выборке для {ticker} представлены не все классы.")
+        return False
+
+    # Масштабирование
+    X_train_scaled = scaler.fit_transform(X_train)
+
+    # Обучение
+    model.fit(X_train_scaled, y_train)
+    print(f"    Модель для {ticker} обучена.")
+
+    # Сохранение
+    os.makedirs(OUTPUT_MODELS_DIR, exist_ok=True)
+    os.makedirs(OUTPUT_SCALERS_DIR, exist_ok=True)
+
+    model_filename = os.path.join(OUTPUT_MODELS_DIR, f'model_{ticker}.joblib')
+    scaler_filename = os.path.join(OUTPUT_SCALERS_DIR, f'scaler_{ticker}.joblib')
+
+    try:
+        joblib.dump(model, model_filename)
+        joblib.dump(scaler, scaler_filename)
+        print(f"    Модель для {ticker} сохранена в {model_filename}")
+        print(f"    Scaler для {ticker} сохранен в {scaler_filename}")
+        return True
+    except IOError as e:
+        print(f"    Ошибка при сохранении модели/scaler'а для {ticker}: {e}")
+        return False
+
+def evaluate_model(model, scaler, X_test, y_test, ticker):
+    """Оценивает модель на тестовой выборке."""
+    print(f"  Оценка модели для {ticker}...")
+    if len(y_test) == 0:
+        print(f"    Тестовая выборка для {ticker} пуста.")
+        return None, None, None, None
+
+    # Масштабирование
+    X_test_scaled = scaler.transform(X_test)
+
+    # Прогноз
+    y_pred = model.predict(X_test_scaled)
+
+    # Метрики
+    accuracy = accuracy_score(y_test, y_pred)
+    unique_labels = np.unique(np.concatenate([y_test, y_pred]))
+    precision = precision_score(y_test, y_pred, average='weighted', labels=unique_labels, zero_division=0)
+    recall = recall_score(y_test, y_pred, average='weighted', labels=unique_labels, zero_division=0)
+    f1 = f1_score(y_test, y_pred, average='weighted', labels=unique_labels, zero_division=0)
+
+    print(f"    Accuracy для {ticker}: {accuracy:.4f}")
+    print(f"    Precision для {ticker}: {precision:.4f}")
+    print(f"    Recall для {ticker}: {recall:.4f}")
+    print(f"    F1-score для {ticker}: {f1:.4f}")
+    return accuracy, precision, recall, f1
+
+def main():
+    """Основная функция."""
+    print("Начинаю обучение моделей для ВСЕХ акций...")
+
+    # 1. Загрузка данных
+    df = load_dataset(DATASET_FILE)
+    if df.empty:
+        print("Не удалось загрузить датасет. Завершение.")
+        return
+
+    # 2. Поиск всех целевых переменных
+    target_cols_all = [col for col in df.columns if col.startswith('TARGET_DIRECTION_')]
+    tickers = [col.replace('TARGET_DIRECTION_', '') for col in target_cols_all]
+    print(f"Найдено {len(target_cols_all)} целевых переменных для {len(tickers)} акций.")
+
+    # 3. Обучение моделей
+    results = []
+    for i, (target_col, ticker) in enumerate(zip(target_cols_all, tickers)):
+        print(f"\n--- Обработка {i+1}/{len(tickers)}: {ticker} ---")
+
+        # Подготовка данных
+        X_train, X_test, y_train, y_test = prepare_features_and_target(df, target_col)
+        if X_train is None or X_test is None:
+            print(f"  Пропущен {ticker} из-за ошибок в данных.")
+            results.append({
+                'TICKER': ticker,
+                'ACCURACY': np.nan,
+                'PRECISION': np.nan,
+                'RECALL': np.nan,
+                'F1_SCORE': np.nan,
+                'STATUS': 'FAILED_TO_PREPARE_DATA'
+            })
+            continue
+
+        # Инициализация
+        model = initialize_model()
+        scaler = StandardScaler() # Создаем новый scaler для каждой модели
+
+        # Обучение и сохранение
+        success = train_and_save_model(model, scaler, X_train, y_train, ticker)
+        if not success:
+            print(f"  Не удалось обучить или сохранить модель для {ticker}.")
+            results.append({
+                'TICKER': ticker,
+                'ACCURACY': np.nan,
+                'PRECISION': np.nan,
+                'RECALL': np.nan,
+                'F1_SCORE': np.nan,
+                'STATUS': 'FAILED_TO_TRAIN_OR_SAVE'
+            })
+            continue
+
+        # Оценка
+        acc, prec, rec, f1 = evaluate_model(model, scaler, X_test, y_test, ticker)
+        if acc is not None:
+            results.append({
+                'TICKER': ticker,
+                'ACCURACY': acc,
+                'PRECISION': prec,
+                'RECALL': rec,
+                'F1_SCORE': f1,
+                'STATUS': 'SUCCESS'
+            })
+        else:
+            results.append({
+                'TICKER': ticker,
+                'ACCURACY': np.nan,
+                'PRECISION': np.nan,
+                'RECALL': np.nan,
+                'F1_SCORE': np.nan,
+                'STATUS': 'FAILED_TO_EVALUATE'
+            })
+
+    # 4. Сохранение результатов
+    print(f"\n--- Сохранение результатов обучения {len(results)} моделей ---")
+    results_df = pd.DataFrame(results)
+    try:
+        results_df.to_csv(OUTPUT_RESULTS_FILE, index=False, encoding='utf-8-sig')
+        print(f"Результаты обучения сохранены в {OUTPUT_RESULTS_FILE}")
+    except IOError as e:
+        print(f"Ошибка при сохранении результатов: {e}")
+
+    print("Обучение моделей для ВСЕХ акций завершено.")
+
+if __name__ == "__main__":
+    main()
+
+```
+
