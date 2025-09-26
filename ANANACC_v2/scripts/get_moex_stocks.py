@@ -1,113 +1,112 @@
+# get_moex_stocks.py (полная прокачанная версия)
 import requests
 import pandas as pd
 import time
+import os
+import json
+import logging
+import argparse
 
-# --- Конфигурация ---
+parser = argparse.ArgumentParser()
+parser.add_argument('--config', default='config.json', help='Path to config file')
+args = parser.parse_args()
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', handlers=[logging.FileHandler('get_moex_stocks.log'), logging.StreamHandler()])
+logger = logging.getLogger(__name__)
+
+def load_config(config_file):
+    if not os.path.exists(config_file):
+        logger.error(f"Config file {config_file} not found.")
+        raise FileNotFoundError
+    with open(config_file, 'r') as f:
+        return json.load(f)
+
+config = load_config(args.config)
+
 MOEX_BASE_URL = "https://iss.moex.com/iss"
 MARKET = "shares"
 ENGINE = "stock"
-# Параметры для запроса, чтобы получить данные marketdata
 REQUEST_PARAMS = {
-    "iss.meta": "off",  # Отключить метаданные ISS, чтобы упростить парсинг
-    "iss.only": "securities,marketdata", # Запрашивать только нужные таблицы
+    "iss.meta": "off",
+    "iss.only": "securities,marketdata",
     "securities.columns": "SECID,BOARDID,SHORTNAME,INSTRID,MARKETCODE",
-    "marketdata.columns": "SECID,BOARDID,VALTODAY" # Используем VALTODAY как индикатор ликвидности
+    "marketdata.columns": "SECID,BOARDID,VALTODAY"
 }
 CSV_OUTPUT_FILE = "moex_stocks_liquid_boards.csv"
 
 def get_all_securities_with_marketdata():
     """Получает данные о всех инструментах и рыночной информации с MOEX ISS."""
     url = f"{MOEX_BASE_URL}/engines/{ENGINE}/markets/{MARKET}/securities.json"
-    print(f"Запрашиваю данные с {url}")
+    logger.info(f"Requesting data from {url}")
     try:
         response = requests.get(url, params=REQUEST_PARAMS)
-        response.raise_for_status() # Проверить на HTTP ошибки
+        response.raise_for_status()
         data = response.json()
         return data
     except requests.exceptions.RequestException as e:
-        print(f"Ошибка при запросе к MOEX API: {e}")
+        logger.error(f"Error requesting to MOEX API: {e}")
         return None
-    except ValueError as e: # Ошибка при парсинге JSON
-        print(f"Ошибка при парсинге JSON ответа: {e}")
+    except ValueError as e:
+        logger.error(f"Error parsing JSON response: {e}")
         return None
 
 def process_data_to_liquid_stocks_list(data):
     """Обрабатывает полученные данные, фильтрует акции и находит самый ликвидный режим."""
     if not data or 'securities' not in data or 'marketdata' not in data:
-        print("Ошибка: Полученные данные не содержат ожидаемых таблиц 'securities' или 'marketdata'.")
+        logger.error("Received data does not contain expected 'securities' or 'marketdata' tables.")
         return pd.DataFrame()
-
     securities_df = pd.DataFrame(data['securities']['data'], columns=data['securities']['columns'])
     marketdata_df = pd.DataFrame(data['marketdata']['data'], columns=data['marketdata']['columns'])
-
-    print(f"Всего инструментов в 'securities': {len(securities_df)}")
-    print(f"Всего записей в 'marketdata': {len(marketdata_df)}")
-
-    # 1. Фильтрация: оставить только инструменты фондового рынка (MARKETCODE == 'FNDT') и тип INSTRID, начинающийся на 'EQ'
-    # Убираем строки, где INSTRID или MARKETCODE NaN
+    logger.info(f"Total instruments in 'securities': {len(securities_df)}")
+    logger.info(f"Total records in 'marketdata': {len(marketdata_df)}")
     securities_df = securities_df.dropna(subset=['INSTRID', 'MARKETCODE'])
-    # Фильтр: MARKETCODE == 'FNDT' И INSTRID начинается с 'EQ'
     equity_stocks_df = securities_df[
         (securities_df['MARKETCODE'] == 'FNDT') &
-        (securities_df['INSTRID'].str.startswith('EQ', na=False)) # na=False: NaN значения дают False
+        (securities_df['INSTRID'].str.startswith('EQ', na=False))
     ]
-
-    print(f"После фильтрации по MARKETCODE='FNDT' и INSTRID.startswith('EQ'): {len(equity_stocks_df)}")
-
+    logger.info(f"After filtering by MARKETCODE='FNDT' and INSTRID.startswith('EQ'): {len(equity_stocks_df)}")
     if equity_stocks_df.empty:
-        print("После фильтрации не найдено обыкновенных акций (MARKETCODE='FNDT', INSTRID начинается с 'EQ').")
-        # Попробуем вывести уникальные INSTRID и MARKETCODE для диагностики
-        print("Уникальные значения INSTRID и MARKETCODE в исходных данных:")
-        print(securities_df[['INSTRID', 'MARKETCODE']].drop_duplicates())
+        logger.warning("No ordinary stocks found after filtering (MARKETCODE='FNDT', INSTRID starts with 'EQ').")
+        logger.info("Unique INSTRID and MARKETCODE in original data:")
+        logger.info(securities_df[['INSTRID', 'MARKETCODE']].drop_duplicates())
         return pd.DataFrame()
-
-    # 2. Объединение с marketdata по SECID и BOARDID
-    # Убираем строки marketdata, где VALTODAY NaN (нет торгов)
     marketdata_df = marketdata_df.dropna(subset=['VALTODAY'])
     merged_df = equity_stocks_df[['SECID', 'BOARDID', 'SHORTNAME']].merge(
         marketdata_df[['SECID', 'BOARDID', 'VALTODAY']], on=['SECID', 'BOARDID'], how='inner'
     )
-
-    print(f"После объединения с marketdata и фильтрации по VALTODAY: {len(merged_df)}")
-
+    logger.info(f"After merging with marketdata and filtering by VALTODAY: {len(merged_df)}")
     if merged_df.empty:
-        print("После объединения с рыночными данными и фильтрации по VALTODAY не осталось данных.")
+        logger.warning("No data left after merging with market data and VALTODAY filtering.")
         return pd.DataFrame()
-
-    # 3. Найти самый ликвидный режим для каждой акции (SECID)
-    # Сортируем по VALTODAY (по убыванию) и берем первую строку для каждого SECID
     merged_df = merged_df.sort_values(by=['SECID', 'VALTODAY'], ascending=[True, False])
     liquid_stocks_df = merged_df.groupby('SECID').first().reset_index()
-
-    # 4. Выбираем нужные колонки
     final_df = liquid_stocks_df[['SECID', 'BOARDID', 'SHORTNAME']].copy()
     final_df.rename(columns={'SHORTNAME': 'NAME'}, inplace=True)
-
-    print(f"Найдено {len(final_df)} обыкновенных акций с самым ликвидным режимом.")
+    logger.info(f"Found {len(final_df)} ordinary stocks with most liquid mode.")
     return final_df
 
 def save_to_csv(df, filename):
     """Сохраняет DataFrame в CSV файл."""
     if df.empty:
-        print("DataFrame пуст, файл не будет создан.")
+        logger.error("DataFrame is empty, file will not be created.")
         return
     try:
-        df.to_csv(filename, index=False, encoding='utf-8-sig') # utf-8-sig для корректного отображения в Excel
-        print(f"Список акций успешно сохранен в {filename}")
+        df.to_csv(filename, index=False, encoding='utf-8-sig')
+        logger.info(f"Stocks list successfully saved to {filename}")
     except IOError as e:
-        print(f"Ошибка при сохранении файла: {e}")
+        logger.error(f"Error saving file: {e}")
 
 def main():
     """Основная функция."""
-    print("Начинаю сбор списка обыкновенных акций с MOEX...")
+    logger.info("Starting collection of ordinary stocks list from MOEX...")
     data = get_all_securities_with_marketdata()
     if data:
-        print("Данные успешно получены. Обрабатываю...")
+        logger.info("Data successfully received. Processing...")
         liquid_stocks_df = process_data_to_liquid_stocks_list(data)
-        print("Обработка завершена. Сохраняю результат...")
+        logger.info("Processing completed. Saving result...")
         save_to_csv(liquid_stocks_df, CSV_OUTPUT_FILE)
     else:
-        print("Не удалось получить данные с MOEX API.")
+        logger.error("Failed to get data from MOEX API.")
 
 if __name__ == "__main__":
     main()

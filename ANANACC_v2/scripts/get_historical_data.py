@@ -1,13 +1,32 @@
+# get_historical_data.py (полная прокачанная версия)
 import pandas as pd
 import requests
 import time
 import os
 from datetime import datetime
+import json
+import logging
+import argparse
 
-# --- Конфигурация ---
+parser = argparse.ArgumentParser()
+parser.add_argument('--config', default='config.json', help='Path to config file')
+args = parser.parse_args()
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', handlers=[logging.FileHandler('get_historical_data.log'), logging.StreamHandler()])
+logger = logging.getLogger(__name__)
+
+def load_config(config_file):
+    if not os.path.exists(config_file):
+        logger.error(f"Config file {config_file} not found.")
+        raise FileNotFoundError
+    with open(config_file, 'r') as f:
+        return json.load(f)
+
+config = load_config(args.config)
+
 INPUT_CSV_FILE = "moex_stocks_liquid_boards.csv"
-OUTPUT_DIR = "historical_data_full"
-START_DATE = "2023-01-01"
+OUTPUT_DIR = config['historical_data_full_dir']
+START_DATE = config['start_date']
 MOEX_BASE_URL = "https://iss.moex.com/iss"
 MARKET = "shares"
 ENGINE = "stock"
@@ -20,64 +39,52 @@ REQUEST_PARAMS = {
 }
 REQUEST_DELAY = 1.0
 REQUEST_TIMEOUT = 45
-# MAX_RETRIES для основного цикла не нужен, но можно добавить для внутреннего цикла
-MAX_CONNECTION_RETRY_ATTEMPTS = 5 # Максимальное количество попыток для тикеров с ошибками соединения
+MAX_CONNECTION_RETRY_ATTEMPTS = 5
 
 def load_tickers_from_csv(filename):
     """Загружает список тикеров из CSV файла."""
     try:
         df = pd.read_csv(filename, encoding='utf-8-sig')
-        print(f"Загружено {len(df)} тикеров из {filename}")
+        logger.info(f"Loaded {len(df)} tickers from {filename}")
         return df
     except FileNotFoundError:
-        print(f"Файл {filename} не найден.")
+        logger.error(f"File {filename} not found.")
         return pd.DataFrame()
     except Exception as e:
-        print(f"Ошибка при чтении файла {filename}: {e}")
+        logger.error(f"Error reading file {filename}: {e}")
         return pd.DataFrame()
 
 def get_historical_data_for_ticker(secid, boardid):
     """Получает исторические данные для одного тикера с указанного режима."""
     url = f"{MOEX_BASE_URL}/engines/{ENGINE}/markets/{MARKET}/boards/{boardid}/securities/{secid}/candles.json"
-    # print(f"  Запрашиваю историю для {secid} ({boardid}) с {url}") # Закомментируем для краткости лога при большом количестве
+    logger.info(f"Requesting history for {secid} ({boardid}) from {url}")
     try:
         response = requests.get(url, params=REQUEST_PARAMS, timeout=REQUEST_TIMEOUT)
         response.raise_for_status()
         data = response.json()
         return data
     except requests.exceptions.Timeout:
-        print(f"    Таймаут при запросе истории для {secid} ({boardid}).")
-        return 'CONNECTION_ERROR' # Возвращаем специальный маркер
-    except requests.exceptions.ConnectionError as e: # Обработка ConnectionError, включая NewConnectionError
-        print(f"    Ошибка подключения при запросе истории для {secid} ({boardid}): {e}")
-        return 'CONNECTION_ERROR' # Возвращаем специальный маркер
+        logger.error(f"Timeout requesting history for {secid} ({boardid}).")
+        return 'CONNECTION_ERROR'
+    except requests.exceptions.ConnectionError as e:
+        logger.error(f"Connection error requesting history for {secid} ({boardid}): {e}")
+        return 'CONNECTION_ERROR'
     except requests.exceptions.RequestException as e:
-        if isinstance(e, KeyboardInterrupt):
-            print(f"\n    Запрос прерван пользователем (Ctrl+C) для {secid} ({boardid}).")
-            raise # Передаем исключение наверх
-        print(f"    Ошибка при запросе истории для {secid} ({boardid}): {e}")
-        return 'CONNECTION_ERROR' # Считаем любую другую RequestException ошибкой соединения
-    except ValueError as e: # Ошибка при парсинге JSON
-        print(f"    Ошибка при парсинге JSON ответа для {secid} ({boardid}): {e}")
-        return 'CONNECTION_ERROR' # Считаем ошибкой соединения, если JSON сломан
+        logger.error(f"Error requesting history for {secid} ({boardid}): {e}")
+        return 'CONNECTION_ERROR'
+    except ValueError as e:
+        logger.error(f"Error parsing JSON response for {secid} ({boardid}): {e}")
+        return 'CONNECTION_ERROR'
 
 def save_historical_data_to_csv(data, secid, output_dir):
     """Сохраняет исторические данные в CSV файл для конкретного тикера."""
-    # Проверяем, был ли возвращен специальный маркер ошибки
     if data == 'CONNECTION_ERROR':
-        return False, 'CONNECTION_ERROR' # Возвращаем False и маркер ошибки
-
+        return False, 'CONNECTION_ERROR'
     if not data or 'candles' not in data or not data['candles']['data']:
-        print(f"    Нет исторических данных для {secid}, файл не создан.")
-        return False, 'NO_DATA' # Возвращаем False и маркер отсутствия данных
-
-    # Создаем директорию, если её нет
+        logger.warning(f"No historical data for {secid}, file not created.")
+        return False, 'NO_DATA'
     os.makedirs(output_dir, exist_ok=True)
-
     df = pd.DataFrame(data['candles']['data'], columns=data['candles']['columns'])
-    # print(f"    Отладка: Столбцы до обработки для {secid}: {df.columns.tolist()}") # Для отладки
-
-    # Преобразуем 'begin' или 'end' в формат даты и переименуем в 'TRADEDATE'
     if 'begin' in df.columns:
         df['TRADEDATE'] = pd.to_datetime(df['begin']).dt.date
         df = df.drop(columns=['begin'])
@@ -85,153 +92,126 @@ def save_historical_data_to_csv(data, secid, output_dir):
         df['TRADEDATE'] = pd.to_datetime(df['end']).dt.date
         df = df.drop(columns=['end'])
     else:
-        print(f"    Ошибка: Ни 'begin', ни 'end' не найдены в данных для {secid}. Пропускаю.")
-        return False, 'PARSE_ERROR' # Возвращаем False и маркер ошибки парсинга
-
-    # Переименуем остальные столбцы
+        logger.error(f"Neither 'begin' nor 'end' found in data for {secid}. Skipping.")
+        return False, 'PARSE_ERROR'
     expected_col_mapping = {'open': 'OPEN', 'high': 'HIGH', 'low': 'LOW', 'close': 'CLOSE', 'volume': 'VOLUME'}
     missing_cols = [col for col in expected_col_mapping.keys() if col not in df.columns]
     if missing_cols:
-        print(f"    Некорректные столбцы в данных для {secid}: {df.columns.tolist()}. Отсутствуют: {missing_cols}. Пропущено.")
-        return False, 'PARSE_ERROR' # Возвращаем False и маркер ошибки парсинга
-
+        logger.error(f"Incorrect columns in data for {secid}: {df.columns.tolist()}. Missing: {missing_cols}. Skipped.")
+        return False, 'PARSE_ERROR'
     df = df.rename(columns=expected_col_mapping)
-
     required_cols = ['TRADEDATE', 'OPEN', 'HIGH', 'LOW', 'CLOSE', 'VOLUME']
     if all(col in df.columns for col in required_cols):
         df = df[required_cols]
         filename = os.path.join(output_dir, f"{secid}_history.csv")
         try:
             df.to_csv(filename, index=False, encoding='utf-8-sig')
-            print(f"    История для {secid} сохранена в {filename} ({len(df)} строк)")
-            return True, 'SUCCESS' # Возвращаем True и маркер успеха
+            logger.info(f"History for {secid} saved to {filename} ({len(df)} rows)")
+            return True, 'SUCCESS'
         except IOError as e:
-            print(f"    Ошибка при сохранении файла для {secid}: {e}")
-            return False, 'SAVE_ERROR' # Возвращаем False и маркер ошибки сохранения
+            logger.error(f"Error saving file for {secid}: {e}")
+            return False, 'SAVE_ERROR'
     else:
-        print(f"    Некорректные столбцы в данных для {secid} после обработки: {df.columns.tolist()}. Пропущено.")
-        return False, 'PARSE_ERROR' # Возвращаем False и маркер ошибки парсинга
-
+        logger.error(f"Incorrect columns in data for {secid} after processing: {df.columns.tolist()}. Skipped.")
+        return False, 'PARSE_ERROR'
 
 def main():
     """Основная функция."""
-    print("Начинаю сбор исторических данных (полный список, циклически только ошибки соединения)...")
+    logger.info("Starting collection of historical data (full list, retry only connection errors)...")
     tickers_df = load_tickers_from_csv(INPUT_CSV_FILE)
     if tickers_df.empty:
-        print("Не удалось загрузить список тикеров. Завершение.")
+        logger.error("Failed to load tickers list. Exiting.")
         return
-
     if not all(col in tickers_df.columns for col in ['SECID', 'BOARDID']):
-        print(f"Файл {INPUT_CSV_FILE} не содержит колонок 'SECID' и 'BOARDID'. Завершение.")
+        logger.error(f"File {INPUT_CSV_FILE} does not contain 'SECID' and 'BOARDID' columns. Exiting.")
         return
-
     total_tickers = len(tickers_df)
-    print(f"Начинаю обработку {total_tickers} тикеров...")
-
-    # Инициализируем список тикеров для обработки
+    logger.info(f"Starting processing of {total_tickers} tickers...")
     remaining_tickers_df = tickers_df.copy()
-
-    # --- Первый основной проход ---
-    print(f"\n--- Основной проход ---")
-    failed_connection_tickers = [] # Список тикеров с ошибками соединения
-    failed_other_tickers = []      # Список тикеров с другими ошибками (нет данных и т.д.)
-
+    logger.info("\n--- Main pass ---")
+    failed_connection_tickers = []
+    failed_other_tickers = []
     for index, row in remaining_tickers_df.iterrows():
         secid = row['SECID']
         boardid = row['BOARDID']
-        print(f"Обработка: {secid} ({boardid})")
+        logger.info(f"Processing: {secid} ({boardid})")
         try:
             data = get_historical_data_for_ticker(secid, boardid)
             success, status = save_historical_data_to_csv(data, secid, OUTPUT_DIR)
             if success:
-                print(f"    Успешно обработан: {secid}")
+                logger.info(f"    Successfully processed: {secid}")
             else:
                 if status == 'CONNECTION_ERROR':
-                    print(f"    Ошибка соединения для {secid}, добавлен в список повторных попыток.")
+                    logger.info(f"    Connection error for {secid}, added to retry list.")
                     failed_connection_tickers.append({'SECID': secid, 'BOARDID': boardid})
-                else: # NO_DATA, PARSE_ERROR, SAVE_ERROR
-                    print(f"    Окончательная ошибка для {secid} (причина: {status}), добавлен в список окончательно неудачных.")
+                else:
+                    logger.info(f"    Final error for {secid} (reason: {status}), added to final failed list.")
                     failed_other_tickers.append({'SECID': secid, 'BOARDID': boardid})
         except KeyboardInterrupt:
-            print(f"\nОбработка прервана пользователем на тикере {secid}.")
-            # Сохраняем промежуточные результаты
+            logger.warning(f"\nProcessing interrupted by user on ticker {secid}.")
             if failed_connection_tickers:
                 pd.DataFrame(failed_connection_tickers).to_csv(os.path.join(OUTPUT_DIR, "failed_connection_tickers_on_interrupt.csv"), index=False, encoding='utf-8-sig')
             if failed_other_tickers:
                 pd.DataFrame(failed_other_tickers).to_csv(os.path.join(OUTPUT_DIR, "failed_other_tickers_on_interrupt.csv"), index=False, encoding='utf-8-sig')
-            return # Выходим из функции main
-
-    print(f"Основной проход завершен.")
-    print(f"  Успешно обработано: {total_tickers - len(failed_connection_tickers) - len(failed_other_tickers)}")
-    print(f"  Ошибки соединения: {len(failed_connection_tickers)}")
-    print(f"  Окончательные ошибки (нет данных и др.): {len(failed_other_tickers)}")
-
-    # --- Циклическая обработка ошибок соединения ---
+            return
+    logger.info("Main pass completed.")
+    logger.info(f"  Successfully processed: {total_tickers - len(failed_connection_tickers) - len(failed_other_tickers)}")
+    logger.info(f"  Connection errors: {len(failed_connection_tickers)}")
+    logger.info(f"  Final errors (no data etc.): {len(failed_other_tickers)}")
     connection_retry_df = pd.DataFrame(failed_connection_tickers)
     attempt = 1
     max_attempts = MAX_CONNECTION_RETRY_ATTEMPTS
-
     while not connection_retry_df.empty and attempt <= max_attempts:
-        print(f"\n--- Повторная попытка соединения - Проход {attempt} ---")
-        print(f"Осталось обработать {len(connection_retry_df)} тикеров с ошибками соединения.")
-        next_failed_connection_tickers = [] # Список для следующей итерации
-
+        logger.info(f"\n--- Retry connection - Pass {attempt} ---")
+        logger.info(f"Remaining to process {len(connection_retry_df)} tickers with connection errors.")
+        next_failed_connection_tickers = []
         for _, row in connection_retry_df.iterrows():
             secid = row['SECID']
             boardid = row['BOARDID']
-            print(f"Повторная попытка для: {secid} ({boardid})")
+            logger.info(f"Retry for: {secid} ({boardid})")
             try:
                 data = get_historical_data_for_ticker(secid, boardid)
                 success, status = save_historical_data_to_csv(data, secid, OUTPUT_DIR)
                 if success:
-                    print(f"    Успешно обработан: {secid}")
-                    # Не добавляем в список повторных попыток
+                    logger.info(f"    Successfully processed: {secid}")
                 else:
                     if status == 'CONNECTION_ERROR':
-                        print(f"    Ошибка соединения для {secid}, остается в списке повторных попыток.")
+                        logger.info(f"    Connection error for {secid}, remains in retry list.")
                         next_failed_connection_tickers.append({'SECID': secid, 'BOARDID': boardid})
-                    else: # NO_DATA, PARSE_ERROR, SAVE_ERROR
-                        print(f"    Окончательная ошибка для {secid} (причина: {status}), переносится в окончательно неудачные.")
-                        failed_other_tickers.append({'SECID': secid, 'BOARDID': boardid}) # Добавляем в список окончательных ошибок
+                    else:
+                        logger.info(f"    Final error for {secid} (reason: {status}), moved to final failed.")
+                        failed_other_tickers.append({'SECID': secid, 'BOARDID': boardid})
             except KeyboardInterrupt:
-                print(f"\nОбработка прервана пользователем на тикере {secid}.")
-                # Сохраняем промежуточные результаты
+                logger.warning(f"\nProcessing interrupted by user on ticker {secid}.")
                 if next_failed_connection_tickers:
                     pd.DataFrame(next_failed_connection_tickers).to_csv(os.path.join(OUTPUT_DIR, "failed_connection_tickers_on_interrupt.csv"), index=False, encoding='utf-8-sig')
                 if failed_other_tickers:
                     pd.DataFrame(failed_other_tickers).to_csv(os.path.join(OUTPUT_DIR, "failed_other_tickers_on_interrupt.csv"), index=False, encoding='utf-8-sig')
-                return # Выходим из функции main
-
+                return
         connection_retry_df = pd.DataFrame(next_failed_connection_tickers)
         attempt += 1
         if not connection_retry_df.empty and attempt <= max_attempts:
-            print(f"После прохода {attempt - 1}, осталось {len(connection_retry_df)} тикеров с ошибками соединения.")
-            print(f"Ждем перед следующим проходом... ({REQUEST_DELAY} секунд)")
+            logger.info(f"After pass {attempt - 1}, remaining {len(connection_retry_df)} tickers with connection errors.")
+            logger.info(f"Waiting before next pass... ({REQUEST_DELAY} seconds)")
             time.sleep(REQUEST_DELAY)
-
-    # --- Вывод итогов ---
     final_success_count = total_tickers - len(connection_retry_df) - len(failed_other_tickers)
-    print(f"\n--- Итоги ---")
-    print(f"Все тикеры обработаны (или достигнут лимит попыток).")
-    print(f"  Всего тикеров: {total_tickers}")
-    print(f"  Успешно обработано: {final_success_count}")
-    print(f"  Ошибки соединения (не устранены за {max_attempts} попыток): {len(connection_retry_df)}")
-    print(f"  Окончательные ошибки (нет данных и др.): {len(failed_other_tickers)}")
-
+    logger.info(f"\n--- Summary ---")
+    logger.info(f"All tickers processed (or max retries reached).")
+    logger.info(f"  Total tickers: {total_tickers}")
+    logger.info(f"  Successfully processed: {final_success_count}")
+    logger.info(f"  Unresolved connection errors (after {max_attempts} retries): {len(connection_retry_df)}")
+    logger.info(f"  Final errors (no data etc.): {len(failed_other_tickers)}")
     if not connection_retry_df.empty:
-        print(f"  Не удалось обработать следующие тикеры из-за повторяющихся ошибок соединения:")
-        print(connection_retry_df)
-        # Сохраняем список неудачных тикеров (ошибки соединения) в файл
+        logger.info(f"  Failed to process the following tickers due to repeated connection errors:")
+        logger.info(connection_retry_df)
         failed_con_file = os.path.join(OUTPUT_DIR, "failed_connection_tickers_final.csv")
         connection_retry_df.to_csv(failed_con_file, index=False, encoding='utf-8-sig')
-        print(f"Список неудачных тикеров (ошибки соединения) сохранен в {failed_con_file}")
-
+        logger.info(f"Final failed tickers (connection errors) saved to {failed_con_file}")
     if failed_other_tickers:
         failed_other_file = os.path.join(OUTPUT_DIR, "failed_other_tickers_final.csv")
         pd.DataFrame(failed_other_tickers).to_csv(failed_other_file, index=False, encoding='utf-8-sig')
-        print(f"Список тикеров с окончательными ошибками (нет данных и др.) сохранен в {failed_other_file}")
-
-    print("Сбор исторических данных (полный список) завершен (или прерван).")
+        logger.info(f"Tickers with final errors (no data etc.) saved to {failed_other_file}")
+    logger.info("Collection of historical data (full list) completed (or interrupted).")
 
 if __name__ == "__main__":
     main()

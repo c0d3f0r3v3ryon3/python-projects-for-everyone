@@ -1,84 +1,84 @@
+# plot_incremental_learning.py (полная прокачанная версия)
 import pandas as pd
 import matplotlib.pyplot as plt
 import os
+import json
+import logging
+import argparse
 
-# --- Конфигурация ---
-LOG_FILE = 'incremental_learning_log.csv'
-OUTPUT_PLOT_FILE = 'incremental_learning_accuracy_plot.png'
-FIGURE_SIZE = (12, 6) # Ширина, Высота в дюймах
-DPI = 150 # Разрешение изображения
+parser = argparse.ArgumentParser()
+parser.add_argument('--config', default='config.json', help='Path to config file')
+args = parser.parse_args()
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', handlers=[logging.FileHandler('plot_incremental_learning.log'), logging.StreamHandler()])
+logger = logging.getLogger(__name__)
+
+def load_config(config_file):
+    if not os.path.exists(config_file):
+        logger.error(f"Config file {config_file} not found.")
+        raise FileNotFoundError
+    with open(config_file, 'r') as f:
+        return json.load(f)
+
+config = load_config(args.config)
+
+LOG_FILE = os.path.join(config['logs_dir'], 'incremental_learning_log_final.csv')
+OUTPUT_PLOT_FILE = os.path.join(config['plots_dir'], 'incremental_learning_accuracy_plot.png')
+FIGURE_SIZE = (12, 6)
+DPI = 150
 
 def plot_accuracy_over_time(log_filename, output_plot_filename):
     """Строит график нарастающей точности от даты."""
-    print(f"Загружаю лог инкрементального обучения из {log_filename}...")
+    logger.info(f"Loading incremental learning log from {log_filename}...")
     if not os.path.exists(log_filename):
-        print(f"Файл {log_filename} не найден.")
+        logger.error(f"File {log_filename} not found.")
         return
-
     try:
         df = pd.read_csv(log_filename, encoding='utf-8-sig')
-        print(f"Лог загружен: {len(df)} строк.")
+        logger.info(f"Log loaded: {len(df)} rows.")
     except Exception as e:
-        print(f"Ошибка при загрузке {log_filename}: {e}")
+        logger.error(f"Error loading {log_filename}: {e}")
         return
-
     if df.empty:
-        print("Лог пуст.")
+        logger.error("Log is empty.")
         return
-
-    # Проверим наличие необходимых столбцов
     required_columns = ['TRADEDATE', 'ACCURACY_CUMULATIVE']
     if not all(col in df.columns for col in required_columns):
-        print(f"В файле {log_filename} отсутствуют необходимые столбцы: {required_columns}")
-        print(f"Найденные столбцы: {df.columns.tolist()}")
+        logger.error(f"Missing required columns in file {log_filename}: {required_columns}")
+        logger.info(f"Found columns: {df.columns.tolist()}")
         return
-
-    # Преобразуем TRADEDATE в datetime
-    print("Преобразование столбца TRADEDATE в формат datetime...")
+    logger.info("Converting TRADEDATE column to datetime format...")
     df['TRADEDATE'] = pd.to_datetime(df['TRADEDATE'], format='%Y-%m-%d', errors='coerce')
-
-    # Проверим на NaT (Not a Time) после преобразования
     nat_count = df['TRADEDATE'].isna().sum()
     if nat_count > 0:
-        print(f"Предупреждение: {nat_count} строк имеют некорректный формат даты и будут удалены.")
+        logger.warning(f"Warning: {nat_count} rows have invalid date format and will be removed.")
         df = df.dropna(subset=['TRADEDATE'])
-
     if df.empty:
-        print("После очистки некорректных дат лог пуст.")
+        logger.error("Log is empty after cleaning invalid dates.")
         return
-
-    # Сортируем по дате
-    print("Сортировка данных по дате...")
+    logger.info("Sorting data by date...")
     df = df.sort_values(by='TRADEDATE').reset_index(drop=True)
-    print(f"Данные отсортированы. Диапазон дат: {df['TRADEDATE'].min()} - {df['TRADEDATE'].max()}")
-
-    # Создаем график
-    print("Построение графика...")
+    logger.info(f"Data sorted. Date range: {df['TRADEDATE'].min()} - {df['TRADEDATE'].max()}")
+    logger.info("Building plot...")
     plt.figure(figsize=FIGURE_SIZE, dpi=DPI)
     plt.plot(df['TRADEDATE'], df['ACCURACY_CUMULATIVE'], marker='o', linestyle='-', linewidth=1, markersize=3, color='blue')
     plt.title('Изменение точности модели в процессе инкрементального обучения')
     plt.xlabel('Дата (TRADEDATE)')
     plt.ylabel('Нарастающая точность (ACCURACY_CUMULATIVE)')
     plt.grid(True, linestyle='--', alpha=0.5)
-
-    # Автоматическое форматирование дат на оси X для лучшей читаемости
-    plt.gcf().autofmt_xdate() # Поворачивает метки дат
-
-    # Добавим немного места по краям
+    plt.gcf().autofmt_xdate()
     plt.tight_layout()
-
-    # Сохраняем график
-    print(f"Сохранение графика в {output_plot_filename}...")
+    logger.info(f"Saving plot to {output_plot_filename}...")
     plt.savefig(output_plot_filename)
-    print("График сохранен.")
-    plt.show() # Открываем окно с графиком (опционально)
-    plt.close() # Закрываем фигуру, чтобы освободить память
+    logger.info("Plot saved.")
+    plt.show()
+    plt.close()
 
 def main():
     """Основная функция."""
-    print("Начинаю построение графика инкрементального обучения...")
+    logger.info("Starting plot of incremental learning...")
     plot_accuracy_over_time(LOG_FILE, OUTPUT_PLOT_FILE)
-    print("Построение графика завершено.")
+    logger.info("Plotting completed.")
 
 if __name__ == "__main__":
     main()

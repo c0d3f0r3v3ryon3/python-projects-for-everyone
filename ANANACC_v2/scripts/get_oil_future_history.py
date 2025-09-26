@@ -1,111 +1,150 @@
+# get_oil_future_history.py (полная прокачанная версия)
 import pandas as pd
 import requests
 import time
 import os
+import subprocess
+import json
+import logging
+import argparse
+import sys
 
-# --- Конфигурация ---
+# Настройка аргументов командной строки
+parser = argparse.ArgumentParser()
+parser.add_argument('--config', default='config.json', help='Path to config file')
+args = parser.parse_args()
+
+# Настройка логирования
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s',
+                    handlers=[logging.FileHandler('get_oil_future_history.log'), logging.StreamHandler()])
+logger = logging.getLogger(__name__)
+
+def load_config(config_file):
+    if not os.path.exists(config_file):
+        logger.error(f"Config file {config_file} not found.")
+        raise FileNotFoundError
+    with open(config_file, 'r') as f:
+        return json.load(f)
+
+config = load_config(args.config)
+
 INPUT_CONTRACT_FILE = "current_oil_future_contract.txt"
-OUTPUT_DIR = "historical_data_oil"
-START_DATE = "2023-01-01" # Используем ту же дату, что и для других активов
+OUTPUT_DIR = config['historical_data_oil_dir']
+START_DATE = config['start_date']
 MOEX_BASE_URL = "https://iss.moex.com/iss"
-MARKET = "forts" # Рынок срочной торговли
-ENGINE = "futures" # Торговая система срочного рынка
+MARKET = "forts"
+ENGINE = "futures"
 REQUEST_PARAMS = {
     "from": START_DATE,
     "iss.meta": "off",
-    # Используем правильный endpoint для истории: /history/engines/.../markets/.../boards/.../securities/[SECID]
-    # Предполагаемые столбцы: TRADEDATE, OPEN, CLOSE, HIGH, LOW, VALUE, VOLUME
-    # Проверим сначала, какие столбцы возвращает API для истории фьючерса.
 }
-# Увеличиваем задержку и таймаут для стабильности
 REQUEST_DELAY = 1.0
 REQUEST_TIMEOUT = 45
 
+def run_find_oil_futures(config_file):
+    """Запускает find_oil_futures.py для создания current_oil_future_contract.txt."""
+    script_path = os.path.join("scripts", "find_oil_futures.py")
+    if not os.path.exists(script_path):
+        logger.error(f"Script {script_path} not found.")
+        return False
+    try:
+        logger.info(f"Running {script_path} to generate {INPUT_CONTRACT_FILE}")
+        result = subprocess.run(
+            [sys.executable, script_path, "--config", config_file],
+            capture_output=True,
+            text=True
+        )
+        if result.returncode == 0:
+            logger.info(f"{script_path} executed successfully.")
+            return True
+        else:
+            logger.error(f"Error running {script_path}: {result.stderr}")
+            return False
+    except Exception as e:
+        logger.error(f"Exception while running {script_path}: {e}")
+        return False
+
 def load_current_contract_from_file(filename):
     """Загружает тикер текущего фьючерсного контракта из файла."""
+    if not os.path.exists(filename):
+        logger.info(f"File {filename} not found. Attempting to run find_oil_futures.py...")
+        success = run_find_oil_futures(args.config)
+        if not success or not os.path.exists(filename):
+            logger.error(f"Failed to generate {filename} after running find_oil_futures.py.")
+            return None
     try:
         with open(filename, 'r') as f:
             secid = f.read().strip()
-        print(f"Загружен тикер фьючерсного контракта: {secid}")
+        logger.info(f"Loaded futures ticker: {secid}")
         return secid
-    except FileNotFoundError:
-        print(f"Файл {filename} не найден.")
-        return None
     except Exception as e:
-        print(f"Ошибка при чтении файла {filename}: {e}")
+        logger.error(f"Error reading file {filename}: {e}")
         return None
 
 def get_oil_future_history(secid):
     """Получает исторические данные для фьючерсного контракта с указанного режима."""
-    # Используем endpoint для истории с указанием BOARDID, как для акций/валют
-    # Ищем BOARDID для BRV5 в предыдущем ответе или устанавливаем по умолчанию
-    # Из предыдущего запроса к /securities/ мы знаем, что BOARDID для BRV5 - RFUD
-    boardid = "RFUD" # Устанавливаем вручную, так как он известен из спецификации
+    boardid = "RFUD"
     url = f"{MOEX_BASE_URL}/history/engines/{ENGINE}/markets/{MARKET}/boards/{boardid}/securities/{secid}.json"
-    print(f"  Запрашиваю историю для фьючерса {secid} ({boardid}) с {url}")
+    logger.info(f"Requesting history for future {secid} ({boardid}) from {url}")
     try:
         response = requests.get(url, params=REQUEST_PARAMS, timeout=REQUEST_TIMEOUT)
         response.raise_for_status()
         data = response.json()
         return data
     except requests.exceptions.Timeout:
-        print(f"    Таймаут при запросе истории для фьючерса {secid} ({boardid}). Пропускаю.")
+        logger.error(f"Timeout requesting history for future {secid} ({boardid}). Skipping.")
         return None
-    except requests.exceptions.ConnectionError as e: # Обработка ConnectionError, включая NewConnectionError
-        print(f"    Ошибка подключения при запросе истории для фьючерса {secid} ({boardid}): {e}")
+    except requests.exceptions.ConnectionError as e:
+        logger.error(f"Connection error requesting history for future {secid} ({boardid}): {e}")
         return None
     except requests.exceptions.RequestException as e:
-        if isinstance(e, KeyboardInterrupt):
-            print(f"\n    Запрос прерван пользователем (Ctrl+C) для фьючерса {secid} ({boardid}).")
-            raise
-        print(f"    Ошибка при запросе истории для фьючерса {secid} ({boardid}): {e}")
+        logger.error(f"Error requesting history for future {secid} ({boardid}): {e}")
         return None
-    except ValueError as e: # Ошибка при парсинге JSON
-        print(f"    Ошибка при парсинге JSON ответа для фьючерса {secid} ({boardid}): {e}")
+    except ValueError as e:
+        logger.error(f"Error parsing JSON response for future {secid} ({boardid}): {e}")
         return None
 
 def save_oil_future_history_to_csv(data, secid, output_dir):
     """Сохраняет исторические данные фьючерса в CSV файл."""
     if not data or 'history' not in data or not data['history']['data']:
-        print(f"    Нет исторических данных для фьючерса {secid}, файл не создан.")
-        return
-
-    # Создаем директорию, если её нет
+        logger.warning(f"No historical data for future {secid}, file not created.")
+        return False
     os.makedirs(output_dir, exist_ok=True)
-
     df = pd.DataFrame(data['history']['data'], columns=data['history']['columns'])
-    print(f"    Получено {len(df)} строк истории для {secid}. Столбцы: {df.columns.tolist()}")
-
-    # Основные ожидаемые столбцы для фьючерса из истории: TRADEDATE, OPEN, CLOSE, HIGH, LOW, VALUE, VOLUME
-    # Также могут быть: WAPRICE (средневзвешенная цена), SETTLEPRICE (цена расчета), и др.
+    logger.info(f"Received {len(df)} rows of history for {secid}. Columns: {df.columns.tolist()}")
     required_cols = ['TRADEDATE', 'OPEN', 'CLOSE', 'HIGH', 'LOW', 'VALUE', 'VOLUME']
-    # Проверим, есть ли все нужные столбцы
     if all(col in df.columns for col in required_cols):
         df = df[required_cols]
         filename = os.path.join(output_dir, f"{secid}_history.csv")
         try:
             df.to_csv(filename, index=False, encoding='utf-8-sig')
-            print(f"    История для фьючерса {secid} сохранена в {filename}")
+            logger.info(f"History for future {secid} saved to {filename}")
+            return True
         except IOError as e:
-            print(f"    Ошибка при сохранении файла для фьючерса {secid}: {e}")
+            logger.error(f"Error saving file for future {secid}: {e}")
+            return False
     else:
-        print(f"    Некорректные столбцы в данных для фьючерса {secid}: {df.columns.tolist()}. Пропущено.")
+        logger.error(f"Incorrect columns in data for future {secid}: {df.columns.tolist()}. Skipped.")
+        return False
 
 def main():
     """Основная функция."""
-    print("Начинаю сбор исторических данных по фьючерсу на нефть...")
-    secid = load_current_contract_from_file(INPUT_CONTRACT_FILE)
-    if secid is None:
-        print("Не удалось загрузить тикер фьючерсного контракта. Завершение.")
-        return
-
-    data = get_oil_future_history(secid)
-    if data: # Сохраняем только если данные успешно получены
-        save_oil_future_history_to_csv(data, secid, OUTPUT_DIR)
-    else:
-        print(f"Не удалось получить исторические данные для фьючерса {secid}.")
-
-    print("Сбор исторических данных по фьючерсу на нефть завершен (или прерван).")
+    try:
+        logger.info("Starting collection of historical data for oil future...")
+        secid = load_current_contract_from_file(INPUT_CONTRACT_FILE)
+        if secid is None:
+            logger.error("Failed to load futures contract ticker. Exiting.")
+            sys.exit(1)
+        data = get_oil_future_history(secid)
+        if data and save_oil_future_history_to_csv(data, secid, OUTPUT_DIR):
+            logger.info("Collection of historical data for oil future completed.")
+            sys.exit(0)
+        else:
+            logger.error(f"Failed to get or save historical data for future {secid}.")
+            sys.exit(1)
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()

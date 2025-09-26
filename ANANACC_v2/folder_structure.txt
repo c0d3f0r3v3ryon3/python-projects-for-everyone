@@ -1,0 +1,3219 @@
+# Структура папки: E:\OTHER\python-projects-for-everyone\ANANACC_v2
+
+## Дерево каталогов
+
+```
+ANANACC_v2/
+  ananacc_gui.py
+  scripts/
+    combine_datasets.py
+    combine_datasets_all_targets.py
+    find_currency_pairs.py
+    find_indices.py
+    find_oil_futures.py
+    get_currency_history.py
+    get_currency_history_cets.py
+    get_historical_data.py
+    get_index_history.py
+    get_key_rate_history.py
+    get_moex_stocks.py
+    get_oil_future_history.py
+    plot_incremental_learning.py
+    predict_and_learn.py
+    train_all_models.py
+```
+
+## Содержимое файлов
+
+### ananacc_gui.py
+
+```py```
+# ananacc_gui.py (полная версия с выбором тикеров чекбоксами)
+import sys
+import os
+import subprocess
+import json
+import time
+from PyQt5.QtWidgets import (
+    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
+    QTextEdit, QLabel, QTabWidget, QFileDialog, QMessageBox, QProgressBar,
+    QGroupBox, QFormLayout, QLineEdit, QDateEdit, QComboBox,
+    QCalendarWidget, QTableWidget, QTableWidgetItem, QListWidget, QListWidgetItem,
+    QAbstractItemView
+)
+from PyQt5.QtCore import QThread, pyqtSignal, QDate, Qt
+import pandas as pd
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+import matplotlib.dates as mdates
+from datetime import datetime, timedelta
+import joblib
+import numpy as np
+import traceback
+
+# --- Конфигурация GUI ---
+CONFIG_FILE = 'config.json'
+SCRIPTS_DIR = 'scripts'
+DEFAULT_CONFIG = {
+    'data_dir': 'data',
+    'models_dir': 'models',
+    'scalers_dir': 'scalers',
+    'logs_dir': 'logs',
+    'plots_dir': 'plots',
+    'historical_data_full_dir': 'historical_data_full',
+    'historical_data_indices_dir': 'historical_data_indices',
+    'historical_data_currency_dir': 'historical_data_currency',
+    'historical_data_oil_dir': 'historical_data_oil',
+    'historical_data_other_dir': 'historical_data_other',
+    'start_date': '2023-01-01',
+    'end_date': datetime.now().strftime('%Y-%m-%d'),
+    'model_type': 'PassiveAggressiveClassifier',
+}
+
+# --- Глобальные константы ---
+DATE_COLUMN = 'TRADEDATE'
+TARGET_COLUMN = 'TARGET_DIRECTION'
+TEST_SIZE = 0.2
+RANDOM_STATE = 42
+
+class ScriptRunner(QThread):
+    output_signal = pyqtSignal(str)
+    progress_signal = pyqtSignal(int)
+    finished_signal = pyqtSignal(int)
+
+    def __init__(self, script_path, args=None, parent=None):
+        super().__init__(parent)
+        self.script_path = script_path
+        self.args = args or []
+
+    def run(self):
+        try:
+            self.output_signal.emit(f"Запуск скрипта: {self.script_path} с аргументами: {self.args}\n")
+            cmd = [sys.executable, self.script_path] + self.args
+            process = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1,
+                universal_newlines=True
+            )
+            progress = 0
+            for line in iter(process.stdout.readline, ''):
+                self.output_signal.emit(line.rstrip('\n'))
+                if 'progress:' in line.lower():
+                    try:
+                        prog_str = line.split('progress:')[1].strip().replace('%', '')
+                        progress = int(prog_str)
+                        self.progress_signal.emit(progress)
+                    except:
+                        pass
+                else:
+                    progress = min(progress + 5, 100)
+                    self.progress_signal.emit(progress)
+            process.stdout.close()
+            return_code = process.wait()
+            self.finished_signal.emit(return_code)
+        except Exception as e:
+            self.output_signal.emit(f"Ошибка при запуске скрипта {self.script_path}: {e}\n")
+            self.finished_signal.emit(-1)
+
+class SettingsTab(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.config = self.load_config()
+        self.init_ui()
+
+    def load_config(self):
+        if os.path.exists(CONFIG_FILE):
+            with open(CONFIG_FILE, 'r') as f:
+                return json.load(f)
+        return DEFAULT_CONFIG.copy()
+
+    def save_config(self):
+        with open(CONFIG_FILE, 'w') as f:
+            json.dump(self.config, f, indent=4)
+        QMessageBox.information(self, "Настройки", "Настройки сохранены в config.json!")
+
+    def init_ui(self):
+        layout = QVBoxLayout()
+        paths_group = QGroupBox("Пути к данным и моделям")
+        paths_layout = QFormLayout()
+        self.data_dir_edit = QLineEdit(self.config['data_dir'])
+        paths_layout.addRow("Директория данных:", self.data_dir_edit)
+        self.models_dir_edit = QLineEdit(self.config['models_dir'])
+        paths_layout.addRow("Директория моделей:", self.models_dir_edit)
+        self.scalers_dir_edit = QLineEdit(self.config['scalers_dir'])
+        paths_layout.addRow("Директория scaler'ов:", self.scalers_dir_edit)
+        self.logs_dir_edit = QLineEdit(self.config['logs_dir'])
+        paths_layout.addRow("Директория логов:", self.logs_dir_edit)
+        self.plots_dir_edit = QLineEdit(self.config['plots_dir'])
+        paths_layout.addRow("Директория графиков:", self.plots_dir_edit)
+        self.historical_data_full_dir_edit = QLineEdit(self.config['historical_data_full_dir'])
+        paths_layout.addRow("Исторические данные (акции):", self.historical_data_full_dir_edit)
+        self.historical_data_indices_dir_edit = QLineEdit(self.config['historical_data_indices_dir'])
+        paths_layout.addRow("Исторические данные (индексы):", self.historical_data_indices_dir_edit)
+        self.historical_data_currency_dir_edit = QLineEdit(self.config['historical_data_currency_dir'])
+        paths_layout.addRow("Исторические данные (валюты):", self.historical_data_currency_dir_edit)
+        self.historical_data_oil_dir_edit = QLineEdit(self.config['historical_data_oil_dir'])
+        paths_layout.addRow("Исторические данные (нефть):", self.historical_data_oil_dir_edit)
+        self.historical_data_other_dir_edit = QLineEdit(self.config['historical_data_other_dir'])
+        paths_layout.addRow("Исторические данные (другие):", self.historical_data_other_dir_edit)
+        paths_group.setLayout(paths_layout)
+        layout.addWidget(paths_group)
+
+        dates_group = QGroupBox("Даты")
+        dates_layout = QFormLayout()
+        self.start_date_edit = QDateEdit(calendarPopup=True)
+        self.start_date_edit.setDate(QDate.fromString(self.config['start_date'], 'yyyy-MM-dd'))
+        dates_layout.addRow("Начальная дата:", self.start_date_edit)
+        self.end_date_edit = QDateEdit(calendarPopup=True)
+        self.end_date_edit.setDate(QDate.fromString(self.config['end_date'], 'yyyy-MM-dd'))
+        dates_layout.addRow("Конечная дата:", self.end_date_edit)
+        dates_group.setLayout(dates_layout)
+        layout.addWidget(dates_group)
+
+        models_group = QGroupBox("Настройки моделей")
+        models_layout = QFormLayout()
+        self.model_type_combo = QComboBox()
+        self.model_type_combo.addItems(["PassiveAggressiveClassifier", "SGDClassifier", "Perceptron"])
+        self.model_type_combo.setCurrentText(self.config['model_type'])
+        models_layout.addRow("Тип модели:", self.model_type_combo)
+        models_group.setLayout(models_layout)
+        layout.addWidget(models_group)
+
+        self.save_settings_btn = QPushButton("Сохранить настройки")
+        self.save_settings_btn.clicked.connect(self.update_and_save)
+        layout.addWidget(self.save_settings_btn)
+        self.setLayout(layout)
+
+    def update_and_save(self):
+        self.config['data_dir'] = self.data_dir_edit.text()
+        self.config['models_dir'] = self.models_dir_edit.text()
+        self.config['scalers_dir'] = self.scalers_dir_edit.text()
+        self.config['logs_dir'] = self.logs_dir_edit.text()
+        self.config['plots_dir'] = self.plots_dir_edit.text()
+        self.config['historical_data_full_dir'] = self.historical_data_full_dir_edit.text()
+        self.config['historical_data_indices_dir'] = self.historical_data_indices_dir_edit.text()
+        self.config['historical_data_currency_dir'] = self.historical_data_currency_dir_edit.text()
+        self.config['historical_data_oil_dir'] = self.historical_data_oil_dir_edit.text()
+        self.config['historical_data_other_dir'] = self.historical_data_other_dir_edit.text()
+        self.config['start_date'] = self.start_date_edit.date().toString('yyyy-MM-dd')
+        self.config['end_date'] = self.end_date_edit.date().toString('yyyy-MM-dd')
+        self.config['model_type'] = self.model_type_combo.currentText()
+        self.save_config()
+
+class DataCollectionTab(QWidget):
+    def __init__(self, main_window):
+        super().__init__()
+        self.main_window = main_window
+        self.config = main_window.settings_tab.config
+        self.init_ui()
+
+    def init_ui(self):
+        layout = QVBoxLayout()
+        collection_group = QGroupBox("Сбор данных")
+        collection_layout = QVBoxLayout()
+        self.get_moex_stocks_btn = QPushButton("Получить список акций (get_moex_stocks.py)")
+        self.get_moex_stocks_btn.clicked.connect(lambda: self.run_script('get_moex_stocks.py'))
+        collection_layout.addWidget(self.get_moex_stocks_btn)
+
+        self.get_historical_data_btn = QPushButton("Получить историю акций (get_historical_data.py)")
+        self.get_historical_data_btn.clicked.connect(lambda: self.run_script('get_historical_data.py'))
+        collection_layout.addWidget(self.get_historical_data_btn)
+
+        self.find_indices_btn = QPushButton("Найти индексы (find_indices.py)")
+        self.find_indices_btn.clicked.connect(lambda: self.run_script('find_indices.py'))
+        collection_layout.addWidget(self.find_indices_btn)
+
+        self.get_index_history_btn = QPushButton("Получить историю индексов (get_index_history.py)")
+        self.get_index_history_btn.clicked.connect(lambda: self.run_script('get_index_history.py'))
+        collection_layout.addWidget(self.get_index_history_btn)
+
+        self.find_currency_pairs_btn = QPushButton("Найти валютные пары (find_currency_pairs.py)")
+        self.find_currency_pairs_btn.clicked.connect(lambda: self.run_script('find_currency_pairs.py'))
+        collection_layout.addWidget(self.find_currency_pairs_btn)
+
+        self.get_currency_history_btn = QPushButton("Получить историю валют (get_currency_history.py)")
+        self.get_currency_history_btn.clicked.connect(lambda: self.run_script('get_currency_history.py'))
+        collection_layout.addWidget(self.get_currency_history_btn)
+
+        self.get_currency_history_cets_btn = QPushButton("Получить историю валют CETS (get_currency_history_cets.py)")
+        self.get_currency_history_cets_btn.clicked.connect(lambda: self.run_script('get_currency_history_cets.py'))
+        collection_layout.addWidget(self.get_currency_history_cets_btn)
+
+        self.find_oil_futures_btn = QPushButton("Найти фьючерсы на нефть (find_oil_futures.py)")
+        self.find_oil_futures_btn.clicked.connect(lambda: self.run_script('find_oil_futures.py'))
+        collection_layout.addWidget(self.find_oil_futures_btn)
+
+        self.get_oil_future_history_btn = QPushButton("Получить историю фьючерсов на нефть (get_oil_future_history.py)")
+        self.get_oil_future_history_btn.clicked.connect(lambda: self.run_script('get_oil_future_history.py'))
+        collection_layout.addWidget(self.get_oil_future_history_btn)
+
+        self.get_key_rate_history_btn = QPushButton("Получить историю ключевой ставки (get_key_rate_history.py)")
+        self.get_key_rate_history_btn.clicked.connect(lambda: self.run_script('get_key_rate_history.py'))
+        collection_layout.addWidget(self.get_key_rate_history_btn)
+
+        collection_group.setLayout(collection_layout)
+        layout.addWidget(collection_group)
+
+        self.log_output = QTextEdit()
+        self.log_output.setReadOnly(True)
+        layout.addWidget(self.log_output)
+
+        self.progress_bar = QProgressBar()
+        layout.addWidget(self.progress_bar)
+
+        self.setLayout(layout)
+
+    def run_script(self, script_name):
+        script_path = os.path.join(SCRIPTS_DIR, script_name)
+        if not os.path.exists(script_path):
+            self.log_output.append(f"Ошибка: Скрипт {script_path} не найден.\n")
+            return
+        args = ['--config', CONFIG_FILE]
+        self.thread = ScriptRunner(script_path, args)
+        self.thread.output_signal.connect(self.log_output.append)
+        self.thread.progress_signal.connect(self.progress_bar.setValue)
+        self.thread.finished_signal.connect(self.on_script_finished)
+        self.thread.start()
+        self.disable_buttons()
+
+    def disable_buttons(self):
+        for btn in self.findChildren(QPushButton):
+            btn.setEnabled(False)
+
+    def enable_buttons(self):
+        for btn in self.findChildren(QPushButton):
+            btn.setEnabled(True)
+
+    def on_script_finished(self, return_code):
+        self.enable_buttons()
+        if return_code == 0:
+            self.log_output.append("Скрипт успешно завершен.\n")
+        else:
+            self.log_output.append(f"Скрипт завершен с ошибкой (код {return_code}).\n")
+        self.main_window.statusBar().showMessage("Скрипт завершен.", 5000)
+
+class DataCombiningTab(QWidget):
+    def __init__(self, main_window):
+        super().__init__()
+        self.main_window = main_window
+        self.config = main_window.settings_tab.config
+        self.init_ui()
+
+    def init_ui(self):
+        layout = QVBoxLayout()
+        combining_group = QGroupBox("Объединение данных")
+        combining_layout = QVBoxLayout()
+        self.combine_datasets_btn = QPushButton("Объединить данные (combine_datasets.py)")
+        self.combine_datasets_btn.clicked.connect(lambda: self.run_script('combine_datasets.py'))
+        combining_layout.addWidget(self.combine_datasets_btn)
+
+        self.combine_datasets_all_targets_btn = QPushButton("Добавить TARGET для всех акций (combine_datasets_all_targets.py)")
+        self.combine_datasets_all_targets_btn.clicked.connect(lambda: self.run_script('combine_datasets_all_targets.py'))
+        combining_layout.addWidget(self.combine_datasets_all_targets_btn)
+
+        combining_group.setLayout(combining_layout)
+        layout.addWidget(combining_group)
+
+        self.log_output = QTextEdit()
+        self.log_output.setReadOnly(True)
+        layout.addWidget(self.log_output)
+
+        self.progress_bar = QProgressBar()
+        layout.addWidget(self.progress_bar)
+
+        self.setLayout(layout)
+
+    def run_script(self, script_name):
+        script_path = os.path.join(SCRIPTS_DIR, script_name)
+        if not os.path.exists(script_path):
+            self.log_output.append(f"Ошибка: Скрипт {script_path} не найден.\n")
+            return
+        args = ['--config', CONFIG_FILE]
+        self.thread = ScriptRunner(script_path, args)
+        self.thread.output_signal.connect(self.log_output.append)
+        self.thread.progress_signal.connect(self.progress_bar.setValue)
+        self.thread.finished_signal.connect(self.on_script_finished)
+        self.thread.start()
+        self.disable_buttons()
+
+    def disable_buttons(self):
+        for btn in self.findChildren(QPushButton):
+            btn.setEnabled(False)
+
+    def enable_buttons(self):
+        for btn in self.findChildren(QPushButton):
+            btn.setEnabled(True)
+
+    def on_script_finished(self, return_code):
+        self.enable_buttons()
+        if return_code == 0:
+            self.log_output.append("Скрипт успешно завершен.\n")
+        else:
+            self.log_output.append(f"Скрипт завершен с ошибкой (код {return_code}).\n")
+        self.main_window.statusBar().showMessage("Скрипт завершен.", 5000)
+
+class ModelTrainingTab(QWidget):
+    def __init__(self, main_window):
+        super().__init__()
+        self.main_window = main_window
+        self.config = main_window.settings_tab.config
+        self.init_ui()
+
+    def init_ui(self):
+        layout = QVBoxLayout()
+        training_group = QGroupBox("Обучение моделей")
+        training_layout = QVBoxLayout()
+        self.train_all_models_btn = QPushButton("Обучить все модели (train_all_models.py)")
+        self.train_all_models_btn.clicked.connect(lambda: self.run_script('train_all_models.py'))
+        training_layout.addWidget(self.train_all_models_btn)
+
+        training_group.setLayout(training_layout)
+        layout.addWidget(training_group)
+
+        self.log_output = QTextEdit()
+        self.log_output.setReadOnly(True)
+        layout.addWidget(self.log_output)
+
+        self.progress_bar = QProgressBar()
+        layout.addWidget(self.progress_bar)
+
+        self.setLayout(layout)
+
+    def run_script(self, script_name):
+        script_path = os.path.join(SCRIPTS_DIR, script_name)
+        if not os.path.exists(script_path):
+            self.log_output.append(f"Ошибка: Скрипт {script_path} не найден.\n")
+            return
+        args = ['--config', CONFIG_FILE]
+        self.thread = ScriptRunner(script_path, args)
+        self.thread.output_signal.connect(self.log_output.append)
+        self.thread.progress_signal.connect(self.progress_bar.setValue)
+        self.thread.finished_signal.connect(self.on_script_finished)
+        self.thread.start()
+        self.disable_buttons()
+
+    def disable_buttons(self):
+        for btn in self.findChildren(QPushButton):
+            btn.setEnabled(False)
+
+    def enable_buttons(self):
+        for btn in self.findChildren(QPushButton):
+            btn.setEnabled(True)
+
+    def on_script_finished(self, return_code):
+        self.enable_buttons()
+        if return_code == 0:
+            self.log_output.append("Скрипт успешно завершен.\n")
+        else:
+            self.log_output.append(f"Скрипт завершен с ошибкой (код {return_code}).\n")
+        self.main_window.statusBar().showMessage("Скрипт завершен.", 5000)
+
+class PredictionTab(QWidget):
+    def __init__(self, main_window):
+        super().__init__()
+        self.main_window = main_window
+        self.config = main_window.settings_tab.config
+        self.init_ui()
+
+    def init_ui(self):
+        layout = QVBoxLayout()
+        prediction_setup_group = QGroupBox("Настройка прогноза")
+        prediction_setup_layout = QFormLayout()
+        self.model_selector_combo = QComboBox()
+        prediction_setup_layout.addRow("Выберите модель (тикер):", self.model_selector_combo)
+        self.date_picker = QCalendarWidget()
+        self.date_picker.setSelectedDate(QDate.currentDate())
+        prediction_setup_layout.addRow("Выберите дату:", self.date_picker)
+        prediction_setup_group.setLayout(prediction_setup_layout)
+        layout.addWidget(prediction_setup_group)
+
+        prediction_actions_group = QGroupBox("Действия")
+        prediction_actions_layout = QVBoxLayout()
+        self.predict_btn = QPushButton("Получить прогноз")
+        self.predict_btn.clicked.connect(self.make_prediction)
+        prediction_actions_layout.addWidget(self.predict_btn)
+
+        self.auto_predict_btn = QPushButton("Автоматический прогноз и обучение (predict_and_learn.py)")
+        self.auto_predict_btn.clicked.connect(lambda: self.run_script('predict_and_learn.py'))
+        prediction_actions_layout.addWidget(self.auto_predict_btn)
+
+        prediction_actions_group.setLayout(prediction_actions_layout)
+        layout.addWidget(prediction_actions_group)
+
+        self.result_output = QTextEdit()
+        self.result_output.setReadOnly(True)
+        layout.addWidget(self.result_output)
+
+        self.progress_bar = QProgressBar()
+        layout.addWidget(self.progress_bar)
+
+        self.populate_model_selector()  # Заполняем список тикеров при инициализации
+
+        self.setLayout(layout)
+
+    def populate_model_selector(self):
+        self.model_selector_combo.clear()
+        models_dir = self.config['models_dir']
+        if not os.path.exists(models_dir):
+            self.result_output.append(f"Директория моделей {models_dir} не найдена.\n")
+            return
+        try:
+            model_files = [f for f in os.listdir(models_dir) if f.startswith('model_') and f.endswith('.joblib')]
+            tickers = sorted(set([f.replace('model_', '').replace('.joblib', '') for f in model_files]))
+            if not tickers:
+                self.result_output.append("Нет доступных моделей для выбора.\n")
+                return
+            self.model_selector_combo.addItems(tickers)
+            self.result_output.append(f"Найдено {len(tickers)} моделей.\n")
+            self.model_selector_combo.setCurrentIndex(-1)  # Устанавливаем пустой выбор по умолчанию
+        except Exception as e:
+            self.result_output.append(f"Ошибка при поиске моделей: {e}\n")
+
+    def make_prediction(self):
+        selected_model = self.model_selector_combo.currentText()
+        selected_date = self.date_picker.selectedDate().toString("yyyy-MM-dd")
+        self.result_output.append(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Запрос прогноза для {selected_model} на {selected_date}...\n")
+        self.progress_bar.setValue(0)
+        if not selected_model:
+            self.result_output.append("  Ошибка: Тикер не выбран.\n")
+            return
+        try:
+            scalers_dir = self.config['scalers_dir']
+            models_dir = self.config['models_dir']
+            if not os.path.exists(models_dir) or not os.path.exists(scalers_dir):
+                self.result_output.append(f"  Ошибка: Директория моделей {models_dir} или скейлеров {scalers_dir} не найдена.\n")
+                return
+            scaler_filename = os.path.join(scalers_dir, f'scaler_{selected_model}.joblib')
+            if not os.path.exists(scaler_filename):
+                self.result_output.append(f"  Ошибка: Файл scaler'а {scaler_filename} не найден.\n")
+                return
+            scaler = joblib.load(scaler_filename)
+            self.result_output.append(f"  Scaler для {selected_model} загружен.\n")
+            self.progress_bar.setValue(20)
+            model_filename = os.path.join(models_dir, f'model_{selected_model}.joblib')
+            if not os.path.exists(model_filename):
+                self.result_output.append(f"  Ошибка: Файл модели {model_filename} не найден.\n")
+                return
+            model = joblib.load(model_filename)
+            self.result_output.append(f"  Модель для {selected_model} загружена.\n")
+            self.progress_bar.setValue(40)
+            data_dir = self.config['data_dir']
+            combined_file = os.path.join(data_dir, 'combined_dataset.csv')
+            if not os.path.exists(combined_file):
+                self.result_output.append(f"  Ошибка: Файл данных {combined_file} не найден.\n")
+                return
+            df_combined = pd.read_csv(combined_file, encoding='utf-8-sig')
+            df_combined[DATE_COLUMN] = pd.to_datetime(df_combined[DATE_COLUMN], format='%Y-%m-%d', errors='coerce')
+            df_selected = df_combined[df_combined[DATE_COLUMN] == selected_date]
+            if df_selected.empty:
+                df_selected = df_combined[df_combined[DATE_COLUMN] <= pd.to_datetime(selected_date)]
+                if df_selected.empty:
+                    self.result_output.append(f"  Ошибка: Нет данных до даты {selected_date}.\n")
+                    return
+                df_selected = df_selected.tail(1)
+            self.result_output.append(f"  Найдены данные за {df_selected[DATE_COLUMN].iloc[0].strftime('%Y-%m-%d')}.\n")
+            self.progress_bar.setValue(60)
+            feature_columns = [col for col in df_combined.columns if col not in [DATE_COLUMN, TARGET_COLUMN]]
+            X_new = df_selected[feature_columns].copy()
+            price_cols = [col for col in X_new.columns if any(suffix in col for suffix in ['_OPEN', '_HIGH', '_LOW', '_CLOSE'])]
+            volume_cols = [col for col in X_new.columns if '_VOLUME' in col]
+            other_cols = [col for col in X_new.columns if col not in price_cols + volume_cols]
+            self.result_output.append(f"  Заполнение цен (ffill/bfill): {len(price_cols)} столбцов.\n")
+            X_new[price_cols] = X_new[price_cols].ffill().bfill()
+            self.result_output.append(f"  Заполнение объемов (0): {len(volume_cols)} столбцов.\n")
+            X_new[volume_cols] = X_new[volume_cols].fillna(0)
+            self.result_output.append(f"  Заполнение других (0 или ffill): {len(other_cols)} столбцов.\n")
+            cbr_key_rate_cols = [col for col in other_cols if 'CBR_KEY_RATE' in col]
+            if cbr_key_rate_cols:
+                self.result_output.append(f"    Заполнение CBR_KEY_RATE (ffill): {cbr_key_rate_cols}\n")
+                X_new[cbr_key_rate_cols] = X_new[cbr_key_rate_cols].ffill()
+                other_cols = [col for col in other_cols if col not in cbr_key_rate_cols]
+            if other_cols:
+                self.result_output.append(f"    Заполнение остальных (0): {other_cols}\n")
+                X_new[other_cols] = X_new[other_cols].fillna(0)
+            mask_after_fill = ~X_new.isnull().any(axis=1)
+            X_new_clean = X_new[mask_after_fill]
+            if X_new_clean.empty:
+                self.result_output.append(f"  Ошибка: После обработки пропусков данные пусты.\n")
+                return
+            X_new_scaled = scaler.transform(X_new_clean)
+            self.result_output.append(f"  Признаки подготовлены и масштабированы.\n")
+            self.progress_bar.setValue(80)
+            y_pred = model.predict(X_new_scaled)[0]
+            self.result_output.append(f"  Прогноз TARGET_DIRECTION для {selected_model} на {selected_date}: {y_pred}\n")
+            self.progress_bar.setValue(90)
+            logs_dir = self.config['logs_dir']
+            os.makedirs(logs_dir, exist_ok=True)  # Создаем директорию logs
+            predictions_log_file = os.path.join(logs_dir, 'predictions_log.csv')
+            prediction_log_entry = pd.DataFrame([{
+                'TRADEDATE': selected_date,
+                'TICKER': selected_model,
+                'PREDICTED_DIRECTION': y_pred,
+                'TIMESTAMP': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            }])
+            if os.path.exists(predictions_log_file):
+                prediction_log_entry.to_csv(predictions_log_file, mode='a', header=False, index=False, encoding='utf-8-sig')
+            else:
+                prediction_log_entry.to_csv(predictions_log_file, index=False, encoding='utf-8-sig')
+            self.result_output.append(f"  Прогноз сохранен в {predictions_log_file}.\n")
+            self.progress_bar.setValue(100)
+        except Exception as e:
+            self.result_output.append(f"  Ошибка при прогнозировании: {e}\n")
+            self.result_output.append(traceback.format_exc() + "\n")
+            self.progress_bar.setValue(0)
+
+    def run_script(self, script_name):
+        script_path = os.path.join(SCRIPTS_DIR, script_name)
+        if not os.path.exists(script_path):
+            self.result_output.append(f"Ошибка: Скрипт {script_path} не найден.\n")
+            return
+        args = ['--config', CONFIG_FILE]
+        self.thread = ScriptRunner(script_path, args)
+        self.thread.output_signal.connect(self.result_output.append)
+        self.thread.progress_signal.connect(self.progress_bar.setValue)
+        self.thread.finished_signal.connect(self.on_script_finished)
+        self.thread.start()
+        self.predict_btn.setEnabled(False)
+        self.auto_predict_btn.setEnabled(False)
+
+    def on_script_finished(self, return_code):
+        self.predict_btn.setEnabled(True)
+        self.auto_predict_btn.setEnabled(True)
+        if return_code == 0:
+            self.result_output.append("Скрипт успешно завершен.\n")
+            self.populate_model_selector()  # Обновляем список тикеров после выполнения скрипта
+        else:
+            self.result_output.append(f"Скрипт завершен с ошибкой (код {return_code}).\n")
+        self.main_window.statusBar().showMessage("Скрипт завершен.", 5000)
+
+class RetrainingTab(QWidget):
+    def __init__(self, main_window):
+        super().__init__()
+        self.main_window = main_window
+        self.config = main_window.settings_tab.config
+        self.init_ui()
+
+    def init_ui(self):
+        layout = QVBoxLayout()
+        retraining_group = QGroupBox("Дообучение моделей")
+        retraining_layout = QVBoxLayout()
+        self.check_predictions_btn = QPushButton("Проверить прогнозы")
+        self.check_predictions_btn.clicked.connect(self.check_predictions)
+        retraining_layout.addWidget(self.check_predictions_btn)
+
+        self.retrain_models_btn = QPushButton("Дообучить модели")
+        self.retrain_models_btn.clicked.connect(self.retrain_models)
+        retraining_layout.addWidget(self.retrain_models_btn)
+
+        retraining_group.setLayout(retraining_layout)
+        layout.addWidget(retraining_group)
+
+        self.log_output = QTextEdit()
+        self.log_output.setReadOnly(True)
+        layout.addWidget(self.log_output)
+
+        self.progress_bar = QProgressBar()
+        layout.addWidget(self.progress_bar)
+
+        self.setLayout(layout)
+
+    def check_predictions(self):
+        self.log_output.append(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Проверка прогнозов...\n")
+        self.progress_bar.setValue(0)
+        try:
+            logs_dir = self.config['logs_dir']
+            os.makedirs(logs_dir, exist_ok=True)
+            predictions_log_file = os.path.join(logs_dir, 'predictions_log.csv')
+            if not os.path.exists(predictions_log_file):
+                self.log_output.append(f"  Файл лога {predictions_log_file} не найден.\n")
+                return
+            df_predictions = pd.read_csv(predictions_log_file, encoding='utf-8-sig')
+            self.log_output.append(f"  Загружено {len(df_predictions)} записей из лога прогнозов.\n")
+            self.progress_bar.setValue(20)
+            data_dir = self.config['data_dir']
+            combined_all_targets_file = os.path.join(data_dir, 'combined_dataset_all_targets.csv')
+            if not os.path.exists(combined_all_targets_file):
+                self.log_output.append(f"  Файл данных {combined_all_targets_file} не найден.\n")
+                return
+            df_combined = pd.read_csv(combined_all_targets_file, encoding='utf-8-sig')
+            df_combined[DATE_COLUMN] = pd.to_datetime(df_combined[DATE_COLUMN], format='%Y-%m-%d', errors='coerce')
+            self.log_output.append(f"  Загружены данные для сравнения из {combined_all_targets_file}.\n")
+            self.progress_bar.setValue(40)
+            today = pd.Timestamp.today().normalize()
+            df_overdue = df_predictions[pd.to_datetime(df_predictions['TRADEDATE'], format='%Y-%m-%d', errors='coerce') < today]
+            self.log_output.append(f"  Найдено {len(df_overdue)} 'просроченных' прогнозов.\n")
+            self.progress_bar.setValue(50)
+            if df_overdue.empty:
+                self.log_output.append("  Нет просроченных прогнозов для проверки.\n")
+                self.progress_bar.setValue(100)
+                return
+            overdue_to_process = []
+            progress_step = 30 / len(df_overdue) if len(df_overdue) > 0 else 0
+            current_progress = 50
+            for index, row in df_overdue.iterrows():
+                pred_date_str = row['TRADEDATE']
+                pred_ticker = row['TICKER']
+                pred_direction = row['PREDICTED_DIRECTION']
+                df_real_data = df_combined[df_combined[DATE_COLUMN] == pd.to_datetime(pred_date_str, format='%Y-%m-%d', errors='coerce')]
+                if df_real_data.empty:
+                    self.log_output.append(f"    Нет реальных данных за {pred_date_str} для {pred_ticker}. Пропущено.\n")
+                    continue
+                target_col = f"TARGET_DIRECTION_{pred_ticker}"
+                if target_col not in df_real_data.columns:
+                    self.log_output.append(f"    Целевая переменная {target_col} не найдена в данных за {pred_date_str}. Пропущено.\n")
+                    continue
+                real_direction = df_real_data[target_col].iloc[0]
+                if pd.isna(real_direction):
+                    self.log_output.append(f"    Реальная метка {target_col} за {pred_date_str} NaN. Пропущено.\n")
+                    continue
+                is_correct = (pred_direction == real_direction)
+                overdue_to_process.append({
+                    'TRADEDATE': pred_date_str,
+                    'TICKER': pred_ticker,
+                    'PREDICTED_DIRECTION': pred_direction,
+                    'REAL_DIRECTION': real_direction,
+                    'IS_CORRECT': is_correct
+                })
+                self.log_output.append(f"    Проверка {pred_ticker} за {pred_date_str}: Прогноз={pred_direction}, Истина={real_direction}, {'Верно' if is_correct else 'Неверно'}\n")
+                current_progress += progress_step
+                self.progress_bar.setValue(int(current_progress))
+            if overdue_to_process:
+                df_overdue_batch = pd.DataFrame(overdue_to_process)
+                batch_filename = os.path.join(logs_dir, f"overdue_predictions_batch_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv")
+                df_overdue_batch.to_csv(batch_filename, index=False, encoding='utf-8-sig')
+                self.log_output.append(f"  Сформирован батч для дообучения: {batch_filename}\n")
+                self.log_output.append(f"  В батче {len(df_overdue_batch)} примеров.\n")
+                self.overdue_batch_filename = batch_filename
+            else:
+                self.log_output.append("  Нет корректных данных для формирования батча.\n")
+            self.progress_bar.setValue(100)
+        except Exception as e:
+            self.log_output.append(f"  Ошибка при проверке прогнозов: {e}\n")
+            self.log_output.append(traceback.format_exc() + "\n")
+            self.progress_bar.setValue(0)
+
+    def retrain_models(self):
+        self.log_output.append(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Дообучение моделей...\n")
+        self.progress_bar.setValue(0)
+        try:
+            if not hasattr(self, 'overdue_batch_filename') or not os.path.exists(self.overdue_batch_filename):
+                self.log_output.append(f"  Файл батча для дообучения не найден. Сначала выполните 'Проверить прогнозы'.\n")
+                return
+            df_batch = pd.read_csv(self.overdue_batch_filename, encoding='utf-8-sig')
+            self.log_output.append(f"  Загружен батч для дообучения: {len(df_batch)} примеров.\n")
+            self.progress_bar.setValue(20)
+            if df_batch.empty:
+                self.log_output.append("  Батч пуст. Дообучение невозможно.\n")
+                return
+            grouped_batches = df_batch.groupby('TICKER')
+            progress_step = 80 / len(grouped_batches) if len(grouped_batches) > 0 else 0
+            current_progress = 20
+            for ticker, group in grouped_batches:
+                self.log_output.append(f"  Дообучение модели для {ticker}...")
+                models_dir = self.config['models_dir']
+                scalers_dir = self.config['scalers_dir']
+                model_filename = os.path.join(models_dir, f'model_{ticker}.joblib')
+                scaler_filename = os.path.join(scalers_dir, f'scaler_{ticker}.joblib')
+                if not os.path.exists(model_filename) or not os.path.exists(scaler_filename):
+                    self.log_output.append(f"    Ошибка: Файл модели ({model_filename}) или scaler'а ({scaler_filename}) для {ticker} не найден.\n")
+                    continue
+                model = joblib.load(model_filename)
+                scaler = joblib.load(scaler_filename)
+                self.log_output.append(f"    Модель и scaler для {ticker} загружены.")
+                data_dir = self.config['data_dir']
+                combined_file = os.path.join(data_dir, 'combined_dataset.csv')
+                if not os.path.exists(combined_file):
+                    self.log_output.append(f"    Ошибка: Файл данных {combined_file} не найден.\n")
+                    continue
+                df_combined = pd.read_csv(combined_file, encoding='utf-8-sig')
+                df_combined[DATE_COLUMN] = pd.to_datetime(df_combined[DATE_COLUMN], format='%Y-%m-%d', errors='coerce')
+                dates_for_ticker = group['TRADEDATE'].tolist()
+                df_X_for_ticker = df_combined[df_combined[DATE_COLUMN].isin(pd.to_datetime(dates_for_ticker, format='%Y-%m-%d', errors='coerce'))]
+                if df_X_for_ticker.empty:
+                    self.log_output.append(f"    Нет данных для дообучения модели {ticker} по датам {dates_for_ticker}. Пропущено.\n")
+                    continue
+                feature_columns = [col for col in df_combined.columns if col not in [DATE_COLUMN, TARGET_COLUMN]]
+                X_batch = df_X_for_ticker[feature_columns].copy()
+                price_cols = [col for col in X_batch.columns if any(suffix in col for suffix in ['_OPEN', '_HIGH', '_LOW', '_CLOSE'])]
+                volume_cols = [col for col in X_batch.columns if '_VOLUME' in col]
+                other_cols = [col for col in X_batch.columns if col not in price_cols + volume_cols]
+                self.log_output.append(f"    Заполнение цен (ffill/bfill): {len(price_cols)} столбцов для {ticker}.")
+                X_batch[price_cols] = X_batch[price_cols].ffill().bfill()
+                self.log_output.append(f"    Заполнение объемов (0): {len(volume_cols)} столбцов для {ticker}.")
+                X_batch[volume_cols] = X_batch[volume_cols].fillna(0)
+                self.log_output.append(f"    Заполнение других (0 или ffill): {len(other_cols)} столбцов для {ticker}.")
+                cbr_key_rate_cols = [col for col in other_cols if 'CBR_KEY_RATE' in col]
+                if cbr_key_rate_cols:
+                    self.log_output.append(f"      Заполнение CBR_KEY_RATE (ffill): {cbr_key_rate_cols} для {ticker}.")
+                    X_batch[cbr_key_rate_cols] = X_batch[cbr_key_rate_cols].ffill()
+                    other_cols = [col for col in other_cols if col not in cbr_key_rate_cols]
+                if other_cols:
+                    self.log_output.append(f"      Заполнение остальных (0): {other_cols} для {ticker}.")
+                    X_batch[other_cols] = X_batch[other_cols].fillna(0)
+                mask_after_fill = ~X_batch.isnull().any(axis=1)
+                X_batch_clean = X_batch[mask_after_fill]
+                if X_batch_clean.empty:
+                    self.log_output.append(f"    После обработки пропусков признаки X за {dates_for_ticker} для {ticker} пусты. Пропущено.\n")
+                    continue
+                X_batch_scaled = scaler.transform(X_batch_clean)
+                self.log_output.append(f"    Признаки X за {dates_for_ticker} для {ticker} подготовлены и масштабированы.")
+                y_batch = group['REAL_DIRECTION'].tolist()
+                classes = np.array([-1, 0, 1])
+                model.partial_fit(X_batch_scaled, y_batch, classes=classes)
+                self.log_output.append(f"    Модель для {ticker} дообучена на реальных метках {y_batch}.")
+                joblib.dump(model, model_filename)
+                joblib.dump(scaler, scaler_filename)
+                self.log_output.append(f"    Обновленная модель для {ticker} сохранена в {model_filename}")
+                self.log_output.append(f"    Scaler для {ticker} перезаписан в {scaler_filename}")
+                current_progress += progress_step
+                self.progress_bar.setValue(int(current_progress))
+            self.log_output.append(f"\n--- Дообучение моделей завершено ---")
+            self.log_output.append(f"Всего обработано тикеров: {len(grouped_batches)}")
+            self.log_output.append(f"Всего примеров в батче: {len(df_batch)}")
+            self.progress_bar.setValue(100)
+        except Exception as e:
+            self.log_output.append(f"  Ошибка при дообучении моделей: {e}\n")
+            self.log_output.append(traceback.format_exc() + "\n")
+            self.progress_bar.setValue(0)
+
+class ResultsTab(QWidget):
+    def __init__(self, main_window):
+        super().__init__()
+        self.main_window = main_window
+        self.config = main_window.settings_tab.config
+        self.init_ui()
+
+    def init_ui(self):
+        layout = QVBoxLayout()
+        plot_group = QGroupBox("График инкрементального обучения")
+        plot_layout = QVBoxLayout()
+        self.figure = plt.Figure(figsize=(10, 5), dpi=100)
+        self.canvas = FigureCanvas(self.figure)
+        plot_layout.addWidget(self.canvas)
+        self.plot_btn = QPushButton("Построить график (plot_incremental_learning.py)")
+        self.plot_btn.clicked.connect(self.run_plot_script)
+        plot_layout.addWidget(self.plot_btn)
+        plot_group.setLayout(plot_layout)
+        layout.addWidget(plot_group)
+
+        predictions_group = QGroupBox("Последние прогнозы")
+        predictions_layout = QVBoxLayout()
+        self.predictions_table = QTableWidget()
+        predictions_layout.addWidget(self.predictions_table)
+        self.load_predictions_btn = QPushButton("Загрузить последние прогнозы")
+        self.load_predictions_btn.clicked.connect(self.load_predictions)
+        predictions_layout.addWidget(self.load_predictions_btn)
+        predictions_group.setLayout(predictions_layout)
+        layout.addWidget(predictions_group)
+
+        self.log_output = QTextEdit()
+        self.log_output.setReadOnly(True)
+        layout.addWidget(self.log_output)
+
+        self.progress_bar = QProgressBar()
+        layout.addWidget(self.progress_bar)
+
+        self.setLayout(layout)
+
+    def run_plot_script(self):
+        script_path = os.path.join(SCRIPTS_DIR, 'plot_incremental_learning.py')
+        if not os.path.exists(script_path):
+            self.log_output.append(f"Ошибка: Скрипт {script_path} не найден.\n")
+            return
+        args = ['--config', CONFIG_FILE]
+        self.thread = ScriptRunner(script_path, args)
+        self.thread.output_signal.connect(self.log_output.append)
+        self.thread.progress_signal.connect(self.progress_bar.setValue)
+        self.thread.finished_signal.connect(self.on_script_finished)
+        self.thread.start()
+        self.plot_btn.setEnabled(False)
+
+    def on_script_finished(self, return_code):
+        self.plot_btn.setEnabled(True)
+        if return_code == 0:
+            self.log_output.append("Скрипт успешно завершен.\n")
+            self.plot_accuracy()
+        else:
+            self.log_output.append(f"Скрипт завершен с ошибкой (код {return_code}).\n")
+        self.main_window.statusBar().showMessage("Скрипт завершен.", 5000)
+
+    def plot_accuracy(self):
+        logs_dir = self.config['logs_dir']
+        incremental_log_file = os.path.join(logs_dir, 'incremental_learning_log_final.csv')
+        if not os.path.exists(incremental_log_file):
+            self.log_output.append(f"Файл лога {incremental_log_file} не найден.\n")
+            return
+        try:
+            df = pd.read_csv(incremental_log_file, encoding='utf-8-sig')
+            df['TRADEDATE'] = pd.to_datetime(df['TRADEDATE'], format='%Y-%m-%d', errors='coerce')
+            df = df.dropna(subset=['TRADEDATE', 'ACCURACY_CUMULATIVE'])
+            df = df.sort_values(by='TRADEDATE').reset_index(drop=True)
+            self.figure.clear()
+            ax = self.figure.add_subplot(111)
+            ax.plot(df['TRADEDATE'], df['ACCURACY_CUMULATIVE'], marker='o', linestyle='-', linewidth=1, markersize=3, color='blue')
+            ax.set_title('Изменение точности модели в процессе инкрементального обучения')
+            ax.set_xlabel('Дата (TRADEDATE)')
+            ax.set_ylabel('Нарастающая точность (ACCURACY_CUMULATIVE)')
+            ax.grid(True, linestyle='--', alpha=0.5)
+            ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
+            ax.xaxis.set_major_locator(mdates.MonthLocator(interval=2))
+            plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
+            self.figure.tight_layout()
+            self.canvas.draw()
+            self.log_output.append("График построен.\n")
+        except Exception as e:
+            self.log_output.append(f"Ошибка при построении графика: {e}\n")
+
+    def load_predictions(self):
+        logs_dir = self.config['logs_dir']
+        predictions_log_file = os.path.join(logs_dir, 'predictions_log.csv')
+        if not os.path.exists(predictions_log_file):
+            self.log_output.append(f"Файл лога {predictions_log_file} не найден.\n")
+            return
+        try:
+            df = pd.read_csv(predictions_log_file, encoding='utf-8-sig')
+            last_predictions = df.tail(10)
+            self.predictions_table.setRowCount(len(last_predictions))
+            self.predictions_table.setColumnCount(len(last_predictions.columns))
+            self.predictions_table.setHorizontalHeaderLabels(last_predictions.columns)
+            for i in range(len(last_predictions)):
+                for j in range(len(last_predictions.columns)):
+                    self.predictions_table.setItem(i, j, QTableWidgetItem(str(last_predictions.iloc[i, j])))
+            self.log_output.append("Последние прогнозы загружены.\n")
+        except Exception as e:
+            self.log_output.append(f"Ошибка при загрузке прогнозов: {e}\n")
+
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.settings_tab = SettingsTab()
+        self.init_ui()
+
+    def init_ui(self):
+        self.setWindowTitle('ANANACC - Прогнозирование цен акций (Прокачанная версия)')
+        self.setGeometry(100, 100, 1200, 800)
+        self.tabs = QTabWidget()
+        self.data_collection_tab = DataCollectionTab(self)
+        self.data_combining_tab = DataCombiningTab(self)
+        self.model_training_tab = ModelTrainingTab(self)
+        self.prediction_tab = PredictionTab(self)
+        self.retraining_tab = RetrainingTab(self)
+        self.results_tab = ResultsTab(self)
+        self.tabs.addTab(self.settings_tab, "Настройки")
+        self.tabs.addTab(self.data_collection_tab, "Сбор данных")
+        self.tabs.addTab(self.data_combining_tab, "Объединение данных")
+        self.tabs.addTab(self.model_training_tab, "Обучение моделей")
+        self.tabs.addTab(self.prediction_tab, "Прогноз")
+        self.tabs.addTab(self.retraining_tab, "Дообучение")
+        self.tabs.addTab(self.results_tab, "Результаты")
+        self.setCentralWidget(self.tabs)
+        self.statusBar().showMessage('Готов к работе')
+        menubar = self.menuBar()
+        file_menu = menubar.addMenu('Файл')
+        exit_action = file_menu.addAction('Выход')
+        exit_action.triggered.connect(self.close)
+        help_menu = menubar.addMenu('Помощь')
+        about_action = help_menu.addAction('О программе')
+        about_action.triggered.connect(self.show_about)
+
+    def show_about(self):
+        QMessageBox.about(self, "О программе", "ANANACC - Автоматическая система прогнозирования цен акций с инкрементальным обучением.\nВерсия 2.0 (Прокачанная)")
+
+def main():
+    app = QApplication(sys.argv)
+    main_window = MainWindow()
+    main_window.show()
+    sys.exit(app.exec_())
+
+if __name__ == "__main__":
+    main()
+
+```
+
+### scripts\combine_datasets.py
+
+```py```
+# combine_datasets.py (полная прокачанная версия)
+import pandas as pd
+import numpy as np
+import os
+import sys
+from datetime import datetime
+import json
+import logging
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--config', default='config.json', help='Path to config file')
+args = parser.parse_args()
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', handlers=[logging.FileHandler('combine_datasets.log'), logging.StreamHandler()])
+logger = logging.getLogger(__name__)
+
+def load_config(config_file):
+    if not os.path.exists(config_file):
+        logger.error(f"Config file {config_file} not found.")
+        raise FileNotFoundError
+    with open(config_file, 'r') as f:
+        return json.load(f)
+
+config = load_config(args.config)
+
+HISTORICAL_DATA_DIR = {
+    'stocks': config['historical_data_full_dir'],
+    'indices': config['historical_data_indices_dir'],
+    'currency': config['historical_data_currency_dir'],
+    'oil': config['historical_data_oil_dir'],
+    'other': config['historical_data_other_dir']
+}
+OUTPUT_FILE = os.path.join(config['data_dir'], 'combined_dataset.csv')
+
+def load_csv_files_from_dir(directory):
+    """Загружает все CSV-файлы из директории."""
+    files = []
+    for filename in os.listdir(directory):
+        if filename.lower().endswith('.csv'):
+            filepath = os.path.join(directory, filename)
+            files.append(filepath)
+    logger.info(f"Found {len(files)} CSV files in {directory}")
+    return files
+
+def load_and_standardize_data(filepath, source_type):
+    """Загружает CSV-файл и приводит его к стандартному формату."""
+    try:
+        df = pd.read_csv(filepath, encoding='utf-8-sig')
+        logger.info(f"Loaded file: {filepath}, rows: {len(df)}")
+    except Exception as e:
+        logger.error(f"Error loading {filepath}: {e}")
+        return pd.DataFrame()
+    if 'TRADEDATE' not in df.columns:
+        logger.error(f"TRADEDATE not found in {filepath}")
+        return pd.DataFrame()
+    df['TRADEDATE'] = pd.to_datetime(df['TRADEDATE'], format='%Y-%m-%d', errors='coerce')
+    df = df.dropna(subset=['TRADEDATE'])
+    filename = os.path.basename(filepath)
+    if filename.endswith('_history.csv'):
+        asset_name = filename.replace('_history.csv', '')
+    elif filename.endswith('.csv'):
+        asset_name = filename.replace('.csv', '')
+    else:
+        asset_name = filename
+    if source_type == 'other':
+        logger.info(f"Processing 'other' file: {asset_name} from {filepath}")
+        if len(df.columns) >= 2:
+            indicator_col_original = df.columns[1]
+            indicator_col_new = f"{asset_name}_{indicator_col_original}"
+            df_renamed = df.rename(columns={indicator_col_original: indicator_col_new})
+            df_final = df_renamed[['TRADEDATE', indicator_col_new]].copy()
+            logger.info(f"    Processed indicator: {indicator_col_new}")
+            return df_final
+        else:
+            logger.error(f"    'other' file {filepath} does not contain indicator column.")
+            return pd.DataFrame()
+    required_cols = ['OPEN', 'HIGH', 'LOW', 'CLOSE']
+    if not all(col in df.columns for col in required_cols):
+        logger.error(f"Not all standard columns (OPEN, HIGH, LOW, CLOSE) found in {filepath}")
+        logger.info(f"Found columns: {df.columns.tolist()}")
+        return pd.DataFrame()
+    logger.info(f"Processing asset: {asset_name} (type: {source_type})")
+    if 'VOLUME' not in df.columns:
+        df['VOLUME'] = 0
+        logger.warning(f"VOLUME not found in {filepath}, filled with zeros.")
+    df = df.rename(columns={
+        'OPEN': f'{asset_name}_OPEN',
+        'HIGH': f'{asset_name}_HIGH',
+        'LOW': f'{asset_name}_LOW',
+        'CLOSE': f'{asset_name}_CLOSE',
+        'VOLUME': f'{asset_name}_VOLUME'
+    })
+    cols_to_keep = ['TRADEDATE'] + [col for col in df.columns if col != 'TRADEDATE']
+    df = df[cols_to_keep]
+    return df
+
+def main():
+    """Основная функция объединения."""
+    try:
+        logger.info("Starting data combining...")
+        all_dataframes = []
+        for source_type, directory in HISTORICAL_DATA_DIR.items():
+            logger.info(f"\n--- Processing {source_type} from {directory} ---")
+            if not os.path.exists(directory):
+                logger.warning(f"Directory {directory} does not exist, skipping.")
+                continue
+            files = load_csv_files_from_dir(directory)
+            if not files:
+                logger.info(f"No CSV files found in directory {directory}.")
+                continue
+            for filepath in files:
+                if 'failed' in filepath.lower() and 'ticker' in filepath.lower():
+                    logger.info(f"Skipped error file: {filepath}")
+                    continue
+                df = load_and_standardize_data(filepath, source_type)
+                if not df.empty:
+                    all_dataframes.append(df)
+                else:
+                    logger.info(f"Skipped file (no data or unsuitable): {filepath}")
+        if not all_dataframes:
+            logger.error("Failed to load any suitable CSV files. Exiting.")
+            sys.exit(1)
+        logger.info(f"\nCombining {len(all_dataframes)} DataFrames...")
+        combined_df = all_dataframes[0]
+        for df in all_dataframes[1:]:
+            combined_df = pd.merge(combined_df, df, on='TRADEDATE', how='outer')
+        combined_df = combined_df.sort_values(by='TRADEDATE').reset_index(drop=True)
+        logger.info(f"Final dataset: {len(combined_df)} rows, {len(combined_df.columns)} columns.")
+        logger.info("\nProcessing missing values...")
+        price_cols = [col for col in combined_df.columns if any(suffix in col for suffix in ['_OPEN', '_HIGH', '_LOW', '_CLOSE'])]
+        volume_cols = [col for col in combined_df.columns if '_VOLUME' in col]
+        other_cols = [col for col in combined_df.columns if col not in ['TRADEDATE'] + price_cols + volume_cols]
+        logger.info(f"  Filling prices (ffill/bfill): {len(price_cols)} columns.")
+        combined_df[price_cols] = combined_df[price_cols].ffill().bfill()
+        logger.info(f"  Filling volumes (0): {len(volume_cols)} columns.")
+        combined_df[volume_cols] = combined_df[volume_cols].fillna(0)
+        logger.info(f"  Filling others (0 or ffill): {len(other_cols)} columns.")
+        macro_indicator_cols = [col for col in other_cols if any(indicator in col for indicator in ['KEY_RATE', 'RATE', 'INFLATION', 'GDP'])]
+        if macro_indicator_cols:
+            logger.info(f"    Filling macro indicators (ffill): {macro_indicator_cols}")
+            combined_df[macro_indicator_cols] = combined_df[macro_indicator_cols].ffill()
+            other_cols = [col for col in other_cols if col not in macro_indicator_cols]
+        if other_cols:
+            logger.info(f"    Filling remaining (0): {other_cols}")
+            combined_df[other_cols] = combined_df[other_cols].fillna(0)
+        target_ticker = 'GAZP'
+        target_close_col = f'{target_ticker}_CLOSE'
+        if target_close_col in combined_df.columns:
+            logger.info(f"\nCreating target variable for {target_ticker}...")
+            target_close_series = combined_df[target_close_col].shift(-1)
+            target_direction_series = np.where(
+                target_close_series > combined_df[target_close_col], 1,
+                np.where(target_close_series < combined_df[target_close_col], -1, 0)
+            )
+            combined_df = combined_df.iloc[:-1].copy()
+            combined_df['TARGET_CLOSE'] = target_close_series.iloc[:-1].values
+            combined_df['TARGET_DIRECTION'] = target_direction_series[:-1]
+            logger.info(f"  Created {len(combined_df)} rows with target variable.")
+        else:
+            logger.warning(f"\nTarget stock {target_ticker} not found in combined dataset. Target variable not created.")
+        logger.info(f"\nSaving combined dataset to {OUTPUT_FILE}...")
+        os.makedirs(os.path.dirname(OUTPUT_FILE), exist_ok=True)  # Создаем директорию
+        combined_df.to_csv(OUTPUT_FILE, index=False, encoding='utf-8-sig')
+        logger.info("Data combining completed.")
+        sys.exit(0)
+    except Exception as e:
+        logger.error(f"Error: {e}")
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()
+
+```
+
+### scripts\combine_datasets_all_targets.py
+
+```py```
+# combine_datasets_all_targets.py (полная прокачанная версия)
+import pandas as pd
+import numpy as np
+import os
+import subprocess
+import sys
+from datetime import datetime
+import json
+import logging
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--config', default='config.json', help='Path to config file')
+args = parser.parse_args()
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', handlers=[logging.FileHandler('combine_datasets_all_targets.log'), logging.StreamHandler()])
+logger = logging.getLogger(__name__)
+
+def load_config(config_file):
+    if not os.path.exists(config_file):
+        logger.error(f"Config file {config_file} not found.")
+        raise FileNotFoundError
+    with open(config_file, 'r') as f:
+        return json.load(f)
+
+config = load_config(args.config)
+
+INPUT_DATASET_FILE = os.path.join(config['data_dir'], 'combined_dataset.csv')
+OUTPUT_DATASET_FILE = os.path.join(config['data_dir'], 'combined_dataset_all_targets.csv')
+
+def run_combine_datasets(config_file):
+    """Запускает combine_datasets.py для создания combined_dataset.csv."""
+    script_path = os.path.join("scripts", "combine_datasets.py")
+    if not os.path.exists(script_path):
+        logger.error(f"Script {script_path} not found.")
+        return False
+    try:
+        logger.info(f"Running {script_path} to generate {INPUT_DATASET_FILE}")
+        result = subprocess.run(
+            [sys.executable, script_path, "--config", config_file],
+            capture_output=True,
+            text=True
+        )
+        if result.returncode == 0:
+            logger.info(f"{script_path} executed successfully.")
+            return True
+        else:
+            logger.error(f"Error running {script_path}: {result.stderr}")
+            return False
+    except Exception as e:
+        logger.error(f"Exception while running {script_path}: {e}")
+        return False
+
+def load_dataset(filename):
+    """Загружает датасет из CSV файла."""
+    logger.info(f"Loading dataset from {filename}...")
+    if not os.path.exists(filename):
+        logger.info(f"File {filename} not found. Attempting to run combine_datasets.py...")
+        success = run_combine_datasets(args.config)
+        if not success or not os.path.exists(filename):
+            logger.error(f"Failed to generate {filename} after running combine_datasets.py.")
+            return pd.DataFrame()
+    try:
+        df = pd.read_csv(filename, encoding='utf-8-sig')
+        logger.info(f"Dataset loaded: {len(df)} rows, {len(df.columns)} columns.")
+        return df
+    except Exception as e:
+        logger.error(f"Error loading dataset from {filename}: {e}")
+        return pd.DataFrame()
+
+def add_target_directions_for_all_tickers(df):
+    """Добавляет колонки TARGET_DIRECTION для всех тикеров."""
+    logger.info("\n--- Adding TARGET_DIRECTION for all tickers ---")
+    close_cols = [col for col in df.columns if col.endswith('_CLOSE')]
+    logger.info(f"Found {len(close_cols)} columns with closing prices (_CLOSE).")
+    tickers = [col.replace('_CLOSE', '') for col in close_cols]
+    logger.info(f"Extracted tickers: {tickers[:10]}... (first 10)")
+    new_columns_series = []
+    added_targets = 0
+    for ticker in tickers:
+        close_col = f"{ticker}_CLOSE"
+        target_col = f"TARGET_DIRECTION_{ticker}"
+        if close_col in df.columns:
+            logger.info(f"  Creating target variable for {ticker}...")
+            shifted_close = df[close_col].shift(-1)
+            target_direction_series = np.where(
+                shifted_close > df[close_col], 1,
+                np.where(shifted_close < df[close_col], -1, 0)
+            )
+            new_columns_series.append(pd.Series(target_direction_series, name=target_col, index=df.index))
+            added_targets += 1
+        else:
+            logger.warning(f"  Warning: Column {close_col} not found. Skipped.")
+    logger.info(f"Added {added_targets} target variables TARGET_DIRECTION_*.")
+    if new_columns_series:
+        logger.info(f"  Combining {len(new_columns_series)} new TARGET_DIRECTION columns...")
+        new_columns_df = pd.concat(new_columns_series, axis=1)
+        df = pd.concat([df, new_columns_df], axis=1)
+        logger.info("  All new TARGET_DIRECTION columns successfully added.")
+    else:
+        logger.info("  No new TARGET_DIRECTION columns created.")
+    return df
+
+def save_dataset(df, filename):
+    """Сохраняет датасет в CSV файл."""
+    if df.empty:
+        logger.error("DataFrame is empty, file will not be created.")
+        return False
+    logger.info(f"\nSaving updated dataset to {filename}...")
+    try:
+        os.makedirs(os.path.dirname(filename), exist_ok=True)  # Создаем директорию
+        df.to_csv(filename, index=False, encoding='utf-8-sig')
+        logger.info("Updated dataset saved.")
+        return True
+    except IOError as e:
+        logger.error(f"Error saving file: {e}")
+        return False
+
+def main():
+    """Основная функция."""
+    try:
+        logger.info("Starting creation of dataset with TARGET_DIRECTION for ALL stocks...")
+        df = load_dataset(INPUT_DATASET_FILE)
+        if df.empty:
+            logger.error("Failed to load dataset. Exiting.")
+            sys.exit(1)
+        df_with_targets = add_target_directions_for_all_tickers(df)
+        if save_dataset(df_with_targets, OUTPUT_DATASET_FILE):
+            logger.info("Creation of dataset with TARGET_DIRECTION for ALL stocks completed.")
+            sys.exit(0)
+        else:
+            logger.error("Failed to save dataset. Exiting.")
+            sys.exit(1)
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()
+
+```
+
+### scripts\find_currency_pairs.py
+
+```py```
+# find_currency_pairs.py (полная прокачанная версия)
+import requests
+import pandas as pd
+import os
+import json
+import logging
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--config', default='config.json', help='Path to config file')
+args = parser.parse_args()
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', handlers=[logging.FileHandler('find_currency_pairs.log'), logging.StreamHandler()])
+logger = logging.getLogger(__name__)
+
+def load_config(config_file):
+    if not os.path.exists(config_file):
+        logger.error(f"Config file {config_file} not found.")
+        raise FileNotFoundError
+    with open(config_file, 'r') as f:
+        return json.load(f)
+
+config = load_config(args.config)
+
+MOEX_BASE_URL = "https://iss.moex.com/iss"
+MARKET = "selt"
+ENGINE = "currency"
+
+def get_currency_list():
+    """Получает список валютных инструментов с MOEX ISS."""
+    url = f"{MOEX_BASE_URL}/engines/{ENGINE}/markets/{MARKET}/securities.json"
+    logger.info(f"Requesting currency instruments list from {url}")
+    try:
+        response = requests.get(url, params={"iss.meta": "off", "iss.only": "securities"})
+        response.raise_for_status()
+        data = response.json()
+        return data
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error requesting currency instruments list: {e}")
+        return None
+    except ValueError as e:
+        logger.error(f"Error parsing JSON response for currency instruments list: {e}")
+        return None
+
+def find_currency_pairs(data, target_specific_pairs):
+    """Находит конкретные валютные пары в полученном списке."""
+    if not data or 'securities' not in data:
+        logger.error("No data for currency instruments.")
+        return pd.DataFrame()
+    securities_df = pd.DataFrame(data['securities']['data'], columns=data['securities']['columns'])
+    logger.info(f"Total instruments on market '{MARKET}': {len(securities_df)}")
+    logger.info("First few rows:")
+    logger.info(securities_df.head(10))
+    found_pairs_df = securities_df[securities_df['SECID'].isin(target_specific_pairs)]
+    logger.info(f"\nFound currency pairs matching {target_specific_pairs}:")
+    logger.info(found_pairs_df[['SECID', 'SHORTNAME', 'BOARDID']])
+    return found_pairs_df
+
+def main():
+    target_specific_pairs = ['USD000UTSTOM', 'EUR_RUB__TOM']
+    data = get_currency_list()
+    if data:
+        found_df = find_currency_pairs(data, target_specific_pairs)
+        if not found_df.empty:
+            logger.info("\nCurrency pair tickers found. Proceed to history collection.")
+            found_df[['SECID', 'BOARDID']].to_csv('moex_currency_pairs_list.csv', index=False, encoding='utf-8-sig')
+            logger.info("Currency pairs list saved to 'moex_currency_pairs_list.csv'.")
+        else:
+            logger.warning(f"\nSpecific tickers {target_specific_pairs} not found. Check the full instruments list above.")
+    else:
+        logger.error("Failed to get currency instruments list.")
+
+if __name__ == "__main__":
+    main()
+
+```
+
+### scripts\find_indices.py
+
+```py```
+# find_indices.py (полная прокачанная версия)
+import requests
+import pandas as pd
+import os
+import json
+import logging
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--config', default='config.json', help='Path to config file')
+args = parser.parse_args()
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', handlers=[logging.FileHandler('find_indices.log'), logging.StreamHandler()])
+logger = logging.getLogger(__name__)
+
+def load_config(config_file):
+    if not os.path.exists(config_file):
+        logger.error(f"Config file {config_file} not found.")
+        raise FileNotFoundError
+    with open(config_file, 'r') as f:
+        return json.load(f)
+
+config = load_config(args.config)
+
+MOEX_BASE_URL = "https://iss.moex.com/iss"
+MARKET = "index"
+ENGINE = "stock"
+
+def get_index_list():
+    """Получает список индексов с MOEX ISS."""
+    url = f"{MOEX_BASE_URL}/engines/{ENGINE}/markets/{MARKET}/securities.json"
+    logger.info(f"Requesting indices list from {url}")
+    try:
+        response = requests.get(url, params={"iss.meta": "off", "iss.only": "securities"})
+        response.raise_for_status()
+        data = response.json()
+        return data
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error requesting indices list: {e}")
+        return None
+    except ValueError as e:
+        logger.error(f"Error parsing JSON response for indices list: {e}")
+        return None
+
+def find_indices(data, target_indices):
+    """Находит конкретные индексы в полученном списке."""
+    if not data or 'securities' not in data:
+        logger.error("No data for indices.")
+        return pd.DataFrame()
+    securities_df = pd.DataFrame(data['securities']['data'], columns=data['securities']['columns'])
+    logger.info(f"Total instruments on market '{MARKET}': {len(securities_df)}")
+    logger.info("First few rows:")
+    logger.info(securities_df.head())
+    found_indices_df = securities_df[securities_df['SECID'].isin(target_indices)]
+    logger.info(f"\nFound indices {target_indices}:")
+    logger.info(found_indices_df[['SECID', 'SHORTNAME', 'BOARDID']])
+    return found_indices_df
+
+def main():
+    target_indices = ['IMOEX', 'RTSI']
+    data = get_index_list()
+    if data:
+        found_df = find_indices(data, target_indices)
+        if not found_df.empty:
+            logger.info("\nIndices tickers found. Proceed to history collection.")
+            found_df[['SECID', 'BOARDID']].to_csv('moex_indices_list.csv', index=False, encoding='utf-8-sig')
+            logger.info("Indices list saved to 'moex_indices_list.csv'.")
+        else:
+            logger.warning(f"\nIndices {target_indices} not found on market '{MARKET}'.")
+    else:
+        logger.error("Failed to get indices list.")
+
+if __name__ == "__main__":
+    main()
+
+```
+
+### scripts\find_oil_futures.py
+
+```py```
+# find_oil_futures.py (полная прокачанная версия с повторными попытками)
+import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+import pandas as pd
+from datetime import datetime
+import os
+import json
+import logging
+import argparse
+import sys
+
+# Настройка аргументов командной строки
+parser = argparse.ArgumentParser()
+parser.add_argument('--config', default='config.json', help='Path to config file')
+args = parser.parse_args()
+
+# Настройка логирования
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s',
+                    handlers=[logging.FileHandler('find_oil_futures.log'), logging.StreamHandler()])
+logger = logging.getLogger(__name__)
+
+# Функция для загрузки конфигурации
+def load_config(config_file):
+    if not os.path.exists(config_file):
+        logger.error(f"Config file {config_file} not found.")
+        raise FileNotFoundError
+    with open(config_file, 'r') as f:
+        return json.load(f)
+
+config = load_config(args.config)
+
+MOEX_BASE_URL = "https://iss.moex.com/iss"
+MARKET = "forts"
+ENGINE = "futures"
+MAX_RETRIES = 5
+RETRY_DELAY = 5
+
+# Настройка сессии с повторными попытками
+session = requests.Session()
+retries = Retry(total=MAX_RETRIES, backoff_factor=1, status_forcelist=[429, 500, 502, 503, 504])
+session.mount('https://', HTTPAdapter(max_retries=retries))
+
+def get_futures_list():
+    """Получает список фьючерсов с MOEX ISS с повторными попытками."""
+    url = f"{MOEX_BASE_URL}/engines/{ENGINE}/markets/{MARKET}/securities.json"
+    logger.info(f"Requesting futures list from {url}")
+    try:
+        response = session.get(url, params={"iss.meta": "off", "iss.only": "securities"}, timeout=30)
+        response.raise_for_status()
+        data = response.json()
+        return data
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error requesting futures list after {MAX_RETRIES} retries: {e}")
+        return None
+    except ValueError as e:
+        logger.error(f"Error parsing JSON response for futures list: {e}")
+        return None
+
+def find_oil_futures(data, oil_symbol='BR'):
+    """Находит фьючерсы на нефть в полученном списке."""
+    if not data or 'securities' not in data:
+        logger.error("No data for futures.")
+        return pd.DataFrame()
+    securities_df = pd.DataFrame(data['securities']['data'], columns=data['securities']['columns'])
+    logger.info(f"Total futures on market '{MARKET}': {len(securities_df)}")
+    oil_futures_df = securities_df[securities_df['SECID'].str.contains(oil_symbol, case=False, na=False)]
+    logger.info(f"\nFound oil futures ({oil_symbol}):")
+    logger.info(oil_futures_df[['SECID', 'SHORTNAME', 'BOARDID', 'LASTDELDATE']].head())
+    return oil_futures_df
+
+def get_current_and_next_oil_futures(oil_futures_df):
+    """Определяет текущий и следующий фьючерсный контракт на нефть."""
+    if oil_futures_df.empty:
+        logger.error("No available oil futures to determine current/next.")
+        return None, None
+    oil_futures_df = oil_futures_df.copy()
+    oil_futures_df['LASTDELDATE_DT'] = pd.to_datetime(oil_futures_df['LASTDELDATE'], format='%Y-%m-%d', errors='coerce')
+    oil_futures_df = oil_futures_df.dropna(subset=['LASTDELDATE_DT'])
+    if oil_futures_df.empty:
+        logger.error("No valid expiration dates (LASTDELDATE) for oil futures.")
+        return None, None
+    oil_futures_df = oil_futures_df.sort_values(by='LASTDELDATE_DT')
+    today = pd.Timestamp.today().normalize()
+    current_contract_df = oil_futures_df[oil_futures_df['LASTDELDATE_DT'] >= today]
+    if current_contract_df.empty:
+        logger.error("No futures contracts with expiration >= today.")
+        return None, None
+    current_contract = current_contract_df.iloc[0]
+    current_contract_secid = current_contract['SECID']
+    current_contract_matdate = current_contract['LASTDELDATE_DT']
+    all_sorted_matdates = oil_futures_df['LASTDELDATE_DT'].unique()
+    current_idx = None
+    for i, date in enumerate(all_sorted_matdates):
+        if date == current_contract_matdate:
+            current_idx = i
+            break
+    next_contract_secid = None
+    if current_idx is not None and current_idx + 1 < len(all_sorted_matdates):
+        next_matdate = all_sorted_matdates[current_idx + 1]
+        next_contract_df = oil_futures_df[oil_futures_df['LASTDELDATE_DT'] == next_matdate]
+        if not next_contract_df.empty:
+            next_contract_secid = next_contract_df.iloc[0]['SECID']
+    logger.info(f"Current oil future (nearest >= today): {current_contract_secid} (expiration: {current_contract_matdate.strftime('%Y-%m-%d')})")
+    if next_contract_secid:
+        logger.info(f"Next oil future: {next_contract_secid}")
+    else:
+        logger.warning("Next oil future not found (possibly only one active).")
+    return current_contract_secid, next_contract_secid
+
+def main():
+    try:
+        oil_symbol = 'BR'
+        data = get_futures_list()
+        if data:
+            oil_futures_df = find_oil_futures(data, oil_symbol)
+            if not oil_futures_df.empty:
+                logger.info("\n--- Determining current and next contracts ---")
+                current_secid, next_secid = get_current_and_next_oil_futures(oil_futures_df)
+                if current_secid:
+                    logger.info(f"\nFor further history collection, current contract will be used: {current_secid}")
+                    with open('current_oil_future_contract.txt', 'w') as f:
+                        f.write(current_secid)
+                    logger.info("Current futures ticker saved to 'current_oil_future_contract.txt'.")
+                    sys.exit(0)
+                else:
+                    logger.error("\nFailed to determine current futures contract for oil.")
+                    sys.exit(1)
+            else:
+                logger.warning(f"\nOil futures with symbol '{oil_symbol}' not found.")
+                sys.exit(1)
+        else:
+            logger.error("Failed to get futures list.")
+            sys.exit(1)
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()
+
+```
+
+### scripts\get_currency_history.py
+
+```py```
+# get_currency_history.py (полная прокачанная версия)
+import pandas as pd
+import requests
+import time
+import os
+from datetime import datetime
+import json
+import logging
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--config', default='config.json', help='Path to config file')
+args = parser.parse_args()
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', handlers=[logging.FileHandler('get_currency_history.log'), logging.StreamHandler()])
+logger = logging.getLogger(__name__)
+
+def load_config(config_file):
+    if not os.path.exists(config_file):
+        logger.error(f"Config file {config_file} not found.")
+        raise FileNotFoundError
+    with open(config_file, 'r') as f:
+        return json.load(f)
+
+config = load_config(args.config)
+
+INPUT_CSV_FILE = "moex_currency_pairs_list.csv"
+OUTPUT_DIR = config['historical_data_currency_dir']
+START_DATE = config['start_date']
+MOEX_BASE_URL = "https://iss.moex.com/iss"
+MARKET = "selt"
+ENGINE = "currency"
+REQUEST_PARAMS = {
+    "from": START_DATE,
+    "iss.meta": "off",
+}
+REQUEST_DELAY = 1.0
+REQUEST_TIMEOUT = 45
+
+def load_currency_tickers_from_csv(filename):
+    """Загружает список валютных пар из CSV файла."""
+    try:
+        df = pd.read_csv(filename, encoding='utf-8-sig')
+        logger.info(f"Loaded {len(df)} currency pairs from {filename}")
+        return df
+    except FileNotFoundError:
+        logger.error(f"File {filename} not found.")
+        return pd.DataFrame()
+    except Exception as e:
+        logger.error(f"Error reading file {filename}: {e}")
+        return pd.DataFrame()
+
+def get_currency_history(secid, boardid):
+    """Получает исторические данные для одной валютной пары с указанного режима."""
+    url = f"{MOEX_BASE_URL}/history/engines/{ENGINE}/markets/{MARKET}/boards/{boardid}/securities/{secid}.json"
+    logger.info(f"Requesting history for currency pair {secid} ({boardid}) from {url}")
+    try:
+        response = requests.get(url, params=REQUEST_PARAMS, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        data = response.json()
+        return data
+    except requests.exceptions.Timeout:
+        logger.error(f"Timeout requesting history for currency pair {secid} ({boardid}). Skipping.")
+        return None
+    except requests.exceptions.ConnectionError as e:
+        logger.error(f"Connection error requesting history for currency pair {secid} ({boardid}): {e}")
+        return None
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error requesting history for currency pair {secid} ({boardid}): {e}")
+        return None
+    except ValueError as e:
+        logger.error(f"Error parsing JSON response for currency pair {secid} ({boardid}): {e}")
+        return None
+
+def save_currency_history_to_csv(data, secid, output_dir):
+    """Сохраняет исторические данные валютной пары в CSV файл."""
+    if not data or 'history' not in data or not data['history']['data']:
+        logger.warning(f"No historical data for currency pair {secid}, file not created.")
+        return
+    os.makedirs(output_dir, exist_ok=True)
+    df = pd.DataFrame(data['history']['data'], columns=data['history']['columns'])
+    logger.info(f"Received {len(df)} rows of history for {secid}. Columns: {df.columns.tolist()}")
+    required_cols = ['TRADEDATE', 'OPEN', 'CLOSE', 'HIGH', 'LOW', 'VOLRUR']
+    if all(col in df.columns for col in required_cols):
+        df = df[required_cols]
+        df = df.rename(columns={'VOLRUR': 'VOLUME'})
+        filename = os.path.join(output_dir, f"{secid}_history.csv")
+        try:
+            df.to_csv(filename, index=False, encoding='utf-8-sig')
+            logger.info(f"History for currency pair {secid} saved to {filename}")
+        except IOError as e:
+            logger.error(f"Error saving file for currency pair {secid}: {e}")
+    else:
+        logger.error(f"Incorrect columns in data for currency pair {secid}: {df.columns.tolist()}. Skipped.")
+
+def main():
+    """Основная функция."""
+    logger.info("Starting collection of historical data for currency pairs...")
+    tickers_df = load_currency_tickers_from_csv(INPUT_CSV_FILE)
+    if tickers_df.empty:
+        logger.error("Failed to load currency pairs list. Exiting.")
+        return
+    if not all(col in tickers_df.columns for col in ['SECID', 'BOARDID']):
+        logger.error(f"File {INPUT_CSV_FILE} does not contain 'SECID' and 'BOARDID' columns. Exiting.")
+        return
+    total_pairs = len(tickers_df)
+    logger.info(f"Starting processing of {total_pairs} currency pairs...")
+    for index, row in tickers_df.iterrows():
+        secid = row['SECID']
+        boardid = row['BOARDID']
+        logger.info(f"Processing {index + 1}/{total_pairs}: {secid} ({boardid})")
+        data = get_currency_history(secid, boardid)
+        if data:
+            save_currency_history_to_csv(data, secid, OUTPUT_DIR)
+        time.sleep(REQUEST_DELAY)
+    logger.info("Collection of historical data for currency pairs completed.")
+
+if __name__ == "__main__":
+    main()
+
+```
+
+### scripts\get_currency_history_cets.py
+
+```py```
+# get_currency_history_cets.py (полная прокачанная версия)
+import pandas as pd
+import requests
+import time
+import os
+from datetime import datetime
+import json
+import logging
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--config', default='config.json', help='Path to config file')
+args = parser.parse_args()
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', handlers=[logging.FileHandler('get_currency_history_cets.log'), logging.StreamHandler()])
+logger = logging.getLogger(__name__)
+
+def load_config(config_file):
+    if not os.path.exists(config_file):
+        logger.error(f"Config file {config_file} not found.")
+        raise FileNotFoundError
+    with open(config_file, 'r') as f:
+        return json.load(f)
+
+config = load_config(args.config)
+
+INPUT_CSV_FILE = "moex_currency_pairs_list.csv"
+FILTER_BOARDID = "CETS"
+OUTPUT_DIR = config['historical_data_currency_dir']
+START_DATE = config['start_date']
+MOEX_BASE_URL = "https://iss.moex.com/iss"
+MARKET = "selt"
+ENGINE = "currency"
+REQUEST_PARAMS = {
+    "from": START_DATE,
+    "iss.meta": "off",
+}
+REQUEST_DELAY = 1.0
+REQUEST_TIMEOUT = 45
+
+def load_filtered_currency_tickers_from_csv(filename, filter_boardid):
+    """Загружает список валютных пар из CSV файла, фильтруя по BOARDID."""
+    try:
+        df = pd.read_csv(filename, encoding='utf-8-sig')
+        logger.info(f"Loaded {len(df)} records from {filename}")
+        filtered_df = df[df['BOARDID'] == filter_boardid]
+        logger.info(f"After filtering by BOARDID='{filter_boardid}': {len(filtered_df)} records")
+        return filtered_df
+    except FileNotFoundError:
+        logger.error(f"File {filename} not found.")
+        return pd.DataFrame()
+    except Exception as e:
+        logger.error(f"Error reading file {filename}: {e}")
+        return pd.DataFrame()
+
+def get_currency_history(secid, boardid):
+    """Получает исторические данные для одной валютной пары с указанного режима."""
+    url = f"{MOEX_BASE_URL}/history/engines/{ENGINE}/markets/{MARKET}/boards/{boardid}/securities/{secid}.json"
+    logger.info(f"Requesting history for currency pair {secid} ({boardid}) from {url}")
+    try:
+        response = requests.get(url, params=REQUEST_PARAMS, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        data = response.json()
+        return data
+    except requests.exceptions.Timeout:
+        logger.error(f"Timeout requesting history for currency pair {secid} ({boardid}). Skipping.")
+        return None
+    except requests.exceptions.ConnectionError as e:
+        logger.error(f"Connection error requesting history for currency pair {secid} ({boardid}): {e}")
+        return None
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error requesting history for currency pair {secid} ({boardid}): {e}")
+        return None
+    except ValueError as e:
+        logger.error(f"Error parsing JSON response for currency pair {secid} ({boardid}): {e}")
+        return None
+
+def save_currency_history_to_csv(data, secid, output_dir):
+    """Сохраняет исторические данные валютной пары в CSV файл, адаптируя столбцы."""
+    if not data or 'history' not in data or not data['history']['data']:
+        logger.warning(f"No historical data for currency pair {secid}, file not created.")
+        return
+    os.makedirs(output_dir, exist_ok=True)
+    df = pd.DataFrame(data['history']['data'], columns=data['history']['columns'])
+    logger.info(f"Received {len(df)} rows of history for {secid}. Columns: {df.columns.tolist()}")
+    required_input_cols = ['TRADEDATE', 'OPEN', 'CLOSE', 'HIGH', 'LOW', 'VOLRUR']
+    if all(col in df.columns for col in required_input_cols):
+        df_renamed = df[['TRADEDATE', 'OPEN', 'HIGH', 'LOW', 'CLOSE', 'VOLRUR']].copy()
+        df_renamed = df_renamed.rename(columns={'VOLRUR': 'VALUE'})
+        if 'NUMTRADES' in df.columns:
+            df_renamed['VOLUME'] = df['NUMTRADES']
+        else:
+            df_renamed['VOLUME'] = 0
+            logger.warning(f"NUMTRADES not found for {secid}, VOLUME filled with 0.")
+        df_final = df_renamed[['TRADEDATE', 'OPEN', 'HIGH', 'LOW', 'CLOSE', 'VALUE', 'VOLUME']]
+        filename = os.path.join(output_dir, f"{secid}_history.csv")
+        try:
+            df_final.to_csv(filename, index=False, encoding='utf-8-sig')
+            logger.info(f"Adapted history for currency pair {secid} saved to {filename}")
+        except IOError as e:
+            logger.error(f"Error saving file for currency pair {secid}: {e}")
+    else:
+        logger.error(f"Incorrect columns in data for currency pair {secid}: {df.columns.tolist()}. Skipped.")
+
+def main():
+    """Основная функция."""
+    logger.info(f"Starting collection of historical data for currency pairs (BOARDID={FILTER_BOARDID})...")
+    tickers_df = load_filtered_currency_tickers_from_csv(INPUT_CSV_FILE, FILTER_BOARDID)
+    if tickers_df.empty:
+        logger.error("Failed to load currency pairs list for specified BOARDID. Exiting.")
+        return
+    if not all(col in tickers_df.columns for col in ['SECID', 'BOARDID']):
+        logger.error(f"File {INPUT_CSV_FILE} does not contain 'SECID' and 'BOARDID' columns. Exiting.")
+        return
+    total_pairs = len(tickers_df)
+    logger.info(f"Starting processing of {total_pairs} currency pairs...")
+    for index, row in tickers_df.iterrows():
+        secid = row['SECID']
+        boardid = row['BOARDID']
+        logger.info(f"Processing {index + 1}/{total_pairs}: {secid} ({boardid})")
+        data = get_currency_history(secid, boardid)
+        if data:
+            save_currency_history_to_csv(data, secid, OUTPUT_DIR)
+        time.sleep(REQUEST_DELAY)
+    logger.info("Collection of historical data for currency pairs completed.")
+
+if __name__ == "__main__":
+    main()
+
+```
+
+### scripts\get_historical_data.py
+
+```py```
+# get_historical_data.py (полная прокачанная версия)
+import pandas as pd
+import requests
+import time
+import os
+from datetime import datetime
+import json
+import logging
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--config', default='config.json', help='Path to config file')
+args = parser.parse_args()
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', handlers=[logging.FileHandler('get_historical_data.log'), logging.StreamHandler()])
+logger = logging.getLogger(__name__)
+
+def load_config(config_file):
+    if not os.path.exists(config_file):
+        logger.error(f"Config file {config_file} not found.")
+        raise FileNotFoundError
+    with open(config_file, 'r') as f:
+        return json.load(f)
+
+config = load_config(args.config)
+
+INPUT_CSV_FILE = "moex_stocks_liquid_boards.csv"
+OUTPUT_DIR = config['historical_data_full_dir']
+START_DATE = config['start_date']
+MOEX_BASE_URL = "https://iss.moex.com/iss"
+MARKET = "shares"
+ENGINE = "stock"
+REQUEST_PARAMS = {
+    "from": START_DATE,
+    "interval": 24,
+    "iss.meta": "off",
+    "iss.only": "candles",
+    "candles.columns": "begin,end,open,high,low,close,volume"
+}
+REQUEST_DELAY = 1.0
+REQUEST_TIMEOUT = 45
+MAX_CONNECTION_RETRY_ATTEMPTS = 5
+
+def load_tickers_from_csv(filename):
+    """Загружает список тикеров из CSV файла."""
+    try:
+        df = pd.read_csv(filename, encoding='utf-8-sig')
+        logger.info(f"Loaded {len(df)} tickers from {filename}")
+        return df
+    except FileNotFoundError:
+        logger.error(f"File {filename} not found.")
+        return pd.DataFrame()
+    except Exception as e:
+        logger.error(f"Error reading file {filename}: {e}")
+        return pd.DataFrame()
+
+def get_historical_data_for_ticker(secid, boardid):
+    """Получает исторические данные для одного тикера с указанного режима."""
+    url = f"{MOEX_BASE_URL}/engines/{ENGINE}/markets/{MARKET}/boards/{boardid}/securities/{secid}/candles.json"
+    logger.info(f"Requesting history for {secid} ({boardid}) from {url}")
+    try:
+        response = requests.get(url, params=REQUEST_PARAMS, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        data = response.json()
+        return data
+    except requests.exceptions.Timeout:
+        logger.error(f"Timeout requesting history for {secid} ({boardid}).")
+        return 'CONNECTION_ERROR'
+    except requests.exceptions.ConnectionError as e:
+        logger.error(f"Connection error requesting history for {secid} ({boardid}): {e}")
+        return 'CONNECTION_ERROR'
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error requesting history for {secid} ({boardid}): {e}")
+        return 'CONNECTION_ERROR'
+    except ValueError as e:
+        logger.error(f"Error parsing JSON response for {secid} ({boardid}): {e}")
+        return 'CONNECTION_ERROR'
+
+def save_historical_data_to_csv(data, secid, output_dir):
+    """Сохраняет исторические данные в CSV файл для конкретного тикера."""
+    if data == 'CONNECTION_ERROR':
+        return False, 'CONNECTION_ERROR'
+    if not data or 'candles' not in data or not data['candles']['data']:
+        logger.warning(f"No historical data for {secid}, file not created.")
+        return False, 'NO_DATA'
+    os.makedirs(output_dir, exist_ok=True)
+    df = pd.DataFrame(data['candles']['data'], columns=data['candles']['columns'])
+    if 'begin' in df.columns:
+        df['TRADEDATE'] = pd.to_datetime(df['begin']).dt.date
+        df = df.drop(columns=['begin'])
+    elif 'end' in df.columns:
+        df['TRADEDATE'] = pd.to_datetime(df['end']).dt.date
+        df = df.drop(columns=['end'])
+    else:
+        logger.error(f"Neither 'begin' nor 'end' found in data for {secid}. Skipping.")
+        return False, 'PARSE_ERROR'
+    expected_col_mapping = {'open': 'OPEN', 'high': 'HIGH', 'low': 'LOW', 'close': 'CLOSE', 'volume': 'VOLUME'}
+    missing_cols = [col for col in expected_col_mapping.keys() if col not in df.columns]
+    if missing_cols:
+        logger.error(f"Incorrect columns in data for {secid}: {df.columns.tolist()}. Missing: {missing_cols}. Skipped.")
+        return False, 'PARSE_ERROR'
+    df = df.rename(columns=expected_col_mapping)
+    required_cols = ['TRADEDATE', 'OPEN', 'HIGH', 'LOW', 'CLOSE', 'VOLUME']
+    if all(col in df.columns for col in required_cols):
+        df = df[required_cols]
+        filename = os.path.join(output_dir, f"{secid}_history.csv")
+        try:
+            df.to_csv(filename, index=False, encoding='utf-8-sig')
+            logger.info(f"History for {secid} saved to {filename} ({len(df)} rows)")
+            return True, 'SUCCESS'
+        except IOError as e:
+            logger.error(f"Error saving file for {secid}: {e}")
+            return False, 'SAVE_ERROR'
+    else:
+        logger.error(f"Incorrect columns in data for {secid} after processing: {df.columns.tolist()}. Skipped.")
+        return False, 'PARSE_ERROR'
+
+def main():
+    """Основная функция."""
+    logger.info("Starting collection of historical data (full list, retry only connection errors)...")
+    tickers_df = load_tickers_from_csv(INPUT_CSV_FILE)
+    if tickers_df.empty:
+        logger.error("Failed to load tickers list. Exiting.")
+        return
+    if not all(col in tickers_df.columns for col in ['SECID', 'BOARDID']):
+        logger.error(f"File {INPUT_CSV_FILE} does not contain 'SECID' and 'BOARDID' columns. Exiting.")
+        return
+    total_tickers = len(tickers_df)
+    logger.info(f"Starting processing of {total_tickers} tickers...")
+    remaining_tickers_df = tickers_df.copy()
+    logger.info("\n--- Main pass ---")
+    failed_connection_tickers = []
+    failed_other_tickers = []
+    for index, row in remaining_tickers_df.iterrows():
+        secid = row['SECID']
+        boardid = row['BOARDID']
+        logger.info(f"Processing: {secid} ({boardid})")
+        try:
+            data = get_historical_data_for_ticker(secid, boardid)
+            success, status = save_historical_data_to_csv(data, secid, OUTPUT_DIR)
+            if success:
+                logger.info(f"    Successfully processed: {secid}")
+            else:
+                if status == 'CONNECTION_ERROR':
+                    logger.info(f"    Connection error for {secid}, added to retry list.")
+                    failed_connection_tickers.append({'SECID': secid, 'BOARDID': boardid})
+                else:
+                    logger.info(f"    Final error for {secid} (reason: {status}), added to final failed list.")
+                    failed_other_tickers.append({'SECID': secid, 'BOARDID': boardid})
+        except KeyboardInterrupt:
+            logger.warning(f"\nProcessing interrupted by user on ticker {secid}.")
+            if failed_connection_tickers:
+                pd.DataFrame(failed_connection_tickers).to_csv(os.path.join(OUTPUT_DIR, "failed_connection_tickers_on_interrupt.csv"), index=False, encoding='utf-8-sig')
+            if failed_other_tickers:
+                pd.DataFrame(failed_other_tickers).to_csv(os.path.join(OUTPUT_DIR, "failed_other_tickers_on_interrupt.csv"), index=False, encoding='utf-8-sig')
+            return
+    logger.info("Main pass completed.")
+    logger.info(f"  Successfully processed: {total_tickers - len(failed_connection_tickers) - len(failed_other_tickers)}")
+    logger.info(f"  Connection errors: {len(failed_connection_tickers)}")
+    logger.info(f"  Final errors (no data etc.): {len(failed_other_tickers)}")
+    connection_retry_df = pd.DataFrame(failed_connection_tickers)
+    attempt = 1
+    max_attempts = MAX_CONNECTION_RETRY_ATTEMPTS
+    while not connection_retry_df.empty and attempt <= max_attempts:
+        logger.info(f"\n--- Retry connection - Pass {attempt} ---")
+        logger.info(f"Remaining to process {len(connection_retry_df)} tickers with connection errors.")
+        next_failed_connection_tickers = []
+        for _, row in connection_retry_df.iterrows():
+            secid = row['SECID']
+            boardid = row['BOARDID']
+            logger.info(f"Retry for: {secid} ({boardid})")
+            try:
+                data = get_historical_data_for_ticker(secid, boardid)
+                success, status = save_historical_data_to_csv(data, secid, OUTPUT_DIR)
+                if success:
+                    logger.info(f"    Successfully processed: {secid}")
+                else:
+                    if status == 'CONNECTION_ERROR':
+                        logger.info(f"    Connection error for {secid}, remains in retry list.")
+                        next_failed_connection_tickers.append({'SECID': secid, 'BOARDID': boardid})
+                    else:
+                        logger.info(f"    Final error for {secid} (reason: {status}), moved to final failed.")
+                        failed_other_tickers.append({'SECID': secid, 'BOARDID': boardid})
+            except KeyboardInterrupt:
+                logger.warning(f"\nProcessing interrupted by user on ticker {secid}.")
+                if next_failed_connection_tickers:
+                    pd.DataFrame(next_failed_connection_tickers).to_csv(os.path.join(OUTPUT_DIR, "failed_connection_tickers_on_interrupt.csv"), index=False, encoding='utf-8-sig')
+                if failed_other_tickers:
+                    pd.DataFrame(failed_other_tickers).to_csv(os.path.join(OUTPUT_DIR, "failed_other_tickers_on_interrupt.csv"), index=False, encoding='utf-8-sig')
+                return
+        connection_retry_df = pd.DataFrame(next_failed_connection_tickers)
+        attempt += 1
+        if not connection_retry_df.empty and attempt <= max_attempts:
+            logger.info(f"After pass {attempt - 1}, remaining {len(connection_retry_df)} tickers with connection errors.")
+            logger.info(f"Waiting before next pass... ({REQUEST_DELAY} seconds)")
+            time.sleep(REQUEST_DELAY)
+    final_success_count = total_tickers - len(connection_retry_df) - len(failed_other_tickers)
+    logger.info(f"\n--- Summary ---")
+    logger.info(f"All tickers processed (or max retries reached).")
+    logger.info(f"  Total tickers: {total_tickers}")
+    logger.info(f"  Successfully processed: {final_success_count}")
+    logger.info(f"  Unresolved connection errors (after {max_attempts} retries): {len(connection_retry_df)}")
+    logger.info(f"  Final errors (no data etc.): {len(failed_other_tickers)}")
+    if not connection_retry_df.empty:
+        logger.info(f"  Failed to process the following tickers due to repeated connection errors:")
+        logger.info(connection_retry_df)
+        failed_con_file = os.path.join(OUTPUT_DIR, "failed_connection_tickers_final.csv")
+        connection_retry_df.to_csv(failed_con_file, index=False, encoding='utf-8-sig')
+        logger.info(f"Final failed tickers (connection errors) saved to {failed_con_file}")
+    if failed_other_tickers:
+        failed_other_file = os.path.join(OUTPUT_DIR, "failed_other_tickers_final.csv")
+        pd.DataFrame(failed_other_tickers).to_csv(failed_other_file, index=False, encoding='utf-8-sig')
+        logger.info(f"Tickers with final errors (no data etc.) saved to {failed_other_file}")
+    logger.info("Collection of historical data (full list) completed (or interrupted).")
+
+if __name__ == "__main__":
+    main()
+
+```
+
+### scripts\get_index_history.py
+
+```py```
+# get_index_history.py (полная прокачанная версия)
+import pandas as pd
+import requests
+import time
+import os
+from datetime import datetime
+import json
+import logging
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--config', default='config.json', help='Path to config file')
+args = parser.parse_args()
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', handlers=[logging.FileHandler('get_index_history.log'), logging.StreamHandler()])
+logger = logging.getLogger(__name__)
+
+def load_config(config_file):
+    if not os.path.exists(config_file):
+        logger.error(f"Config file {config_file} not found.")
+        raise FileNotFoundError
+    with open(config_file, 'r') as f:
+        return json.load(f)
+
+config = load_config(args.config)
+
+INPUT_CSV_FILE = "moex_indices_list.csv"
+OUTPUT_DIR = config['historical_data_indices_dir']
+START_DATE = config['start_date']
+MOEX_BASE_URL = "https://iss.moex.com/iss"
+MARKET = "index"
+ENGINE = "stock"
+REQUEST_PARAMS = {
+    "from": START_DATE,
+    "iss.meta": "off",
+}
+REQUEST_DELAY = 1.0
+REQUEST_TIMEOUT = 45
+
+def load_index_tickers_from_csv(filename):
+    """Загружает список индексов из CSV файла."""
+    try:
+        df = pd.read_csv(filename, encoding='utf-8-sig')
+        logger.info(f"Loaded {len(df)} indices from {filename}")
+        return df
+    except FileNotFoundError:
+        logger.error(f"File {filename} not found.")
+        return pd.DataFrame()
+    except Exception as e:
+        logger.error(f"Error reading file {filename}: {e}")
+        return pd.DataFrame()
+
+def get_index_history(secid):
+    """Получает исторические данные для одного индекса с рынка индексов."""
+    url = f"{MOEX_BASE_URL}/history/engines/{ENGINE}/markets/{MARKET}/securities/{secid}.json"
+    logger.info(f"Requesting history for index {secid} from {url}")
+    try:
+        response = requests.get(url, params=REQUEST_PARAMS, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        data = response.json()
+        return data
+    except requests.exceptions.Timeout:
+        logger.error(f"Timeout requesting history for index {secid}. Skipping.")
+        return None
+    except requests.exceptions.ConnectionError as e:
+        logger.error(f"Connection error requesting history for index {secid}: {e}")
+        return None
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error requesting history for index {secid}: {e}")
+        return None
+    except ValueError as e:
+        logger.error(f"Error parsing JSON response for index {secid}: {e}")
+        return None
+
+def save_index_history_to_csv(data, secid, output_dir):
+    """Сохраняет исторические данные индекса в CSV файл."""
+    if not data or 'history' not in data or not data['history']['data']:
+        logger.warning(f"No historical data for index {secid}, file not created.")
+        return
+    os.makedirs(output_dir, exist_ok=True)
+    df = pd.DataFrame(data['history']['data'], columns=data['history']['columns'])
+    logger.info(f"Received {len(df)} rows of history for {secid}. Columns: {df.columns.tolist()}")
+    required_cols = ['TRADEDATE', 'OPEN', 'CLOSE', 'HIGH', 'LOW']
+    if all(col in df.columns for col in required_cols):
+        df = df[required_cols]
+        filename = os.path.join(output_dir, f"{secid}_history.csv")
+        try:
+            df.to_csv(filename, index=False, encoding='utf-8-sig')
+            logger.info(f"History for index {secid} saved to {filename}")
+        except IOError as e:
+            logger.error(f"Error saving file for index {secid}: {e}")
+    else:
+        logger.error(f"Incorrect columns in data for index {secid}: {df.columns.tolist()}. Skipped.")
+
+def main():
+    """Основная функция."""
+    logger.info("Starting collection of historical data for indices...")
+    tickers_df = load_index_tickers_from_csv(INPUT_CSV_FILE)
+    if tickers_df.empty:
+        logger.error("Failed to load indices list. Exiting.")
+        return
+    if not all(col in tickers_df.columns for col in ['SECID', 'BOARDID']):
+        logger.error(f"File {INPUT_CSV_FILE} does not contain 'SECID' and 'BOARDID' columns. Exiting.")
+        return
+    total_indices = len(tickers_df)
+    logger.info(f"Starting processing of {total_indices} indices...")
+    for index, row in tickers_df.iterrows():
+        secid = row['SECID']
+        logger.info(f"Processing {index + 1}/{total_indices}: {secid}")
+        data = get_index_history(secid)
+        if data:
+            save_index_history_to_csv(data, secid, OUTPUT_DIR)
+        time.sleep(REQUEST_DELAY)
+    logger.info("Collection of historical data for indices completed.")
+
+if __name__ == "__main__":
+    main()
+
+```
+
+### scripts\get_key_rate_history.py
+
+```py```
+# get_key_rate_history.py (полная прокачанная версия)
+import requests
+from bs4 import BeautifulSoup
+import pandas as pd
+import os
+from datetime import datetime
+import json
+import logging
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--config', default='config.json', help='Path to config file')
+args = parser.parse_args()
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', handlers=[logging.FileHandler('get_key_rate_history.log'), logging.StreamHandler()])
+logger = logging.getLogger(__name__)
+
+def load_config(config_file):
+    if not os.path.exists(config_file):
+        logger.error(f"Config file {config_file} not found.")
+        raise FileNotFoundError
+    with open(config_file, 'r') as f:
+        return json.load(f)
+
+config = load_config(args.config)
+
+CBR_KEY_RATE_URL = "https://www.cbr.ru/hd_base/KeyRate/"
+OUTPUT_DIR = config['historical_data_other_dir']
+OUTPUT_FILE = "cbr_key_rate_history_html.csv"
+
+def get_key_rate_html():
+    """Получает HTML-страницу с историей ключевой ставки ЦБ РФ."""
+    logger.info(f"Requesting HTML page with key rate history from {CBR_KEY_RATE_URL}")
+    try:
+        response = requests.get(CBR_KEY_RATE_URL, timeout=60)
+        response.raise_for_status()
+        logger.info("HTML page successfully received.")
+        return response.text
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error requesting HTML page: {e}")
+        return None
+
+def parse_key_rate_html(html_content):
+    """Парсит HTML и извлекает таблицу с ключевой ставкой."""
+    if not html_content:
+        logger.error("No HTML content for parsing.")
+        return pd.DataFrame()
+    try:
+        soup = BeautifulSoup(html_content, 'html.parser')
+        table = soup.find('table', class_='data')
+        if not table:
+            tables = soup.find_all('table')
+            if tables:
+                table = tables[0]
+                logger.info("Table with class 'data' not found, using first table on page.")
+            else:
+                logger.error("No tables found on page.")
+                return pd.DataFrame()
+        else:
+            logger.info("Found table with class 'data'.")
+        rows = table.find_all('tr')
+        if not rows:
+            logger.error("No rows (<tr>) found in table.")
+            return pd.DataFrame()
+        header_row = rows[0]
+        headers = [th.get_text(strip=True) for th in header_row.find_all(['th', 'td'])]
+        logger.info(f"Table headers: {headers}")
+        expected_headers_ru = ['Дата', 'Ставка']
+        expected_headers_en = ['Date', 'Rate']
+        data_rows = rows[1:]
+        parsed_data = []
+        for row in data_rows:
+            cols = row.find_all(['td', 'th'])
+            cols_text = [col.get_text(strip=True) for col in cols]
+            if len(cols_text) >= 2:
+                date_str = cols_text[0]
+                rate_str = cols_text[1]
+                try:
+                    date_obj = datetime.strptime(date_str, '%d.%m.%Y')
+                    rate_clean = rate_str.replace('%', '').replace(',', '.').strip()
+                    rate_val = float(rate_clean)
+                    parsed_data.append([date_obj.strftime('%Y-%m-%d'), rate_val])
+                except ValueError as e:
+                    logger.warning(f"Warning: Failed to parse data row: {cols_text}. Error: {e}")
+                    continue
+            else:
+                continue
+        if not parsed_data:
+            logger.error("Failed to extract data after parsing table.")
+            return pd.DataFrame()
+        df = pd.DataFrame(parsed_data, columns=['TRADEDATE', 'KEY_RATE'])
+        logger.info(f"Extracted {len(df)} rows of data from HTML table.")
+        df = df.sort_values(by='TRADEDATE').reset_index(drop=True)
+        return df
+    except Exception as e:
+        logger.error(f"Error parsing HTML: {e}")
+        return pd.DataFrame()
+
+def save_key_rate_history_to_csv(df, output_dir, output_file):
+    """Сохраняет историю ключевой ставки в CSV файл."""
+    if df.empty:
+        logger.error("DataFrame with key rate history is empty, file will not be created.")
+        return
+    os.makedirs(output_dir, exist_ok=True)
+    filename = os.path.join(output_dir, output_file)
+    try:
+        df.to_csv(filename, index=False, encoding='utf-8-sig')
+        logger.info(f"Key rate history saved to {filename}")
+    except IOError as e:
+        logger.error(f"Error saving file: {e}")
+
+def main():
+    """Основная функция."""
+    logger.info("Starting collection of historical data for CBR key rate via HTML parsing...")
+    html_content = get_key_rate_html()
+    if html_content:
+        df = parse_key_rate_html(html_content)
+        save_key_rate_history_to_csv(df, OUTPUT_DIR, OUTPUT_FILE)
+    else:
+        logger.error("Failed to get HTML page with data.")
+    logger.info("Collection of historical data for CBR key rate (via HTML) completed (or interrupted).")
+
+if __name__ == "__main__":
+    main()
+
+```
+
+### scripts\get_moex_stocks.py
+
+```py```
+# get_moex_stocks.py (полная прокачанная версия)
+import requests
+import pandas as pd
+import time
+import os
+import json
+import logging
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--config', default='config.json', help='Path to config file')
+args = parser.parse_args()
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', handlers=[logging.FileHandler('get_moex_stocks.log'), logging.StreamHandler()])
+logger = logging.getLogger(__name__)
+
+def load_config(config_file):
+    if not os.path.exists(config_file):
+        logger.error(f"Config file {config_file} not found.")
+        raise FileNotFoundError
+    with open(config_file, 'r') as f:
+        return json.load(f)
+
+config = load_config(args.config)
+
+MOEX_BASE_URL = "https://iss.moex.com/iss"
+MARKET = "shares"
+ENGINE = "stock"
+REQUEST_PARAMS = {
+    "iss.meta": "off",
+    "iss.only": "securities,marketdata",
+    "securities.columns": "SECID,BOARDID,SHORTNAME,INSTRID,MARKETCODE",
+    "marketdata.columns": "SECID,BOARDID,VALTODAY"
+}
+CSV_OUTPUT_FILE = "moex_stocks_liquid_boards.csv"
+
+def get_all_securities_with_marketdata():
+    """Получает данные о всех инструментах и рыночной информации с MOEX ISS."""
+    url = f"{MOEX_BASE_URL}/engines/{ENGINE}/markets/{MARKET}/securities.json"
+    logger.info(f"Requesting data from {url}")
+    try:
+        response = requests.get(url, params=REQUEST_PARAMS)
+        response.raise_for_status()
+        data = response.json()
+        return data
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error requesting to MOEX API: {e}")
+        return None
+    except ValueError as e:
+        logger.error(f"Error parsing JSON response: {e}")
+        return None
+
+def process_data_to_liquid_stocks_list(data):
+    """Обрабатывает полученные данные, фильтрует акции и находит самый ликвидный режим."""
+    if not data or 'securities' not in data or 'marketdata' not in data:
+        logger.error("Received data does not contain expected 'securities' or 'marketdata' tables.")
+        return pd.DataFrame()
+    securities_df = pd.DataFrame(data['securities']['data'], columns=data['securities']['columns'])
+    marketdata_df = pd.DataFrame(data['marketdata']['data'], columns=data['marketdata']['columns'])
+    logger.info(f"Total instruments in 'securities': {len(securities_df)}")
+    logger.info(f"Total records in 'marketdata': {len(marketdata_df)}")
+    securities_df = securities_df.dropna(subset=['INSTRID', 'MARKETCODE'])
+    equity_stocks_df = securities_df[
+        (securities_df['MARKETCODE'] == 'FNDT') &
+        (securities_df['INSTRID'].str.startswith('EQ', na=False))
+    ]
+    logger.info(f"After filtering by MARKETCODE='FNDT' and INSTRID.startswith('EQ'): {len(equity_stocks_df)}")
+    if equity_stocks_df.empty:
+        logger.warning("No ordinary stocks found after filtering (MARKETCODE='FNDT', INSTRID starts with 'EQ').")
+        logger.info("Unique INSTRID and MARKETCODE in original data:")
+        logger.info(securities_df[['INSTRID', 'MARKETCODE']].drop_duplicates())
+        return pd.DataFrame()
+    marketdata_df = marketdata_df.dropna(subset=['VALTODAY'])
+    merged_df = equity_stocks_df[['SECID', 'BOARDID', 'SHORTNAME']].merge(
+        marketdata_df[['SECID', 'BOARDID', 'VALTODAY']], on=['SECID', 'BOARDID'], how='inner'
+    )
+    logger.info(f"After merging with marketdata and filtering by VALTODAY: {len(merged_df)}")
+    if merged_df.empty:
+        logger.warning("No data left after merging with market data and VALTODAY filtering.")
+        return pd.DataFrame()
+    merged_df = merged_df.sort_values(by=['SECID', 'VALTODAY'], ascending=[True, False])
+    liquid_stocks_df = merged_df.groupby('SECID').first().reset_index()
+    final_df = liquid_stocks_df[['SECID', 'BOARDID', 'SHORTNAME']].copy()
+    final_df.rename(columns={'SHORTNAME': 'NAME'}, inplace=True)
+    logger.info(f"Found {len(final_df)} ordinary stocks with most liquid mode.")
+    return final_df
+
+def save_to_csv(df, filename):
+    """Сохраняет DataFrame в CSV файл."""
+    if df.empty:
+        logger.error("DataFrame is empty, file will not be created.")
+        return
+    try:
+        df.to_csv(filename, index=False, encoding='utf-8-sig')
+        logger.info(f"Stocks list successfully saved to {filename}")
+    except IOError as e:
+        logger.error(f"Error saving file: {e}")
+
+def main():
+    """Основная функция."""
+    logger.info("Starting collection of ordinary stocks list from MOEX...")
+    data = get_all_securities_with_marketdata()
+    if data:
+        logger.info("Data successfully received. Processing...")
+        liquid_stocks_df = process_data_to_liquid_stocks_list(data)
+        logger.info("Processing completed. Saving result...")
+        save_to_csv(liquid_stocks_df, CSV_OUTPUT_FILE)
+    else:
+        logger.error("Failed to get data from MOEX API.")
+
+if __name__ == "__main__":
+    main()
+
+```
+
+### scripts\get_oil_future_history.py
+
+```py```
+# get_oil_future_history.py (полная прокачанная версия)
+import pandas as pd
+import requests
+import time
+import os
+import subprocess
+import json
+import logging
+import argparse
+import sys
+
+# Настройка аргументов командной строки
+parser = argparse.ArgumentParser()
+parser.add_argument('--config', default='config.json', help='Path to config file')
+args = parser.parse_args()
+
+# Настройка логирования
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s',
+                    handlers=[logging.FileHandler('get_oil_future_history.log'), logging.StreamHandler()])
+logger = logging.getLogger(__name__)
+
+def load_config(config_file):
+    if not os.path.exists(config_file):
+        logger.error(f"Config file {config_file} not found.")
+        raise FileNotFoundError
+    with open(config_file, 'r') as f:
+        return json.load(f)
+
+config = load_config(args.config)
+
+INPUT_CONTRACT_FILE = "current_oil_future_contract.txt"
+OUTPUT_DIR = config['historical_data_oil_dir']
+START_DATE = config['start_date']
+MOEX_BASE_URL = "https://iss.moex.com/iss"
+MARKET = "forts"
+ENGINE = "futures"
+REQUEST_PARAMS = {
+    "from": START_DATE,
+    "iss.meta": "off",
+}
+REQUEST_DELAY = 1.0
+REQUEST_TIMEOUT = 45
+
+def run_find_oil_futures(config_file):
+    """Запускает find_oil_futures.py для создания current_oil_future_contract.txt."""
+    script_path = os.path.join("scripts", "find_oil_futures.py")
+    if not os.path.exists(script_path):
+        logger.error(f"Script {script_path} not found.")
+        return False
+    try:
+        logger.info(f"Running {script_path} to generate {INPUT_CONTRACT_FILE}")
+        result = subprocess.run(
+            [sys.executable, script_path, "--config", config_file],
+            capture_output=True,
+            text=True
+        )
+        if result.returncode == 0:
+            logger.info(f"{script_path} executed successfully.")
+            return True
+        else:
+            logger.error(f"Error running {script_path}: {result.stderr}")
+            return False
+    except Exception as e:
+        logger.error(f"Exception while running {script_path}: {e}")
+        return False
+
+def load_current_contract_from_file(filename):
+    """Загружает тикер текущего фьючерсного контракта из файла."""
+    if not os.path.exists(filename):
+        logger.info(f"File {filename} not found. Attempting to run find_oil_futures.py...")
+        success = run_find_oil_futures(args.config)
+        if not success or not os.path.exists(filename):
+            logger.error(f"Failed to generate {filename} after running find_oil_futures.py.")
+            return None
+    try:
+        with open(filename, 'r') as f:
+            secid = f.read().strip()
+        logger.info(f"Loaded futures ticker: {secid}")
+        return secid
+    except Exception as e:
+        logger.error(f"Error reading file {filename}: {e}")
+        return None
+
+def get_oil_future_history(secid):
+    """Получает исторические данные для фьючерсного контракта с указанного режима."""
+    boardid = "RFUD"
+    url = f"{MOEX_BASE_URL}/history/engines/{ENGINE}/markets/{MARKET}/boards/{boardid}/securities/{secid}.json"
+    logger.info(f"Requesting history for future {secid} ({boardid}) from {url}")
+    try:
+        response = requests.get(url, params=REQUEST_PARAMS, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        data = response.json()
+        return data
+    except requests.exceptions.Timeout:
+        logger.error(f"Timeout requesting history for future {secid} ({boardid}). Skipping.")
+        return None
+    except requests.exceptions.ConnectionError as e:
+        logger.error(f"Connection error requesting history for future {secid} ({boardid}): {e}")
+        return None
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error requesting history for future {secid} ({boardid}): {e}")
+        return None
+    except ValueError as e:
+        logger.error(f"Error parsing JSON response for future {secid} ({boardid}): {e}")
+        return None
+
+def save_oil_future_history_to_csv(data, secid, output_dir):
+    """Сохраняет исторические данные фьючерса в CSV файл."""
+    if not data or 'history' not in data or not data['history']['data']:
+        logger.warning(f"No historical data for future {secid}, file not created.")
+        return False
+    os.makedirs(output_dir, exist_ok=True)
+    df = pd.DataFrame(data['history']['data'], columns=data['history']['columns'])
+    logger.info(f"Received {len(df)} rows of history for {secid}. Columns: {df.columns.tolist()}")
+    required_cols = ['TRADEDATE', 'OPEN', 'CLOSE', 'HIGH', 'LOW', 'VALUE', 'VOLUME']
+    if all(col in df.columns for col in required_cols):
+        df = df[required_cols]
+        filename = os.path.join(output_dir, f"{secid}_history.csv")
+        try:
+            df.to_csv(filename, index=False, encoding='utf-8-sig')
+            logger.info(f"History for future {secid} saved to {filename}")
+            return True
+        except IOError as e:
+            logger.error(f"Error saving file for future {secid}: {e}")
+            return False
+    else:
+        logger.error(f"Incorrect columns in data for future {secid}: {df.columns.tolist()}. Skipped.")
+        return False
+
+def main():
+    """Основная функция."""
+    try:
+        logger.info("Starting collection of historical data for oil future...")
+        secid = load_current_contract_from_file(INPUT_CONTRACT_FILE)
+        if secid is None:
+            logger.error("Failed to load futures contract ticker. Exiting.")
+            sys.exit(1)
+        data = get_oil_future_history(secid)
+        if data and save_oil_future_history_to_csv(data, secid, OUTPUT_DIR):
+            logger.info("Collection of historical data for oil future completed.")
+            sys.exit(0)
+        else:
+            logger.error(f"Failed to get or save historical data for future {secid}.")
+            sys.exit(1)
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()
+
+```
+
+### scripts\plot_incremental_learning.py
+
+```py```
+# plot_incremental_learning.py (полная прокачанная версия)
+import pandas as pd
+import matplotlib.pyplot as plt
+import os
+import json
+import logging
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--config', default='config.json', help='Path to config file')
+args = parser.parse_args()
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', handlers=[logging.FileHandler('plot_incremental_learning.log'), logging.StreamHandler()])
+logger = logging.getLogger(__name__)
+
+def load_config(config_file):
+    if not os.path.exists(config_file):
+        logger.error(f"Config file {config_file} not found.")
+        raise FileNotFoundError
+    with open(config_file, 'r') as f:
+        return json.load(f)
+
+config = load_config(args.config)
+
+LOG_FILE = os.path.join(config['logs_dir'], 'incremental_learning_log_final.csv')
+OUTPUT_PLOT_FILE = os.path.join(config['plots_dir'], 'incremental_learning_accuracy_plot.png')
+FIGURE_SIZE = (12, 6)
+DPI = 150
+
+def plot_accuracy_over_time(log_filename, output_plot_filename):
+    """Строит график нарастающей точности от даты."""
+    logger.info(f"Loading incremental learning log from {log_filename}...")
+    if not os.path.exists(log_filename):
+        logger.error(f"File {log_filename} not found.")
+        return
+    try:
+        df = pd.read_csv(log_filename, encoding='utf-8-sig')
+        logger.info(f"Log loaded: {len(df)} rows.")
+    except Exception as e:
+        logger.error(f"Error loading {log_filename}: {e}")
+        return
+    if df.empty:
+        logger.error("Log is empty.")
+        return
+    required_columns = ['TRADEDATE', 'ACCURACY_CUMULATIVE']
+    if not all(col in df.columns for col in required_columns):
+        logger.error(f"Missing required columns in file {log_filename}: {required_columns}")
+        logger.info(f"Found columns: {df.columns.tolist()}")
+        return
+    logger.info("Converting TRADEDATE column to datetime format...")
+    df['TRADEDATE'] = pd.to_datetime(df['TRADEDATE'], format='%Y-%m-%d', errors='coerce')
+    nat_count = df['TRADEDATE'].isna().sum()
+    if nat_count > 0:
+        logger.warning(f"Warning: {nat_count} rows have invalid date format and will be removed.")
+        df = df.dropna(subset=['TRADEDATE'])
+    if df.empty:
+        logger.error("Log is empty after cleaning invalid dates.")
+        return
+    logger.info("Sorting data by date...")
+    df = df.sort_values(by='TRADEDATE').reset_index(drop=True)
+    logger.info(f"Data sorted. Date range: {df['TRADEDATE'].min()} - {df['TRADEDATE'].max()}")
+    logger.info("Building plot...")
+    plt.figure(figsize=FIGURE_SIZE, dpi=DPI)
+    plt.plot(df['TRADEDATE'], df['ACCURACY_CUMULATIVE'], marker='o', linestyle='-', linewidth=1, markersize=3, color='blue')
+    plt.title('Изменение точности модели в процессе инкрементального обучения')
+    plt.xlabel('Дата (TRADEDATE)')
+    plt.ylabel('Нарастающая точность (ACCURACY_CUMULATIVE)')
+    plt.grid(True, linestyle='--', alpha=0.5)
+    plt.gcf().autofmt_xdate()
+    plt.tight_layout()
+    logger.info(f"Saving plot to {output_plot_filename}...")
+    plt.savefig(output_plot_filename)
+    logger.info("Plot saved.")
+    plt.show()
+    plt.close()
+
+def main():
+    """Основная функция."""
+    logger.info("Starting plot of incremental learning...")
+    plot_accuracy_over_time(LOG_FILE, OUTPUT_PLOT_FILE)
+    logger.info("Plotting completed.")
+
+if __name__ == "__main__":
+    main()
+
+```
+
+### scripts\predict_and_learn.py
+
+```py```
+# predict_and_learn.py
+import pandas as pd
+import numpy as np
+import joblib
+import os
+import sys
+from datetime import datetime, timedelta
+from sklearn.linear_model import PassiveAggressiveClassifier
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import accuracy_score
+import json
+import logging
+import argparse
+import requests  # Для API MOEX
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--config', default='config.json', help='Path to config file')
+args = parser.parse_args()
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s',
+                    handlers=[logging.FileHandler('predict_and_learn.log'), logging.StreamHandler()])
+logger = logging.getLogger(__name__)
+
+def load_config(config_file):
+    if not os.path.exists(config_file):
+        logger.error(f"Config file {config_file} not found.")
+        raise FileNotFoundError
+    with open(config_file, 'r') as f:
+        return json.load(f)
+
+config = load_config(args.config)
+
+MODELS_DIR = config['models_dir']
+SCALERS_DIR = config['scalers_dir']
+DATASET_FILE = os.path.join(config['data_dir'], 'combined_dataset_all_targets.csv')
+PREDICTIONS_LOG_FILE = os.path.join(config['logs_dir'], 'predictions_log.csv')
+MODEL_UPDATE_LOG_FILE = os.path.join(config['logs_dir'], 'model_updates_log.csv')
+TODAY = datetime.today().strftime('%Y-%m-%d')
+YESTERDAY = (datetime.today() - timedelta(days=1)).strftime('%Y-%m-%d')
+
+def load_models_and_scalers(models_dir, scalers_dir):
+    logger.info(f"Loading models from {models_dir} and scalers from {scalers_dir}...")
+    models = {}
+    scalers = {}
+    if not os.path.exists(models_dir) or not os.path.exists(scalers_dir):
+        logger.error(f"Directories {models_dir} or {scalers_dir} do not exist.")
+        return models, scalers
+    model_files = [f for f in os.listdir(models_dir) if f.startswith('model_') and f.endswith('.joblib')]
+    scaler_files = [f for f in os.listdir(scalers_dir) if f.startswith('scaler_') and f.endswith('.joblib')]
+    logger.info(f"Found {len(model_files)} model files.")
+    logger.info(f"Found {len(scaler_files)} scaler files.")
+    for model_file in model_files:
+        ticker = model_file.replace('model_', '').replace('.joblib', '')
+        model_path = os.path.join(models_dir, model_file)
+        try:
+            model = joblib.load(model_path)
+            models[ticker] = model
+            logger.info(f"  Loaded model for {ticker} from {model_path}")
+        except Exception as e:
+            logger.error(f"  Error loading model for {ticker} from {model_path}: {e}")
+    for scaler_file in scaler_files:
+        ticker = scaler_file.replace('scaler_', '').replace('.joblib', '')
+        scaler_path = os.path.join(scalers_dir, scaler_file)
+        try:
+            scaler = joblib.load(scaler_path)
+            scalers[ticker] = scaler
+            logger.info(f"  Loaded scaler for {ticker} from {scaler_path}")
+        except Exception as e:
+            logger.error(f"  Error loading scaler for {ticker} from {scaler_path}: {e}")
+    logger.info(f"Successfully loaded {len(models)} models and {len(scalers)} scalers.")
+    return models, scalers
+
+def load_latest_data(dataset_file, num_days=1):
+    logger.info(f"Loading last {num_days} rows from {dataset_file} as new data...")
+    if not os.path.exists(dataset_file):
+        logger.error(f"File {dataset_file} not found.")
+        return pd.DataFrame(), pd.DataFrame()
+    try:
+        df = pd.read_csv(dataset_file, encoding='utf-8-sig')
+        logger.info(f"Dataset loaded: {len(df)} rows, {len(df.columns)} columns.")
+        latest_df = df.tail(num_days).reset_index(drop=True)
+        logger.info(f"Loaded last {num_days} rows.")
+        dates_df = latest_df[['TRADEDATE']].copy()
+        feature_columns = [col for col in df.columns if col not in ['TRADEDATE'] and not col.startswith('TARGET_DIRECTION_')]
+        features_df = latest_df[feature_columns].copy()
+        logger.info(f"Features (X) size: {features_df.shape}")
+        logger.info(f"Dates size: {dates_df.shape}")
+        return features_df, dates_df
+    except Exception as e:
+        logger.error(f"Error loading last data from {dataset_file}: {e}")
+        return pd.DataFrame(), pd.DataFrame()
+
+def prepare_features(features_df, scaler, ticker):
+    logger.info(f"  Preparing features for {ticker}...")
+    try:
+        features_scaled = scaler.transform(features_df)
+        logger.info(f"    Features scaled. Shape: {features_scaled.shape}")
+        return features_scaled
+    except Exception as e:
+        logger.error(f"    Error scaling features for {ticker}: {e}")
+        return None
+
+def make_predictions(models, scalers, features_df, dates_df):
+    logger.info("\n--- Making predictions for all models ---")
+    predictions = {}
+    for ticker, model in models.items():
+        scaler = scalers.get(ticker)
+        if scaler is None:
+            logger.warning(f"  Warning: Scaler for {ticker} not found. Skipping prediction.")
+            continue
+        features_scaled = prepare_features(features_df, scaler, ticker)
+        if features_scaled is None:
+            continue
+        try:
+            y_pred = model.predict(features_scaled)[0]
+            predictions[ticker] = {
+                'prediction': y_pred,
+                'date': dates_df.iloc[0]['TRADEDATE']
+            }
+            logger.info(f"  Prediction for {ticker}: {y_pred} (date: {dates_df.iloc[0]['TRADEDATE']})")
+        except Exception as e:
+            logger.error(f"  Error predicting for {ticker}: {e}")
+    return predictions
+
+def save_predictions(predictions, log_file):
+    if not predictions:
+        logger.warning("No predictions to save.")
+        return
+    logger.info(f"\n--- Saving predictions to {log_file} ---")
+    try:
+        os.makedirs(os.path.dirname(log_file), exist_ok=True)  # Создаем директорию logs
+        log_data = []
+        for ticker, pred_info in predictions.items():
+            log_data.append({
+                'TICKER': ticker,
+                'TRADEDATE': pred_info['date'],
+                'PREDICTED_DIRECTION': pred_info['prediction'],
+                'TIMESTAMP': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            })
+        log_df = pd.DataFrame(log_data)
+        if os.path.exists(log_file):
+            log_df.to_csv(log_file, mode='a', header=False, index=False, encoding='utf-8-sig')
+            logger.info(f"  Predictions added to existing log {log_file}.")
+        else:
+            log_df.to_csv(log_file, index=False, encoding='utf-8-sig')
+            logger.info(f"  Predictions saved to new log {log_file}.")
+    except Exception as e:
+        logger.error(f"  Error saving predictions to {log_file}: {e}")
+        sys.exit(1)
+
+def get_moex_data(ticker, start_date, end_date):
+    """Загружает данные с MOEX через ISS API."""
+    try:
+        url = f"https://iss.moex.com/iss/history/engines/stock/markets/shares/securities/{ticker}.json"
+        params = {
+            'from': start_date,
+            'till': end_date,
+            'iss.meta': 'off',
+            'iss.json': 'extended',
+            'history.columns': 'TRADEDATE,OPEN,HIGH,LOW,CLOSE,VOLUME'
+        }
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        data = response.json()
+        if 'history' not in data or not data['history']['data']:
+            logger.warning(f"No data found for {ticker} from {start_date} to {end_date}")
+            return pd.DataFrame()
+        df = pd.DataFrame(data['history']['data'], columns=['TRADEDATE', 'OPEN', 'HIGH', 'LOW', 'CLOSE', 'VOLUME'])
+        df['TRADEDATE'] = pd.to_datetime(df['TRADEDATE'], format='%Y-%m-%d')
+        return df
+    except Exception as e:
+        logger.error(f"Error fetching MOEX data for {ticker}: {e}")
+        return pd.DataFrame()
+
+def simulate_get_real_target_directions(tickers, prediction_date):
+    """Симулирует TARGET_DIRECTION, загружая данные CLOSE через API MOEX."""
+    logger.info(f"\n--- Simulating real TARGET_DIRECTION for {len(tickers)} tickers on date {prediction_date} ---")
+    prediction_date_dt = pd.to_datetime(prediction_date, format='%Y-%m-%d', errors='coerce')
+    if pd.isna(prediction_date_dt):
+        logger.error(f"Invalid prediction date: {prediction_date}")
+        return {}
+    # Для расчета TARGET_DIRECTION нужен следующий день
+    next_day = (prediction_date_dt + timedelta(days=1)).strftime('%Y-%m-%d')
+    real_targets = {}
+    for ticker in tickers:
+        try:
+            # Загружаем данные за два дня: день прогноза и следующий
+            df = get_moex_data(ticker, prediction_date, next_day)
+            if df.empty:
+                logger.warning(f"No data for {ticker} from {prediction_date} to {next_day}")
+                continue
+            df = df.sort_values('TRADEDATE')
+            if len(df) < 2:
+                logger.warning(f"Not enough data for {ticker} to calculate TARGET_DIRECTION")
+                continue
+            close_today = df[df['TRADEDATE'] == prediction_date_dt]['CLOSE'].iloc[0]
+            close_next = df[df['TRADEDATE'] == pd.to_datetime(next_day)]['CLOSE'].iloc[0]
+            if pd.isna(close_today) or pd.isna(close_next):
+                logger.warning(f"Missing CLOSE prices for {ticker} on {prediction_date} or {next_day}")
+                continue
+            # Вычисляем TARGET_DIRECTION: 1 (рост), 0 (без изменений), -1 (падение)
+            if close_next > close_today:
+                target_direction = 1
+            elif close_next < close_today:
+                target_direction = -1
+            else:
+                target_direction = 0
+            real_targets[ticker] = target_direction
+            logger.info(f"  Real TARGET_DIRECTION for {ticker} on {prediction_date}: {target_direction}")
+        except Exception as e:
+            logger.error(f"Error calculating TARGET_DIRECTION for {ticker}: {e}")
+    return real_targets
+
+def perform_incremental_learning(models, scalers, features_df, real_targets, update_log_file):
+    logger.info(f"\n--- Performing incremental learning for models with real labels ---")
+    updated_models = []
+    correct_predictions = 0
+    total_predictions = 0
+    for ticker, y_true in real_targets.items():
+        model = models.get(ticker)
+        scaler = scalers.get(ticker)
+        if model is None or scaler is None:
+            logger.warning(f"  Model or scaler for {ticker} not found. Skipping retraining.")
+            continue
+        features_scaled = prepare_features(features_df, scaler, ticker)
+        if features_scaled is None:
+            continue
+        try:
+            y_pred_before = model.predict(features_scaled)[0]
+            is_correct = (y_pred_before == y_true)
+            correct_predictions += int(is_correct)
+            total_predictions += 1
+            classes = np.array([-1, 0, 1])
+            model.partial_fit(features_scaled, [y_true], classes=classes)
+            logger.info(f"  Model for {ticker} retrained on real label {y_true}. Prediction was {y_pred_before} ({'Correct' if is_correct else 'Incorrect'}).")
+            updated_models.append(ticker)
+        except Exception as e:
+            logger.error(f"  Error retraining model for {ticker}: {e}")
+    if total_predictions > 0:
+        accuracy = correct_predictions / total_predictions
+        logger.info(f"\nPrediction accuracy before retraining: {accuracy:.4f} ({correct_predictions}/{total_predictions})")
+        try:
+            os.makedirs(os.path.dirname(update_log_file), exist_ok=True)  # Создаем директорию logs
+            update_log_entry = pd.DataFrame([{
+                'UPDATE_DATE': datetime.now().strftime('%Y-%m-%d'),
+                'ACCURACY_BEFORE_UPDATE': accuracy,
+                'UPDATED_MODELS_COUNT': len(updated_models),
+                'UPDATED_MODELS': ', '.join(updated_models),
+                'TIMESTAMP': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            }])
+            if os.path.exists(update_log_file):
+                update_log_entry.to_csv(update_log_file, mode='a', header=False, index=False, encoding='utf-8-sig')
+            else:
+                update_log_entry.to_csv(update_log_file, index=False, encoding='utf-8-sig')
+            logger.info(f"Model update log saved to {update_log_file}.")
+        except Exception as e:
+            logger.error(f"Error saving model update log: {e}")
+            sys.exit(1)
+    else:
+        logger.info("No models for retraining (no real labels).")
+
+def save_updated_models(models, scalers, models_dir, scalers_dir):
+    logger.info(f"\n--- Saving updated models and scalers ---")
+    for ticker, model in models.items():
+        model_path = os.path.join(models_dir, f'model_{ticker}.joblib')
+        try:
+            joblib.dump(model, model_path)
+            logger.info(f"  Updated model for {ticker} saved to {model_path}")
+        except Exception as e:
+            logger.error(f"  Error saving updated model for {ticker}: {e}")
+    for ticker, scaler in scalers.items():
+        scaler_path = os.path.join(scalers_dir, f'scaler_{ticker}.joblib')
+        try:
+            joblib.dump(scaler, scaler_path)
+            logger.info(f"  Updated scaler for {ticker} saved to {scaler_path}")
+        except Exception as e:
+            logger.error(f"  Error saving updated scaler for {ticker}: {e}")
+    logger.info("Saving updated models and scalers completed.")
+
+def main():
+    try:
+        logger.info("=== LAUNCHING COMBAT SCRIPT FOR PREDICTION AND INCREMENTAL LEARNING ===")
+        logger.info(f"Launch date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        models, scalers = load_models_and_scalers(MODELS_DIR, SCALERS_DIR)
+        if not models or not scalers:
+            logger.error("Failed to load models or scalers. Exiting.")
+            sys.exit(1)
+        features_df, dates_df = load_latest_data(DATASET_FILE, num_days=1)
+        if features_df.empty or dates_df.empty:
+            logger.error("Failed to load new data. Exiting.")
+            sys.exit(1)
+        prediction_date = dates_df.iloc[0]['TRADEDATE']
+        logger.info(f"Prediction date: {prediction_date}")
+        predictions = make_predictions(models, scalers, features_df, dates_df)
+        if not predictions:
+            logger.error("Failed to make any predictions. Exiting.")
+            sys.exit(1)
+        save_predictions(predictions, PREDICTIONS_LOG_FILE)
+        real_targets = simulate_get_real_target_directions(list(predictions.keys()), prediction_date)
+        if not real_targets:
+            logger.error("Failed to get real TARGET_DIRECTION. Retraining impossible.")
+            sys.exit(1)
+        perform_incremental_learning(models, scalers, features_df, real_targets, MODEL_UPDATE_LOG_FILE)
+        save_updated_models(models, scalers, MODELS_DIR, SCALERS_DIR)
+        logger.info("\n=== COMBAT SCRIPT COMPLETED ===")
+        sys.exit(0)
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()
+
+```
+
+### scripts\train_all_models.py
+
+```py```
+# train_all_models.py
+import pandas as pd
+import numpy as np
+from sklearn.linear_model import PassiveAggressiveClassifier
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from sklearn.model_selection import train_test_split
+import os
+import sys
+import joblib
+from datetime import datetime
+import json
+import logging
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--config', default='config.json', help='Path to config file')
+args = parser.parse_args()
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s',
+                    handlers=[logging.FileHandler('train_all_models.log'), logging.StreamHandler()])
+logger = logging.getLogger(__name__)
+
+def load_config(config_file):
+    if not os.path.exists(config_file):
+        logger.error(f"Config file {config_file} not found.")
+        raise FileNotFoundError
+    with open(config_file, 'r') as f:
+        return json.load(f)
+
+config = load_config(args.config)
+
+DATASET_FILE = os.path.join(config['data_dir'], 'combined_dataset_all_targets.csv')
+OUTPUT_MODELS_DIR = config['models_dir']
+OUTPUT_SCALERS_DIR = config['scalers_dir']
+OUTPUT_RESULTS_FILE = os.path.join(config['logs_dir'], 'model_training_results.csv')
+TEST_SIZE = 0.2
+RANDOM_STATE = 42
+BEST_PARAMS = {
+    'C': 1.0,
+    'loss': 'hinge',
+    'average': False,
+    'random_state': RANDOM_STATE,
+    'max_iter': 1000,
+    'tol': 1e-3,
+    'fit_intercept': True,
+    'shuffle': True,
+}
+
+def load_dataset(filename):
+    logger.info(f"Loading dataset from {filename}...")
+    if not os.path.exists(filename):
+        logger.error(f"File {filename} not found.")
+        return pd.DataFrame()
+    df = pd.read_csv(filename, encoding='utf-8-sig')
+    logger.info(f"Dataset loaded: {len(df)} rows, {len(df.columns)} columns.")
+    return df
+
+def prepare_features_and_target(df, target_col):
+    logger.info(f"  Preparing features and target variable for {target_col}...")
+    if target_col not in df.columns:
+        logger.error(f"    Error: Target variable '{target_col}' not found.")
+        return None, None, None, None
+    target_cols_all = [col for col in df.columns if col.startswith('TARGET_DIRECTION_')]
+    feature_columns = [col for col in df.columns if col not in ['TRADEDATE'] + target_cols_all]
+    X = df[feature_columns]
+    y = df[target_col]
+    logger.info(f"    X size before missing values processing: {X.shape}")
+    logger.info(f"    y size before missing values processing: {y.shape}")
+    y_not_nan_mask = ~y.isnull()
+    logger.info(f"    Rows where {target_col} NOT NaN: {y_not_nan_mask.sum()}")
+    X_filtered = X[y_not_nan_mask]
+    y_filtered = y[y_not_nan_mask]
+    price_cols = [col for col in X_filtered.columns if any(suffix in col for suffix in ['_OPEN', '_HIGH', '_LOW', '_CLOSE'])]
+    volume_cols = [col for col in X_filtered.columns if '_VOLUME' in col]
+    other_cols = [col for col in X_filtered.columns if col not in price_cols + volume_cols]
+    logger.info(f"    Filling prices (ffill/bfill): {len(price_cols)} columns.")
+    X_filtered[price_cols] = X_filtered[price_cols].ffill().bfill()
+    logger.info(f"    Filling volumes (0): {len(volume_cols)} columns.")
+    X_filtered[volume_cols] = X_filtered[volume_cols].fillna(0)
+    logger.info(f"    Filling others (0 or ffill): {len(other_cols)} columns.")
+    cbr_key_rate_cols = [col for col in other_cols if 'CBR_KEY_RATE' in col]
+    if cbr_key_rate_cols:
+        logger.info(f"      Filling CBR_KEY_RATE (ffill): {cbr_key_rate_cols}")
+        X_filtered[cbr_key_rate_cols] = X_filtered[cbr_key_rate_cols].ffill()
+        other_cols = [col for col in other_cols if col not in cbr_key_rate_cols]
+    if other_cols:
+        logger.info(f"      Filling remaining (0): {other_cols}")
+        X_filtered[other_cols] = X_filtered[other_cols].fillna(0)
+    mask_after_fill = ~X_filtered.isnull().any(axis=1)
+    X_clean = X_filtered[mask_after_fill]
+    y_clean = y_filtered[mask_after_fill]
+    logger.info(f"    After removing rows with missing values in X after processing: {len(X_clean)} rows.")
+    if len(X_clean) == 0:
+        logger.error(f"    No rows left after cleaning for {target_col}.")
+        return None, None, None, None
+    try:
+        X_train, X_test, y_train, y_test = train_test_split(
+            X_clean, y_clean, test_size=TEST_SIZE, random_state=RANDOM_STATE, stratify=y_clean
+        )
+        logger.info(f"    Training sample size: {len(X_train)}")
+        logger.info(f"    Test sample size: {len(X_test)}")
+        logger.info(f"    Classes in y_train: {y_train.value_counts().sort_index()}")
+        logger.info(f"    Classes in y_test: {y_test.value_counts().sort_index()}")
+        return X_train, X_test, y_train, y_test
+    except ValueError as e:
+        logger.error(f"    Error splitting data for {target_col}: {e}")
+        return None, None, None, None
+
+def initialize_model(params=None):
+    if params is None:
+        params = BEST_PARAMS
+    model_params = params.copy()
+    model = PassiveAggressiveClassifier(**model_params)
+    logger.info(f"    Initialized PassiveAggressiveClassifier with parameters: {model.get_params()}")
+    return model
+
+def train_and_save_model(model, scaler, X_train, y_train, ticker):
+    logger.info(f"  Training model for {ticker}...")
+    if len(np.unique(y_train)) < 2:
+        logger.error(f"    Not all classes represented in training sample for {ticker}.")
+        return False
+    X_train_scaled = scaler.fit_transform(X_train)
+    model.fit(X_train_scaled, y_train)
+    logger.info(f"    Model for {ticker} trained.")
+    os.makedirs(OUTPUT_MODELS_DIR, exist_ok=True)
+    os.makedirs(OUTPUT_SCALERS_DIR, exist_ok=True)
+    model_filename = os.path.join(OUTPUT_MODELS_DIR, f'model_{ticker}.joblib')
+    scaler_filename = os.path.join(OUTPUT_SCALERS_DIR, f'scaler_{ticker}.joblib')
+    try:
+        joblib.dump(model, model_filename)
+        joblib.dump(scaler, scaler_filename)
+        logger.info(f"    Model for {ticker} saved to {model_filename}")
+        logger.info(f"    Scaler for {ticker} saved to {scaler_filename}")
+        return True
+    except IOError as e:
+        logger.error(f"    Error saving model/scaler for {ticker}: {e}")
+        return False
+
+def evaluate_model(model, scaler, X_test, y_test, ticker):
+    logger.info(f"  Evaluating model for {ticker}...")
+    if len(y_test) == 0:
+        logger.error(f"    Test sample for {ticker} is empty.")
+        return None, None, None, None
+    X_test_scaled = scaler.transform(X_test)
+    y_pred = model.predict(X_test_scaled)
+    accuracy = accuracy_score(y_test, y_pred)
+    unique_labels = np.unique(np.concatenate([y_test, y_pred]))
+    precision = precision_score(y_test, y_pred, average='weighted', labels=unique_labels, zero_division=0)
+    recall = recall_score(y_test, y_pred, average='weighted', labels=unique_labels, zero_division=0)
+    f1 = f1_score(y_test, y_pred, average='weighted', labels=unique_labels, zero_division=0)
+    logger.info(f"    Accuracy for {ticker}: {accuracy:.4f}")
+    logger.info(f"    Precision for {ticker}: {precision:.4f}")
+    logger.info(f"    Recall for {ticker}: {recall:.4f}")
+    logger.info(f"    F1-score for {ticker}: {f1:.4f}")
+    return accuracy, precision, recall, f1
+
+def main():
+    try:
+        logger.info("Starting training models for ALL stocks...")
+        df = load_dataset(DATASET_FILE)
+        if df.empty:
+            logger.error("Failed to load dataset. Exiting.")
+            sys.exit(1)
+        target_cols_all = [col for col in df.columns if col.startswith('TARGET_DIRECTION_')]
+        tickers = [col.replace('TARGET_DIRECTION_', '') for col in target_cols_all]
+        logger.info(f"Found {len(target_cols_all)} target variables for {len(tickers)} stocks.")
+        results = []
+        for i, (target_col, ticker) in enumerate(zip(target_cols_all, tickers)):
+            logger.info(f"\n--- Processing {i+1}/{len(tickers)}: {ticker} ---")
+            X_train, X_test, y_train, y_test = prepare_features_and_target(df, target_col)
+            if X_train is None or X_test is None:
+                logger.warning(f"  Skipped {ticker} due to data errors.")
+                results.append({
+                    'TICKER': ticker,
+                    'ACCURACY': np.nan,
+                    'PRECISION': np.nan,
+                    'RECALL': np.nan,
+                    'F1_SCORE': np.nan,
+                    'STATUS': 'FAILED_TO_PREPARE_DATA'
+                })
+                continue
+            model = initialize_model()
+            scaler = StandardScaler()
+            success = train_and_save_model(model, scaler, X_train, y_train, ticker)
+            if not success:
+                logger.warning(f"  Failed to train or save model for {ticker}.")
+                results.append({
+                    'TICKER': ticker,
+                    'ACCURACY': np.nan,
+                    'PRECISION': np.nan,
+                    'RECALL': np.nan,
+                    'F1_SCORE': np.nan,
+                    'STATUS': 'FAILED_TO_TRAIN_OR_SAVE'
+                })
+                continue
+            acc, prec, rec, f1 = evaluate_model(model, scaler, X_test, y_test, ticker)
+            if acc is not None:
+                results.append({
+                    'TICKER': ticker,
+                    'ACCURACY': acc,
+                    'PRECISION': prec,
+                    'RECALL': rec,
+                    'F1_SCORE': f1,
+                    'STATUS': 'SUCCESS'
+                })
+            else:
+                results.append({
+                    'TICKER': ticker,
+                    'ACCURACY': np.nan,
+                    'PRECISION': np.nan,
+                    'RECALL': np.nan,
+                    'F1_SCORE': np.nan,
+                    'STATUS': 'FAILED_TO_EVALUATE'
+                })
+        logger.info(f"\n--- Saving training results for {len(results)} models ---")
+        results_df = pd.DataFrame(results)
+        try:
+            os.makedirs(os.path.dirname(OUTPUT_RESULTS_FILE), exist_ok=True)  # Создаем директорию logs
+            results_df.to_csv(OUTPUT_RESULTS_FILE, index=False, encoding='utf-8-sig')
+            logger.info(f"Training results saved to {OUTPUT_RESULTS_FILE}")
+        except IOError as e:
+            logger.error(f"Error saving results: {e}")
+            sys.exit(1)
+        logger.info("Training models for ALL stocks completed.")
+        sys.exit(0)
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()
+
+```
+
