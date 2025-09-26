@@ -1,111 +1,81 @@
+# scripts/data_collection/get_oil_future_history.py
 import pandas as pd
 import requests
 import time
 import os
+from config import HISTORICAL_DATA_DIR, SCRIPTS_DIR
 
-# --- Конфигурация ---
-INPUT_CONTRACT_FILE = "current_oil_future_contract.txt"
-OUTPUT_DIR = "historical_data_oil"
-START_DATE = "2023-01-01" # Используем ту же дату, что и для других активов
+# Конфигурация
+INPUT_FILE = os.path.join(HISTORICAL_DATA_DIR['stocks'], "current_oil_future_contract.txt")
+OUTPUT_DIR = HISTORICAL_DATA_DIR['oil']
+START_DATE = "2023-01-01"
 MOEX_BASE_URL = "https://iss.moex.com/iss"
-MARKET = "forts" # Рынок срочной торговли
-ENGINE = "futures" # Торговая система срочного рынка
-REQUEST_PARAMS = {
-    "from": START_DATE,
-    "iss.meta": "off",
-    # Используем правильный endpoint для истории: /history/engines/.../markets/.../boards/.../securities/[SECID]
-    # Предполагаемые столбцы: TRADEDATE, OPEN, CLOSE, HIGH, LOW, VALUE, VOLUME
-    # Проверим сначала, какие столбцы возвращает API для истории фьючерса.
-}
-# Увеличиваем задержку и таймаут для стабильности
+MARKET = "forts"
+ENGINE = "futures"
+BOARDID = "RFUD"  # Режим торгов для фьючерсов на нефть
 REQUEST_DELAY = 1.0
-REQUEST_TIMEOUT = 45
 
-def load_current_contract_from_file(filename):
-    """Загружает тикер текущего фьючерсного контракта из файла."""
+def load_current_contract(filename):
+    """Загружает текущий контракт из файла."""
     try:
         with open(filename, 'r') as f:
-            secid = f.read().strip()
-        print(f"Загружен тикер фьючерсного контракта: {secid}")
-        return secid
-    except FileNotFoundError:
-        print(f"Файл {filename} не найден.")
-        return None
+            return f.read().strip()
     except Exception as e:
-        print(f"Ошибка при чтении файла {filename}: {e}")
+        print(f"Ошибка загрузки {filename}: {e}")
         return None
 
-def get_oil_future_history(secid):
-    """Получает исторические данные для фьючерсного контракта с указанного режима."""
-    # Используем endpoint для истории с указанием BOARDID, как для акций/валют
-    # Ищем BOARDID для BRV5 в предыдущем ответе или устанавливаем по умолчанию
-    # Из предыдущего запроса к /securities/ мы знаем, что BOARDID для BRV5 - RFUD
-    boardid = "RFUD" # Устанавливаем вручную, так как он известен из спецификации
-    url = f"{MOEX_BASE_URL}/history/engines/{ENGINE}/markets/{MARKET}/boards/{boardid}/securities/{secid}.json"
-    print(f"  Запрашиваю историю для фьючерса {secid} ({boardid}) с {url}")
+def get_oil_history(secid):
+    """Получает исторические данные для фьючерса на нефть."""
+    url = f"{MOEX_BASE_URL}/history/engines/{ENGINE}/markets/{MARKET}/boards/{BOARDID}/securities/{secid}.json"
+    params = {
+        "from": START_DATE,
+        "iss.meta": "off"
+    }
+
     try:
-        response = requests.get(url, params=REQUEST_PARAMS, timeout=REQUEST_TIMEOUT)
+        response = requests.get(url, params=params, timeout=30)
         response.raise_for_status()
         data = response.json()
-        return data
-    except requests.exceptions.Timeout:
-        print(f"    Таймаут при запросе истории для фьючерса {secid} ({boardid}). Пропускаю.")
-        return None
-    except requests.exceptions.ConnectionError as e: # Обработка ConnectionError, включая NewConnectionError
-        print(f"    Ошибка подключения при запросе истории для фьючерса {secid} ({boardid}): {e}")
-        return None
-    except requests.exceptions.RequestException as e:
-        if isinstance(e, KeyboardInterrupt):
-            print(f"\n    Запрос прерван пользователем (Ctrl+C) для фьючерса {secid} ({boardid}).")
-            raise
-        print(f"    Ошибка при запросе истории для фьючерса {secid} ({boardid}): {e}")
-        return None
-    except ValueError as e: # Ошибка при парсинге JSON
-        print(f"    Ошибка при парсинге JSON ответа для фьючерса {secid} ({boardid}): {e}")
+        if 'history' not in data or not data['history']['data']:
+            return None
+
+        df = pd.DataFrame(data['history']['data'], columns=data['history']['columns'])
+        df['TRADEDATE'] = pd.to_datetime(df['TRADEDATE']).dt.date
+        required_cols = ['TRADEDATE', 'OPEN', 'HIGH', 'LOW', 'CLOSE', 'VOLUME']
+        if all(col in df.columns for col in required_cols):
+            return df[required_cols]
         return None
 
-def save_oil_future_history_to_csv(data, secid, output_dir):
-    """Сохраняет исторические данные фьючерса в CSV файл."""
-    if not data or 'history' not in data or not data['history']['data']:
-        print(f"    Нет исторических данных для фьючерса {secid}, файл не создан.")
-        return
+    except Exception as e:
+        print(f"Ошибка для фьючерса {secid}: {e}")
+        return None
 
-    # Создаем директорию, если её нет
-    os.makedirs(output_dir, exist_ok=True)
-
-    df = pd.DataFrame(data['history']['data'], columns=data['history']['columns'])
-    print(f"    Получено {len(df)} строк истории для {secid}. Столбцы: {df.columns.tolist()}")
-
-    # Основные ожидаемые столбцы для фьючерса из истории: TRADEDATE, OPEN, CLOSE, HIGH, LOW, VALUE, VOLUME
-    # Также могут быть: WAPRICE (средневзвешенная цена), SETTLEPRICE (цена расчета), и др.
-    required_cols = ['TRADEDATE', 'OPEN', 'CLOSE', 'HIGH', 'LOW', 'VALUE', 'VOLUME']
-    # Проверим, есть ли все нужные столбцы
-    if all(col in df.columns for col in required_cols):
-        df = df[required_cols]
-        filename = os.path.join(output_dir, f"{secid}_history.csv")
-        try:
-            df.to_csv(filename, index=False, encoding='utf-8-sig')
-            print(f"    История для фьючерса {secid} сохранена в {filename}")
-        except IOError as e:
-            print(f"    Ошибка при сохранении файла для фьючерса {secid}: {e}")
-    else:
-        print(f"    Некорректные столбцы в данных для фьючерса {secid}: {df.columns.tolist()}. Пропущено.")
+def save_history(df, secid):
+    """Сохраняет историю фьючерса в CSV."""
+    if df is None or df.empty:
+        return False
+    try:
+        os.makedirs(OUTPUT_DIR, exist_ok=True)
+        filename = os.path.join(OUTPUT_DIR, f"{secid}_history.csv")
+        df.to_csv(filename, index=False, encoding='utf-8-sig')
+        return True
+    except Exception as e:
+        print(f"Ошибка сохранения для {secid}: {e}")
+        return False
 
 def main():
-    """Основная функция."""
-    print("Начинаю сбор исторических данных по фьючерсу на нефть...")
-    secid = load_current_contract_from_file(INPUT_CONTRACT_FILE)
-    if secid is None:
-        print("Не удалось загрузить тикер фьючерсного контракта. Завершение.")
+    print("=== Сбор исторических данных фьючерсов на нефть ===")
+    secid = load_current_contract(INPUT_FILE)
+    if not secid:
+        print("Не удалось загрузить текущий контракт.")
         return
 
-    data = get_oil_future_history(secid)
-    if data: # Сохраняем только если данные успешно получены
-        save_oil_future_history_to_csv(data, secid, OUTPUT_DIR)
+    print(f"Обработка фьючерса {secid}...")
+    data = get_oil_history(secid)
+    if save_history(data, secid):
+        print("Готово. История фьючерса сохранена.")
     else:
-        print(f"Не удалось получить исторические данные для фьючерса {secid}.")
-
-    print("Сбор исторических данных по фьючерсу на нефть завершен (или прерван).")
+        print("Ошибка сохранения.")
 
 if __name__ == "__main__":
     main()
