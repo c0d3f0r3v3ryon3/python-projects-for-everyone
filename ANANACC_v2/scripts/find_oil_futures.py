@@ -1,4 +1,3 @@
-# find_oil_futures.py (полная прокачанная версия с повторными попытками)
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
@@ -15,21 +14,33 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--config', default='config.json', help='Path to config file')
 args = parser.parse_args()
 
-# Настройка логирования
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s',
-                    handlers=[logging.FileHandler('find_oil_futures.log'), logging.StreamHandler()])
-logger = logging.getLogger(__name__)
-
-# Функция для загрузки конфигурации
 def load_config(config_file):
+    """Загружает конфигурационный файл."""
     if not os.path.exists(config_file):
         logger.error(f"Config file {config_file} not found.")
-        raise FileNotFoundError
-    with open(config_file, 'r') as f:
+        raise FileNotFoundError(f"Config file {config_file} not found.")
+    with open(config_file, 'r', encoding='utf-8') as f:
         return json.load(f)
 
+# Загрузка конфигурации
 config = load_config(args.config)
 
+# Создание необходимых директорий
+os.makedirs(config['logs_dir'], exist_ok=True)
+
+# Настройка логирования
+log_file = os.path.join(config['logs_dir'], 'find_oil_futures.log')
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler(log_file, encoding='utf-8'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
+
+# Конфигурация
 MOEX_BASE_URL = "https://iss.moex.com/iss"
 MARKET = "forts"
 ENGINE = "futures"
@@ -109,6 +120,7 @@ def get_current_and_next_oil_futures(oil_futures_df):
     return current_contract_secid, next_contract_secid
 
 def main():
+    """Основная функция."""
     try:
         oil_symbol = 'BR'
         data = get_futures_list()
@@ -119,7 +131,7 @@ def main():
                 current_secid, next_secid = get_current_and_next_oil_futures(oil_futures_df)
                 if current_secid:
                     logger.info(f"\nFor further history collection, current contract will be used: {current_secid}")
-                    with open('current_oil_future_contract.txt', 'w') as f:
+                    with open('current_oil_future_contract.txt', 'w', encoding='utf-8') as f:
                         f.write(current_secid)
                     logger.info("Current futures ticker saved to 'current_oil_future_contract.txt'.")
                     sys.exit(0)

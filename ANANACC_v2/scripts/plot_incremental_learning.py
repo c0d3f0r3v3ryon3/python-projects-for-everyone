@@ -1,4 +1,3 @@
-# plot_incremental_learning.py (полная прокачанная версия)
 import pandas as pd
 import matplotlib.pyplot as plt
 import os
@@ -6,22 +5,39 @@ import json
 import logging
 import argparse
 
+# Парсинг аргументов командной строки
 parser = argparse.ArgumentParser()
 parser.add_argument('--config', default='config.json', help='Path to config file')
 args = parser.parse_args()
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', handlers=[logging.FileHandler('plot_incremental_learning.log'), logging.StreamHandler()])
-logger = logging.getLogger(__name__)
-
 def load_config(config_file):
+    """Загружает конфигурационный файл."""
     if not os.path.exists(config_file):
         logger.error(f"Config file {config_file} not found.")
-        raise FileNotFoundError
+        raise FileNotFoundError(f"Config file {config_file} not found.")
     with open(config_file, 'r') as f:
         return json.load(f)
 
+# Загрузка конфигурации
 config = load_config(args.config)
 
+# Создание необходимых директорий
+for dir_path in [config['logs_dir'], config['plots_dir']]:
+    os.makedirs(dir_path, exist_ok=True)
+
+# Настройка логирования
+log_file = os.path.join(config['logs_dir'], 'plot_incremental_learning.log')
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler(log_file, encoding='utf-8'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
+
+# Конфигурация путей
 LOG_FILE = os.path.join(config['logs_dir'], 'incremental_learning_log_final.csv')
 OUTPUT_PLOT_FILE = os.path.join(config['plots_dir'], 'incremental_learning_accuracy_plot.png')
 FIGURE_SIZE = (12, 6)
@@ -69,8 +85,11 @@ def plot_accuracy_over_time(log_filename, output_plot_filename):
     plt.gcf().autofmt_xdate()
     plt.tight_layout()
     logger.info(f"Saving plot to {output_plot_filename}...")
-    plt.savefig(output_plot_filename)
-    logger.info("Plot saved.")
+    try:
+        plt.savefig(output_plot_filename)
+        logger.info("Plot saved.")
+    except Exception as e:
+        logger.error(f"Error saving plot to {output_plot_filename}: {e}")
     plt.show()
     plt.close()
 

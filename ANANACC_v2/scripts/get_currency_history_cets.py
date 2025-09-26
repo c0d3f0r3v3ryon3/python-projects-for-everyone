@@ -1,4 +1,3 @@
-# get_currency_history_cets.py (полная прокачанная версия)
 import pandas as pd
 import requests
 import time
@@ -8,22 +7,39 @@ import json
 import logging
 import argparse
 
+# Настройка аргументов командной строки
 parser = argparse.ArgumentParser()
 parser.add_argument('--config', default='config.json', help='Path to config file')
 args = parser.parse_args()
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', handlers=[logging.FileHandler('get_currency_history_cets.log'), logging.StreamHandler()])
-logger = logging.getLogger(__name__)
-
 def load_config(config_file):
+    """Загружает конфигурационный файл."""
     if not os.path.exists(config_file):
         logger.error(f"Config file {config_file} not found.")
-        raise FileNotFoundError
-    with open(config_file, 'r') as f:
+        raise FileNotFoundError(f"Config file {config_file} not found.")
+    with open(config_file, 'r', encoding='utf-8') as f:
         return json.load(f)
 
+# Загрузка конфигурации
 config = load_config(args.config)
 
+# Создание необходимых директорий
+for dir_path in [config['logs_dir'], config['historical_data_currency_dir']]:
+    os.makedirs(dir_path, exist_ok=True)
+
+# Настройка логирования
+log_file = os.path.join(config['logs_dir'], 'get_currency_history_cets.log')
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler(log_file, encoding='utf-8'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
+
+# Конфигурация
 INPUT_CSV_FILE = "moex_currency_pairs_list.csv"
 FILTER_BOARDID = "CETS"
 OUTPUT_DIR = config['historical_data_currency_dir']
@@ -80,7 +96,6 @@ def save_currency_history_to_csv(data, secid, output_dir):
     if not data or 'history' not in data or not data['history']['data']:
         logger.warning(f"No historical data for currency pair {secid}, file not created.")
         return
-    os.makedirs(output_dir, exist_ok=True)
     df = pd.DataFrame(data['history']['data'], columns=data['history']['columns'])
     logger.info(f"Received {len(df)} rows of history for {secid}. Columns: {df.columns.tolist()}")
     required_input_cols = ['TRADEDATE', 'OPEN', 'CLOSE', 'HIGH', 'LOW', 'VOLRUR']

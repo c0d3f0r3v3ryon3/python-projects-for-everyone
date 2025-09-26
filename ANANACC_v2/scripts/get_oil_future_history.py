@@ -1,4 +1,3 @@
-# get_oil_future_history.py (полная прокачанная версия)
 import pandas as pd
 import requests
 import time
@@ -14,20 +13,40 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--config', default='config.json', help='Path to config file')
 args = parser.parse_args()
 
-# Настройка логирования
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s',
-                    handlers=[logging.FileHandler('get_oil_future_history.log'), logging.StreamHandler()])
-logger = logging.getLogger(__name__)
-
 def load_config(config_file):
+    """Загружает конфигурационный файл."""
     if not os.path.exists(config_file):
         logger.error(f"Config file {config_file} not found.")
-        raise FileNotFoundError
+        raise FileNotFoundError(f"Config file {config_file} not found.")
     with open(config_file, 'r') as f:
         return json.load(f)
 
+# Загрузка конфигурации
 config = load_config(args.config)
 
+# Создание необходимых директорий
+for dir_path in [config['logs_dir'], config['historical_data_oil_dir']]:
+    os.makedirs(dir_path, exist_ok=True)
+
+# Проверка существования директории scripts
+SCRIPTS_DIR = 'scripts'
+if not os.path.exists(SCRIPTS_DIR):
+    os.makedirs(SCRIPTS_DIR, exist_ok=True)
+    logger.warning(f"Scripts directory {SCRIPTS_DIR} was created, but find_oil_futures.py may be missing.")
+
+# Настройка логирования
+log_file = os.path.join(config['logs_dir'], 'get_oil_future_history.log')
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler(log_file, encoding='utf-8'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
+
+# Конфигурация путей
 INPUT_CONTRACT_FILE = "current_oil_future_contract.txt"
 OUTPUT_DIR = config['historical_data_oil_dir']
 START_DATE = config['start_date']
@@ -43,7 +62,7 @@ REQUEST_TIMEOUT = 45
 
 def run_find_oil_futures(config_file):
     """Запускает find_oil_futures.py для создания current_oil_future_contract.txt."""
-    script_path = os.path.join("scripts", "find_oil_futures.py")
+    script_path = os.path.join(SCRIPTS_DIR, "find_oil_futures.py")
     if not os.path.exists(script_path):
         logger.error(f"Script {script_path} not found.")
         return False
@@ -73,7 +92,7 @@ def load_current_contract_from_file(filename):
             logger.error(f"Failed to generate {filename} after running find_oil_futures.py.")
             return None
     try:
-        with open(filename, 'r') as f:
+        with open(filename, 'r', encoding='utf-8') as f:
             secid = f.read().strip()
         logger.info(f"Loaded futures ticker: {secid}")
         return secid
@@ -109,7 +128,6 @@ def save_oil_future_history_to_csv(data, secid, output_dir):
     if not data or 'history' not in data or not data['history']['data']:
         logger.warning(f"No historical data for future {secid}, file not created.")
         return False
-    os.makedirs(output_dir, exist_ok=True)
     df = pd.DataFrame(data['history']['data'], columns=data['history']['columns'])
     logger.info(f"Received {len(df)} rows of history for {secid}. Columns: {df.columns.tolist()}")
     required_cols = ['TRADEDATE', 'OPEN', 'CLOSE', 'HIGH', 'LOW', 'VALUE', 'VOLUME']

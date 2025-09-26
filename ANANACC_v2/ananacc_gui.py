@@ -1,4 +1,4 @@
-# ananacc_gui.py (полная версия с выбором тикеров чекбоксами)
+# ananacc_gui.py
 import sys
 import os
 import subprocess
@@ -101,8 +101,8 @@ class SettingsTab(QWidget):
         return DEFAULT_CONFIG.copy()
 
     def save_config(self):
-        with open(CONFIG_FILE, 'w') as f:
-            json.dump(self.config, f, indent=4)
+        with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
+            json.dump(self.config, f, indent=4, ensure_ascii=False)
         QMessageBox.information(self, "Настройки", "Настройки сохранены в config.json!")
 
     def init_ui(self):
@@ -386,6 +386,14 @@ class PredictionTab(QWidget):
         super().__init__()
         self.main_window = main_window
         self.config = main_window.settings_tab.config
+        # Создание необходимых директорий
+        for dir_path in [
+            self.config['logs_dir'],
+            self.config['data_dir'],
+            self.config['models_dir'],
+            self.config['scalers_dir']
+        ]:
+            os.makedirs(dir_path, exist_ok=True)
         self.init_ui()
 
     def init_ui(self):
@@ -395,16 +403,12 @@ class PredictionTab(QWidget):
         self.ticker_list = QListWidget()
         self.ticker_list.setSelectionMode(QAbstractItemView.MultiSelection)
         prediction_setup_layout.addRow("Выберите тикеры:", self.ticker_list)
-
         self.select_all_btn = QPushButton("Выбрать все")
         self.select_all_btn.clicked.connect(self.select_all_tickers)
+        prediction_setup_layout.addWidget(self.select_all_btn)
         self.clear_selection_btn = QPushButton("Очистить выбор")
         self.clear_selection_btn.clicked.connect(self.clear_selection)
-        buttons_layout = QHBoxLayout()
-        buttons_layout.addWidget(self.select_all_btn)
-        buttons_layout.addWidget(self.clear_selection_btn)
-        prediction_setup_layout.addRow(buttons_layout)
-
+        prediction_setup_layout.addWidget(self.clear_selection_btn)
         self.date_picker = QCalendarWidget()
         self.date_picker.setSelectedDate(QDate.currentDate())
         prediction_setup_layout.addRow("Выберите дату:", self.date_picker)
@@ -418,7 +422,7 @@ class PredictionTab(QWidget):
         prediction_actions_layout.addWidget(self.predict_btn)
 
         self.auto_predict_btn = QPushButton("Автоматический прогноз и обучение (predict_and_learn.py)")
-        self.auto_predict_btn.clicked.connect(lambda: self.run_script('predict_and_learn.py'))
+        self.auto_predict_btn.clicked.connect(self.run_script)  # Исправлено: без lambda
         prediction_actions_layout.addWidget(self.auto_predict_btn)
 
         prediction_actions_group.setLayout(prediction_actions_layout)
@@ -435,6 +439,20 @@ class PredictionTab(QWidget):
 
         self.setLayout(layout)
 
+    def run_script(self):
+        script_path = os.path.join(SCRIPTS_DIR, 'predict_and_learn.py')
+        if not os.path.exists(script_path):
+            self.result_output.append(f"Ошибка: Скрипт {script_path} не найден.\n")
+            return
+        args = ['--config', CONFIG_FILE]
+        self.thread = ScriptRunner(script_path, args)
+        self.thread.output_signal.connect(self.result_output.append)
+        self.thread.progress_signal.connect(self.progress_bar.setValue)
+        self.thread.finished_signal.connect(self.on_script_finished)
+        self.thread.start()
+        self.predict_btn.setEnabled(False)
+        self.auto_predict_btn.setEnabled(False)
+
     def populate_ticker_list(self):
         self.ticker_list.clear()
         models_dir = self.config['models_dir']
@@ -444,9 +462,6 @@ class PredictionTab(QWidget):
         try:
             model_files = [f for f in os.listdir(models_dir) if f.startswith('model_') and f.endswith('.joblib')]
             tickers = sorted(set([f.replace('model_', '').replace('.joblib', '') for f in model_files]))
-            if not tickers:
-                self.result_output.append("Нет доступных моделей для выбора.\n")
-                return
             for ticker in tickers:
                 item = QListWidgetItem(ticker)
                 item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
@@ -467,124 +482,125 @@ class PredictionTab(QWidget):
             item.setCheckState(Qt.Unchecked)
 
     def get_selected_tickers(self):
-        selected = []
+        selected_tickers = []
         for i in range(self.ticker_list.count()):
             item = self.ticker_list.item(i)
             if item.checkState() == Qt.Checked:
-                selected.append(item.text())
-        return selected
+                selected_tickers.append(item.text())
+        return selected_tickers
 
     def make_prediction(self):
         selected_tickers = self.get_selected_tickers()
         selected_date = self.date_picker.selectedDate().toString("yyyy-MM-dd")
-        if not selected_tickers:
-            self.result_output.append("  Ошибка: Не выбран ни один тикер.\n")
-            return
-        self.result_output.append(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Запрос прогноза для {', '.join(selected_tickers)} на {selected_date}...\n")
+        self.result_output.append(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Запрос прогноза для {selected_tickers} на {selected_date}...\n")
         self.progress_bar.setValue(0)
+        if not selected_tickers:
+            self.result_output.append("  Ошибка: Тикеры не выбраны.\n")
+            return
         try:
-            data_dir = self.config['data_dir']
-            combined_file = os.path.join(data_dir, 'combined_dataset.csv')
-            if not os.path.exists(combined_file):
-                self.result_output.append(f"  Ошибка: Файл данных {combined_file} не найден.\n")
-                return
-            df_combined = pd.read_csv(combined_file, encoding='utf-8-sig')
-            df_combined[DATE_COLUMN] = pd.to_datetime(df_combined[DATE_COLUMN], format='%Y-%m-%d', errors='coerce')
-            df_selected = df_combined[df_combined[DATE_COLUMN] == selected_date]
-            if df_selected.empty:
-                df_selected = df_combined[df_combined[DATE_COLUMN] <= pd.to_datetime(selected_date)]
-                if df_selected.empty:
-                    self.result_output.append(f"  Ошибка: Нет данных до даты {selected_date}.\n")
-                    return
-                df_selected = df_selected.tail(1)
-            self.result_output.append(f"  Найдены данные за {df_selected[DATE_COLUMN].iloc[0].strftime('%Y-%m-%d')}.\n")
-            self.progress_bar.setValue(20)
-            feature_columns = [col for col in df_combined.columns if col not in [DATE_COLUMN, TARGET_COLUMN]]
-            X_new = df_selected[feature_columns].copy()
-            price_cols = [col for col in X_new.columns if any(suffix in col for suffix in ['_OPEN', '_HIGH', '_LOW', '_CLOSE'])]
-            volume_cols = [col for col in X_new.columns if '_VOLUME' in col]
-            other_cols = [col for col in X_new.columns if col not in price_cols + volume_cols]
-            self.result_output.append(f"  Заполнение цен (ffill/bfill): {len(price_cols)} столбцов.\n")
-            X_new[price_cols] = X_new[price_cols].ffill().bfill()
-            self.result_output.append(f"  Заполнение объемов (0): {len(volume_cols)} столбцов.\n")
-            X_new[volume_cols] = X_new[volume_cols].fillna(0)
-            self.result_output.append(f"  Заполнение других (0 или ffill): {len(other_cols)} столбцов.\n")
-            cbr_key_rate_cols = [col for col in other_cols if 'CBR_KEY_RATE' in col]
-            if cbr_key_rate_cols:
-                self.result_output.append(f"    Заполнение CBR_KEY_RATE (ffill): {cbr_key_rate_cols}\n")
-                X_new[cbr_key_rate_cols] = X_new[cbr_key_rate_cols].ffill()
-                other_cols = [col for col in other_cols if col not in cbr_key_rate_cols]
-            if other_cols:
-                self.result_output.append(f"    Заполнение остальных (0): {other_cols}\n")
-                X_new[other_cols] = X_new[other_cols].fillna(0)
-            mask_after_fill = ~X_new.isnull().any(axis=1)
-            X_new_clean = X_new[mask_after_fill]
-            if X_new_clean.empty:
-                self.result_output.append(f"  Ошибка: После обработки пропусков данные пусты.\n")
-                return
-            self.progress_bar.setValue(40)
-            predictions = []
-            progress_step = 60 / len(selected_tickers) if selected_tickers else 0
-            current_progress = 40
-            for ticker in selected_tickers:
-                self.result_output.append(f"  Прогнозирование для {ticker}...\n")
-                scaler_filename = os.path.join(self.config['scalers_dir'], f'scaler_{ticker}.joblib')
-                model_filename = os.path.join(self.config['models_dir'], f'model_{ticker}.joblib')
-                if not os.path.exists(scaler_filename) or not os.path.exists(model_filename):
-                    self.result_output.append(f"    Ошибка: Модель или скейлер для {ticker} не найден.\n")
+            progress_step = 100 / len(selected_tickers) if len(selected_tickers) > 0 else 0
+            current_progress = 0
+            for selected_model in selected_tickers:
+                scalers_dir = self.config['scalers_dir']
+                scaler_filename = os.path.join(scalers_dir, f'scaler_{selected_model}.joblib')
+                if not os.path.exists(scaler_filename):
+                    self.result_output.append(f"  Ошибка: Файл scaler'а {scaler_filename} не найден.\n")
                     continue
                 scaler = joblib.load(scaler_filename)
+                self.result_output.append(f"  Scaler для {selected_model} загружен.\n")
+                current_progress += progress_step * 0.2
+                self.progress_bar.setValue(int(current_progress))
+                models_dir = self.config['models_dir']
+                model_filename = os.path.join(models_dir, f'model_{selected_model}.joblib')
+                if not os.path.exists(model_filename):
+                    self.result_output.append(f"  Ошибка: Файл модели {model_filename} не найден.\n")
+                    continue
                 model = joblib.load(model_filename)
+                self.result_output.append(f"  Модель для {selected_model} загружена.\n")
+                current_progress += progress_step * 0.2
+                self.progress_bar.setValue(int(current_progress))
+                data_dir = self.config['data_dir']
+                combined_file = os.path.join(data_dir, 'combined_dataset.csv')
+                if not os.path.exists(combined_file):
+                    self.result_output.append(f"  Ошибка: Файл данных {combined_file} не найден.\n")
+                    continue
+                df_combined = pd.read_csv(combined_file, encoding='utf-8-sig')
+                df_combined[DATE_COLUMN] = pd.to_datetime(df_combined[DATE_COLUMN], format='%Y-%m-%d', errors='coerce')
+                df_selected = df_combined[df_combined[DATE_COLUMN] == selected_date]
+                if df_selected.empty:
+                    df_selected = df_combined[df_combined[DATE_COLUMN] <= pd.to_datetime(selected_date)]
+                    if df_selected.empty:
+                        self.result_output.append(f"  Ошибка: Нет данных до даты {selected_date} для {selected_model}.\n")
+                        continue
+                    df_selected = df_selected.tail(1)
+                self.result_output.append(f"  Найдены данные за {df_selected[DATE_COLUMN].iloc[0].strftime('%Y-%m-%d')} для {selected_model}.\n")
+                current_progress += progress_step * 0.2
+                self.progress_bar.setValue(int(current_progress))
+                # Исключаем целевые столбцы
+                feature_columns = [
+                    col for col in df_combined.columns
+                    if col not in [DATE_COLUMN, TARGET_COLUMN, 'TARGET_CLOSE']
+                    and not col.startswith('TARGET_DIRECTION_')
+                ]
+                X_new = df_selected[feature_columns].copy()
+                # Проверяем соответствие признаков
+                expected_features = scaler.feature_names_in_ if hasattr(scaler, 'feature_names_in_') else feature_columns
+                missing_features = [f for f in expected_features if f not in X_new.columns]
+                extra_features = [f for f in X_new.columns if f not in expected_features]
+                if missing_features or extra_features:
+                    self.result_output.append(f"  Ошибка: Несоответствие признаков для {selected_model}.\n")
+                    self.result_output.append(f"    Отсутствуют признаки: {missing_features}\n")
+                    self.result_output.append(f"    Лишние признаки: {extra_features}\n")
+                    continue
+                # Убедимся, что порядок столбцов соответствует ожидаемому
+                X_new = X_new[expected_features]
+                price_cols = [col for col in X_new.columns if any(suffix in col for suffix in ['_OPEN', '_HIGH', '_LOW', '_CLOSE'])]
+                volume_cols = [col for col in X_new.columns if '_VOLUME' in col]
+                other_cols = [col for col in X_new.columns if col not in price_cols + volume_cols]
+                self.result_output.append(f"  Заполнение цен (ffill/bfill): {len(price_cols)} столбцов для {selected_model}.\n")
+                X_new[price_cols] = X_new[price_cols].ffill().bfill()
+                self.result_output.append(f"  Заполнение объемов (0): {len(volume_cols)} столбцов для {selected_model}.\n")
+                X_new[volume_cols] = X_new[volume_cols].fillna(0)
+                self.result_output.append(f"  Заполнение других (0 или ffill): {len(other_cols)} столбцов для {selected_model}.\n")
+                cbr_key_rate_cols = [col for col in other_cols if 'CBR_KEY_RATE' in col]
+                if cbr_key_rate_cols:
+                    self.result_output.append(f"    Заполнение CBR_KEY_RATE (ffill): {cbr_key_rate_cols} для {selected_model}.\n")
+                    X_new[cbr_key_rate_cols] = X_new[cbr_key_rate_cols].ffill()
+                    other_cols = [col for col in other_cols if col not in cbr_key_rate_cols]
+                if other_cols:
+                    self.result_output.append(f"    Заполнение остальных (0): {other_cols} для {selected_model}.\n")
+                    X_new[other_cols] = X_new[other_cols].fillna(0)
+                mask_after_fill = ~X_new.isnull().any(axis=1)
+                X_new_clean = X_new[mask_after_fill]
+                if X_new_clean.empty:
+                    self.result_output.append(f"  Ошибка: После обработки пропусков данные пусты для {selected_model}.\n")
+                    continue
                 X_new_scaled = scaler.transform(X_new_clean)
+                self.result_output.append(f"  Признаки подготовлены и масштабированы для {selected_model}.\n")
+                current_progress += progress_step * 0.2
+                self.progress_bar.setValue(int(current_progress))
                 y_pred = model.predict(X_new_scaled)[0]
-                self.result_output.append(f"  Прогноз TARGET_DIRECTION для {ticker} на {selected_date}: {y_pred}\n")
-                predictions.append({
+                self.result_output.append(f"  Прогноз TARGET_DIRECTION для {selected_model} на {selected_date}: {y_pred}\n")
+                current_progress += progress_step * 0.2
+                self.progress_bar.setValue(int(current_progress))
+                logs_dir = self.config['logs_dir']
+                predictions_log_file = os.path.join(logs_dir, 'predictions_log.csv')
+                prediction_log_entry = pd.DataFrame([{
                     'TRADEDATE': selected_date,
-                    'TICKER': ticker,
+                    'TICKER': selected_model,
                     'PREDICTED_DIRECTION': y_pred,
                     'TIMESTAMP': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                })
-                current_progress += progress_step
-                self.progress_bar.setValue(int(current_progress))
-            if predictions:
-                predictions_df = pd.DataFrame(predictions)
-                logs_dir = self.config['logs_dir']
-                os.makedirs(logs_dir, exist_ok=True)
-                predictions_log_file = os.path.join(logs_dir, 'predictions_log.csv')
+                }])
                 if os.path.exists(predictions_log_file):
-                    predictions_df.to_csv(predictions_log_file, mode='a', header=False, index=False, encoding='utf-8-sig')
+                    prediction_log_entry.to_csv(predictions_log_file, mode='a', header=False, index=False, encoding='utf-8-sig')
                 else:
-                    predictions_df.to_csv(predictions_log_file, index=False, encoding='utf-8-sig')
-                self.result_output.append(f"  Прогнозы сохранены в {predictions_log_file}.\n")
+                    prediction_log_entry.to_csv(predictions_log_file, index=False, encoding='utf-8-sig')
+                self.result_output.append(f"  Прогноз сохранен в {predictions_log_file} для {selected_model}.\n")
             self.progress_bar.setValue(100)
         except Exception as e:
             self.result_output.append(f"  Ошибка при прогнозировании: {e}\n")
             self.result_output.append(traceback.format_exc() + "\n")
             self.progress_bar.setValue(0)
-
-    def run_script(self, script_name):
-        script_path = os.path.join(SCRIPTS_DIR, script_name)
-        if not os.path.exists(script_path):
-            self.result_output.append(f"Ошибка: Скрипт {script_path} не найден.\n")
-            return
-        args = ['--config', CONFIG_FILE]
-        self.thread = ScriptRunner(script_path, args)
-        self.thread.output_signal.connect(self.result_output.append)
-        self.thread.progress_signal.connect(self.progress_bar.setValue)
-        self.thread.finished_signal.connect(self.on_script_finished)
-        self.thread.start()
-        self.predict_btn.setEnabled(False)
-        self.auto_predict_btn.setEnabled(False)
-
-    def on_script_finished(self, return_code):
-        self.predict_btn.setEnabled(True)
-        self.auto_predict_btn.setEnabled(True)
-        if return_code == 0:
-            self.result_output.append("Скрипт успешно завершен.\n")
-            self.populate_model_selector()  # Обновляем список тикеров после выполнения скрипта
-        else:
-            self.result_output.append(f"Скрипт завершен с ошибкой (код {return_code}).\n")
-        self.main_window.statusBar().showMessage("Скрипт завершен.", 5000)
 
 class RetrainingTab(QWidget):
     def __init__(self, main_window):
@@ -622,7 +638,6 @@ class RetrainingTab(QWidget):
         self.progress_bar.setValue(0)
         try:
             logs_dir = self.config['logs_dir']
-            os.makedirs(logs_dir, exist_ok=True)
             predictions_log_file = os.path.join(logs_dir, 'predictions_log.csv')
             if not os.path.exists(predictions_log_file):
                 self.log_output.append(f"  Файл лога {predictions_log_file} не найден.\n")
@@ -732,8 +747,22 @@ class RetrainingTab(QWidget):
                 if df_X_for_ticker.empty:
                     self.log_output.append(f"    Нет данных для дообучения модели {ticker} по датам {dates_for_ticker}. Пропущено.\n")
                     continue
-                feature_columns = [col for col in df_combined.columns if col not in [DATE_COLUMN, TARGET_COLUMN]]
+                feature_columns = [
+                    col for col in df_combined.columns
+                    if col not in [DATE_COLUMN, TARGET_COLUMN, 'TARGET_CLOSE']
+                    and not col.startswith('TARGET_DIRECTION_')
+                ]
                 X_batch = df_X_for_ticker[feature_columns].copy()
+                # Проверяем соответствие признаков
+                expected_features = scaler.feature_names_in_ if hasattr(scaler, 'feature_names_in_') else feature_columns
+                missing_features = [f for f in expected_features if f not in X_batch.columns]
+                extra_features = [f for f in X_batch.columns if f not in expected_features]
+                if missing_features or extra_features:
+                    self.log_output.append(f"    Ошибка: Несоответствие признаков для {ticker}.\n")
+                    self.log_output.append(f"      Отсутствуют признаки: {missing_features}\n")
+                    self.log_output.append(f"      Лишние признаки: {extra_features}\n")
+                    continue
+                X_batch = X_batch[expected_features]
                 price_cols = [col for col in X_batch.columns if any(suffix in col for suffix in ['_OPEN', '_HIGH', '_LOW', '_CLOSE'])]
                 volume_cols = [col for col in X_batch.columns if '_VOLUME' in col]
                 other_cols = [col for col in X_batch.columns if col not in price_cols + volume_cols]
@@ -775,12 +804,15 @@ class RetrainingTab(QWidget):
             self.log_output.append(f"  Ошибка при дообучении моделей: {e}\n")
             self.log_output.append(traceback.format_exc() + "\n")
             self.progress_bar.setValue(0)
-
+            
 class ResultsTab(QWidget):
     def __init__(self, main_window):
         super().__init__()
         self.main_window = main_window
         self.config = main_window.settings_tab.config
+        # Создание необходимых директорий
+        for dir_path in [self.config['logs_dir'], self.config['plots_dir']]:
+            os.makedirs(dir_path, exist_ok=True)
         self.init_ui()
 
     def init_ui(self):
@@ -887,7 +919,26 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.settings_tab = SettingsTab()
+        # Создаем все необходимые директории при запуске GUI
+        self.create_directories()
         self.init_ui()
+
+    def create_directories(self):
+        """Создает все директории из конфигурации, если они не существуют."""
+        dirs_to_create = [
+            self.settings_tab.config['data_dir'],
+            self.settings_tab.config['models_dir'],
+            self.settings_tab.config['scalers_dir'],
+            self.settings_tab.config['logs_dir'],
+            self.settings_tab.config['plots_dir'],
+            self.settings_tab.config['historical_data_full_dir'],
+            self.settings_tab.config['historical_data_indices_dir'],
+            self.settings_tab.config['historical_data_currency_dir'],
+            self.settings_tab.config['historical_data_oil_dir'],
+            self.settings_tab.config['historical_data_other_dir'],
+        ]
+        for dir_path in dirs_to_create:
+            os.makedirs(dir_path, exist_ok=True)
 
     def init_ui(self):
         self.setWindowTitle('ANANACC - Прогнозирование цен акций (Прокачанная версия)')

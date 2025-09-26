@@ -1,9 +1,8 @@
-# predict_and_learn.py
+# predict_and_learn.py (полная прокачанная версия)
 import pandas as pd
 import numpy as np
 import joblib
 import os
-import sys
 from datetime import datetime, timedelta
 from sklearn.linear_model import PassiveAggressiveClassifier
 from sklearn.preprocessing import StandardScaler
@@ -11,40 +10,59 @@ from sklearn.metrics import accuracy_score
 import json
 import logging
 import argparse
-import requests  # Для API MOEX
 
+# Парсинг аргументов командной строки
 parser = argparse.ArgumentParser()
 parser.add_argument('--config', default='config.json', help='Path to config file')
 args = parser.parse_args()
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s',
-                    handlers=[logging.FileHandler('predict_and_learn.log'), logging.StreamHandler()])
-logger = logging.getLogger(__name__)
-
 def load_config(config_file):
+    """Загружает конфигурационный файл."""
     if not os.path.exists(config_file):
         logger.error(f"Config file {config_file} not found.")
-        raise FileNotFoundError
+        raise FileNotFoundError(f"Config file {config_file} not found.")
     with open(config_file, 'r') as f:
         return json.load(f)
 
+# Загрузка конфигурации
 config = load_config(args.config)
 
+# Создание необходимых директорий
+for dir_path in [
+    config['data_dir'],
+    config['models_dir'],
+    config['scalers_dir'],
+    config['logs_dir']
+]:
+    os.makedirs(dir_path, exist_ok=True)
+
+# Настройка логирования
+log_file = os.path.join(config['logs_dir'], 'predict_and_learn.log')
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler(log_file, encoding='utf-8'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
+
+# Конфигурация путей
 MODELS_DIR = config['models_dir']
 SCALERS_DIR = config['scalers_dir']
 DATASET_FILE = os.path.join(config['data_dir'], 'combined_dataset_all_targets.csv')
 PREDICTIONS_LOG_FILE = os.path.join(config['logs_dir'], 'predictions_log.csv')
 MODEL_UPDATE_LOG_FILE = os.path.join(config['logs_dir'], 'model_updates_log.csv')
+DATE_COLUMN = 'TRADEDATE'
 TODAY = datetime.today().strftime('%Y-%m-%d')
 YESTERDAY = (datetime.today() - timedelta(days=1)).strftime('%Y-%m-%d')
 
 def load_models_and_scalers(models_dir, scalers_dir):
+    """Загружает все модели и scaler'ы из директорий."""
     logger.info(f"Loading models from {models_dir} and scalers from {scalers_dir}...")
     models = {}
     scalers = {}
-    if not os.path.exists(models_dir) or not os.path.exists(scalers_dir):
-        logger.error(f"Directories {models_dir} or {scalers_dir} do not exist.")
-        return models, scalers
     model_files = [f for f in os.listdir(models_dir) if f.startswith('model_') and f.endswith('.joblib')]
     scaler_files = [f for f in os.listdir(scalers_dir) if f.startswith('scaler_') and f.endswith('.joblib')]
     logger.info(f"Found {len(model_files)} model files.")
@@ -71,6 +89,7 @@ def load_models_and_scalers(models_dir, scalers_dir):
     return models, scalers
 
 def load_latest_data(dataset_file, num_days=1):
+    """Загружает последние N строк из датасета как 'новые' данные."""
     logger.info(f"Loading last {num_days} rows from {dataset_file} as new data...")
     if not os.path.exists(dataset_file):
         logger.error(f"File {dataset_file} not found.")
@@ -80,17 +99,38 @@ def load_latest_data(dataset_file, num_days=1):
         logger.info(f"Dataset loaded: {len(df)} rows, {len(df.columns)} columns.")
         latest_df = df.tail(num_days).reset_index(drop=True)
         logger.info(f"Loaded last {num_days} rows.")
-        dates_df = latest_df[['TRADEDATE']].copy()
-        feature_columns = [col for col in df.columns if col not in ['TRADEDATE'] and not col.startswith('TARGET_DIRECTION_')]
+        dates_df = latest_df[[DATE_COLUMN]].copy()
+        feature_columns = [col for col in df.columns if col not in [DATE_COLUMN] and not col.startswith('TARGET_DIRECTION_')]
         features_df = latest_df[feature_columns].copy()
-        logger.info(f"Features (X) size: {features_df.shape}")
-        logger.info(f"Dates size: {dates_df.shape}")
-        return features_df, dates_df
+        # Заполнение пропусков
+        price_cols = [col for col in features_df.columns if any(suffix in col for suffix in ['_OPEN', '_HIGH', '_LOW', '_CLOSE'])]
+        volume_cols = [col for col in features_df.columns if '_VOLUME' in col]
+        other_cols = [col for col in features_df.columns if col not in price_cols + volume_cols]
+        logger.info(f"  Filling prices (ffill/bfill): {len(price_cols)} columns.")
+        features_df[price_cols] = features_df[price_cols].ffill().bfill()
+        logger.info(f"  Filling volumes (0): {len(volume_cols)} columns.")
+        features_df[volume_cols] = features_df[volume_cols].fillna(0)
+        logger.info(f"  Filling others (0 or ffill): {len(other_cols)} columns.")
+        cbr_key_rate_cols = [col for col in other_cols if 'CBR_KEY_RATE' in col]
+        if cbr_key_rate_cols:
+            logger.info(f"    Filling CBR_KEY_RATE (ffill): {cbr_key_rate_cols}")
+            features_df[cbr_key_rate_cols] = features_df[cbr_key_rate_cols].ffill()
+            other_cols = [col for col in other_cols if col not in cbr_key_rate_cols]
+        if other_cols:
+            logger.info(f"    Filling remaining (0): {other_cols}")
+            features_df[other_cols] = features_df[other_cols].fillna(0)
+        mask_after_fill = ~features_df.isnull().any(axis=1)
+        features_df_clean = features_df[mask_after_fill]
+        dates_df_clean = dates_df[mask_after_fill]
+        logger.info(f"Features (X) size after cleaning: {features_df_clean.shape}")
+        logger.info(f"Dates size after cleaning: {dates_df_clean.shape}")
+        return features_df_clean, dates_df_clean
     except Exception as e:
         logger.error(f"Error loading last data from {dataset_file}: {e}")
         return pd.DataFrame(), pd.DataFrame()
 
 def prepare_features(features_df, scaler, ticker):
+    """Подготавливает (масштабирует) признаки для прогноза."""
     logger.info(f"  Preparing features for {ticker}...")
     try:
         features_scaled = scaler.transform(features_df)
@@ -101,6 +141,7 @@ def prepare_features(features_df, scaler, ticker):
         return None
 
 def make_predictions(models, scalers, features_df, dates_df):
+    """Делает прогнозы для всех моделей."""
     logger.info("\n--- Making predictions for all models ---")
     predictions = {}
     for ticker, model in models.items():
@@ -115,20 +156,20 @@ def make_predictions(models, scalers, features_df, dates_df):
             y_pred = model.predict(features_scaled)[0]
             predictions[ticker] = {
                 'prediction': y_pred,
-                'date': dates_df.iloc[0]['TRADEDATE']
+                'date': dates_df.iloc[0][DATE_COLUMN]
             }
-            logger.info(f"  Prediction for {ticker}: {y_pred} (date: {dates_df.iloc[0]['TRADEDATE']})")
+            logger.info(f"  Prediction for {ticker}: {y_pred} (date: {dates_df.iloc[0][DATE_COLUMN]})")
         except Exception as e:
             logger.error(f"  Error predicting for {ticker}: {e}")
     return predictions
 
 def save_predictions(predictions, log_file):
+    """Сохраняет прогнозы в лог-файл."""
     if not predictions:
         logger.warning("No predictions to save.")
         return
     logger.info(f"\n--- Saving predictions to {log_file} ---")
     try:
-        os.makedirs(os.path.dirname(log_file), exist_ok=True)  # Создаем директорию logs
         log_data = []
         for ticker, pred_info in predictions.items():
             log_data.append({
@@ -146,72 +187,43 @@ def save_predictions(predictions, log_file):
             logger.info(f"  Predictions saved to new log {log_file}.")
     except Exception as e:
         logger.error(f"  Error saving predictions to {log_file}: {e}")
-        sys.exit(1)
 
-def get_moex_data(ticker, start_date, end_date):
-    """Загружает данные с MOEX через ISS API."""
-    try:
-        url = f"https://iss.moex.com/iss/history/engines/stock/markets/shares/securities/{ticker}.json"
-        params = {
-            'from': start_date,
-            'till': end_date,
-            'iss.meta': 'off',
-            'iss.json': 'extended',
-            'history.columns': 'TRADEDATE,OPEN,HIGH,LOW,CLOSE,VOLUME'
-        }
-        response = requests.get(url, params=params)
-        response.raise_for_status()
-        data = response.json()
-        if 'history' not in data or not data['history']['data']:
-            logger.warning(f"No data found for {ticker} from {start_date} to {end_date}")
-            return pd.DataFrame()
-        df = pd.DataFrame(data['history']['data'], columns=['TRADEDATE', 'OPEN', 'HIGH', 'LOW', 'CLOSE', 'VOLUME'])
-        df['TRADEDATE'] = pd.to_datetime(df['TRADEDATE'], format='%Y-%m-%d')
-        return df
-    except Exception as e:
-        logger.error(f"Error fetching MOEX data for {ticker}: {e}")
-        return pd.DataFrame()
-
-def simulate_get_real_target_directions(tickers, prediction_date):
-    """Симулирует TARGET_DIRECTION, загружая данные CLOSE через API MOEX."""
+def simulate_get_real_target_directions(dataset_file, tickers, prediction_date):
+    """Симулирует получение реальных TARGET_DIRECTION для всех тикеров."""
     logger.info(f"\n--- Simulating real TARGET_DIRECTION for {len(tickers)} tickers on date {prediction_date} ---")
-    prediction_date_dt = pd.to_datetime(prediction_date, format='%Y-%m-%d', errors='coerce')
-    if pd.isna(prediction_date_dt):
-        logger.error(f"Invalid prediction date: {prediction_date}")
+    if not os.path.exists(dataset_file):
+        logger.error(f"File {dataset_file} not found for simulation.")
         return {}
-    # Для расчета TARGET_DIRECTION нужен следующий день
-    next_day = (prediction_date_dt + timedelta(days=1)).strftime('%Y-%m-%d')
-    real_targets = {}
-    for ticker in tickers:
-        try:
-            # Загружаем данные за два дня: день прогноза и следующий
-            df = get_moex_data(ticker, prediction_date, next_day)
-            if df.empty:
-                logger.warning(f"No data for {ticker} from {prediction_date} to {next_day}")
-                continue
-            df = df.sort_values('TRADEDATE')
-            if len(df) < 2:
-                logger.warning(f"Not enough data for {ticker} to calculate TARGET_DIRECTION")
-                continue
-            close_today = df[df['TRADEDATE'] == prediction_date_dt]['CLOSE'].iloc[0]
-            close_next = df[df['TRADEDATE'] == pd.to_datetime(next_day)]['CLOSE'].iloc[0]
-            if pd.isna(close_today) or pd.isna(close_next):
-                logger.warning(f"Missing CLOSE prices for {ticker} on {prediction_date} or {next_day}")
-                continue
-            # Вычисляем TARGET_DIRECTION: 1 (рост), 0 (без изменений), -1 (падение)
-            if close_next > close_today:
-                target_direction = 1
-            elif close_next < close_today:
-                target_direction = -1
+    try:
+        df = pd.read_csv(dataset_file, encoding='utf-8-sig')
+        df[DATE_COLUMN] = pd.to_datetime(df[DATE_COLUMN], format='%Y-%m-%d', errors='coerce')
+        prediction_date_dt = pd.to_datetime(prediction_date, format='%Y-%m-%d', errors='coerce')
+        if pd.isna(prediction_date_dt):
+            logger.error(f"Invalid prediction date for simulation: {prediction_date}")
+            return {}
+        target_row = df[df[DATE_COLUMN] == prediction_date_dt]
+        if target_row.empty:
+            logger.error(f"Date {prediction_date} not found in {dataset_file} for simulation.")
+            return {}
+        real_targets = {}
+        for ticker in tickers:
+            target_col = f"TARGET_DIRECTION_{ticker}"
+            if target_col in target_row.columns:
+                real_value = target_row[target_col].iloc[0]
+                if not pd.isna(real_value):
+                    real_targets[ticker] = real_value
+                    logger.info(f"  Real TARGET_DIRECTION for {ticker} on {prediction_date}: {real_value}")
+                else:
+                    logger.warning(f"  Real TARGET_DIRECTION for {ticker} on {prediction_date} is NaN.")
             else:
-                target_direction = 0
-            real_targets[ticker] = target_direction
-            logger.info(f"  Real TARGET_DIRECTION for {ticker} on {prediction_date}: {target_direction}")
-        except Exception as e:
-            logger.error(f"Error calculating TARGET_DIRECTION for {ticker}: {e}")
-    return real_targets
+                logger.warning(f"  Column {target_col} not found in {dataset_file} for simulation.")
+        return real_targets
+    except Exception as e:
+        logger.error(f"Error simulating real TARGET_DIRECTION: {e}")
+        return {}
 
 def perform_incremental_learning(models, scalers, features_df, real_targets, update_log_file):
+    """Выполняет инкрементальное обучение для всех моделей, где есть реальная метка."""
     logger.info(f"\n--- Performing incremental learning for models with real labels ---")
     updated_models = []
     correct_predictions = 0
@@ -240,7 +252,6 @@ def perform_incremental_learning(models, scalers, features_df, real_targets, upd
         accuracy = correct_predictions / total_predictions
         logger.info(f"\nPrediction accuracy before retraining: {accuracy:.4f} ({correct_predictions}/{total_predictions})")
         try:
-            os.makedirs(os.path.dirname(update_log_file), exist_ok=True)  # Создаем директорию logs
             update_log_entry = pd.DataFrame([{
                 'UPDATE_DATE': datetime.now().strftime('%Y-%m-%d'),
                 'ACCURACY_BEFORE_UPDATE': accuracy,
@@ -255,11 +266,11 @@ def perform_incremental_learning(models, scalers, features_df, real_targets, upd
             logger.info(f"Model update log saved to {update_log_file}.")
         except Exception as e:
             logger.error(f"Error saving model update log: {e}")
-            sys.exit(1)
     else:
         logger.info("No models for retraining (no real labels).")
 
 def save_updated_models(models, scalers, models_dir, scalers_dir):
+    """Сохраняет обновленные модели и scaler'ы."""
     logger.info(f"\n--- Saving updated models and scalers ---")
     for ticker, model in models.items():
         model_path = os.path.join(models_dir, f'model_{ticker}.joblib')
@@ -278,35 +289,31 @@ def save_updated_models(models, scalers, models_dir, scalers_dir):
     logger.info("Saving updated models and scalers completed.")
 
 def main():
-    try:
-        logger.info("=== LAUNCHING COMBAT SCRIPT FOR PREDICTION AND INCREMENTAL LEARNING ===")
-        logger.info(f"Launch date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-        models, scalers = load_models_and_scalers(MODELS_DIR, SCALERS_DIR)
-        if not models or not scalers:
-            logger.error("Failed to load models or scalers. Exiting.")
-            sys.exit(1)
-        features_df, dates_df = load_latest_data(DATASET_FILE, num_days=1)
-        if features_df.empty or dates_df.empty:
-            logger.error("Failed to load new data. Exiting.")
-            sys.exit(1)
-        prediction_date = dates_df.iloc[0]['TRADEDATE']
-        logger.info(f"Prediction date: {prediction_date}")
-        predictions = make_predictions(models, scalers, features_df, dates_df)
-        if not predictions:
-            logger.error("Failed to make any predictions. Exiting.")
-            sys.exit(1)
-        save_predictions(predictions, PREDICTIONS_LOG_FILE)
-        real_targets = simulate_get_real_target_directions(list(predictions.keys()), prediction_date)
-        if not real_targets:
-            logger.error("Failed to get real TARGET_DIRECTION. Retraining impossible.")
-            sys.exit(1)
-        perform_incremental_learning(models, scalers, features_df, real_targets, MODEL_UPDATE_LOG_FILE)
-        save_updated_models(models, scalers, MODELS_DIR, SCALERS_DIR)
-        logger.info("\n=== COMBAT SCRIPT COMPLETED ===")
-        sys.exit(0)
-    except Exception as e:
-        logger.error(f"Unexpected error: {e}")
-        sys.exit(1)
+    """Основная функция."""
+    logger.info("=== LAUNCHING COMBAT SCRIPT FOR PREDICTION AND INCREMENTAL LEARNING ===")
+    logger.info(f"Launch date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    models, scalers = load_models_and_scalers(MODELS_DIR, SCALERS_DIR)
+    if not models or not scalers:
+        logger.error("Failed to load models or scalers. Exiting.")
+        return
+    features_df, dates_df = load_latest_data(DATASET_FILE, num_days=1)
+    if features_df.empty or dates_df.empty:
+        logger.error("Failed to load new data. Exiting.")
+        return
+    prediction_date = dates_df.iloc[0][DATE_COLUMN]
+    logger.info(f"Prediction date: {prediction_date}")
+    predictions = make_predictions(models, scalers, features_df, dates_df)
+    if not predictions:
+        logger.error("Failed to make any predictions. Exiting.")
+        return
+    save_predictions(predictions, PREDICTIONS_LOG_FILE)
+    real_targets = simulate_get_real_target_directions(DATASET_FILE, list(predictions.keys()), prediction_date)
+    if not real_targets:
+        logger.error("Failed to get real TARGET_DIRECTION. Retraining impossible.")
+        return
+    perform_incremental_learning(models, scalers, features_df, real_targets, MODEL_UPDATE_LOG_FILE)
+    save_updated_models(models, scalers, MODELS_DIR, SCALERS_DIR)
+    logger.info("\n=== COMBAT SCRIPT COMPLETED ===")
 
 if __name__ == "__main__":
     main()

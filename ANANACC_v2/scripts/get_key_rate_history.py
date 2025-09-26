@@ -1,4 +1,3 @@
-# get_key_rate_history.py (полная прокачанная версия)
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
@@ -8,22 +7,39 @@ import json
 import logging
 import argparse
 
+# Настройка аргументов командной строки
 parser = argparse.ArgumentParser()
 parser.add_argument('--config', default='config.json', help='Path to config file')
 args = parser.parse_args()
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', handlers=[logging.FileHandler('get_key_rate_history.log'), logging.StreamHandler()])
-logger = logging.getLogger(__name__)
-
 def load_config(config_file):
+    """Загружает конфигурационный файл."""
     if not os.path.exists(config_file):
         logger.error(f"Config file {config_file} not found.")
-        raise FileNotFoundError
-    with open(config_file, 'r') as f:
+        raise FileNotFoundError(f"Config file {config_file} not found.")
+    with open(config_file, 'r', encoding='utf-8') as f:
         return json.load(f)
 
+# Загрузка конфигурации
 config = load_config(args.config)
 
+# Создание необходимых директорий
+for dir_path in [config['logs_dir'], config['historical_data_other_dir']]:
+    os.makedirs(dir_path, exist_ok=True)
+
+# Настройка логирования
+log_file = os.path.join(config['logs_dir'], 'get_key_rate_history.log')
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler(log_file, encoding='utf-8'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
+
+# Конфигурация
 CBR_KEY_RATE_URL = "https://www.cbr.ru/hd_base/KeyRate/"
 OUTPUT_DIR = config['historical_data_other_dir']
 OUTPUT_FILE = "cbr_key_rate_history_html.csv"
@@ -101,7 +117,6 @@ def save_key_rate_history_to_csv(df, output_dir, output_file):
     if df.empty:
         logger.error("DataFrame with key rate history is empty, file will not be created.")
         return
-    os.makedirs(output_dir, exist_ok=True)
     filename = os.path.join(output_dir, output_file)
     try:
         df.to_csv(filename, index=False, encoding='utf-8-sig')

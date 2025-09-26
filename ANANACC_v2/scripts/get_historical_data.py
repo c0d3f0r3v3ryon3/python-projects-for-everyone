@@ -1,4 +1,3 @@
-# get_historical_data.py (полная прокачанная версия)
 import pandas as pd
 import requests
 import time
@@ -8,22 +7,39 @@ import json
 import logging
 import argparse
 
+# Настройка аргументов командной строки
 parser = argparse.ArgumentParser()
 parser.add_argument('--config', default='config.json', help='Path to config file')
 args = parser.parse_args()
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', handlers=[logging.FileHandler('get_historical_data.log'), logging.StreamHandler()])
-logger = logging.getLogger(__name__)
-
 def load_config(config_file):
+    """Загружает конфигурационный файл."""
     if not os.path.exists(config_file):
         logger.error(f"Config file {config_file} not found.")
-        raise FileNotFoundError
-    with open(config_file, 'r') as f:
+        raise FileNotFoundError(f"Config file {config_file} not found.")
+    with open(config_file, 'r', encoding='utf-8') as f:
         return json.load(f)
 
+# Загрузка конфигурации
 config = load_config(args.config)
 
+# Создание необходимых директорий
+for dir_path in [config['logs_dir'], config['historical_data_full_dir']]:
+    os.makedirs(dir_path, exist_ok=True)
+
+# Настройка логирования
+log_file = os.path.join(config['logs_dir'], 'get_historical_data.log')
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler(log_file, encoding='utf-8'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
+
+# Конфигурация
 INPUT_CSV_FILE = "moex_stocks_liquid_boards.csv"
 OUTPUT_DIR = config['historical_data_full_dir']
 START_DATE = config['start_date']
@@ -83,7 +99,6 @@ def save_historical_data_to_csv(data, secid, output_dir):
     if not data or 'candles' not in data or not data['candles']['data']:
         logger.warning(f"No historical data for {secid}, file not created.")
         return False, 'NO_DATA'
-    os.makedirs(output_dir, exist_ok=True)
     df = pd.DataFrame(data['candles']['data'], columns=data['candles']['columns'])
     if 'begin' in df.columns:
         df['TRADEDATE'] = pd.to_datetime(df['begin']).dt.date
@@ -150,10 +165,19 @@ def main():
         except KeyboardInterrupt:
             logger.warning(f"\nProcessing interrupted by user on ticker {secid}.")
             if failed_connection_tickers:
-                pd.DataFrame(failed_connection_tickers).to_csv(os.path.join(OUTPUT_DIR, "failed_connection_tickers_on_interrupt.csv"), index=False, encoding='utf-8-sig')
+                pd.DataFrame(failed_connection_tickers).to_csv(
+                    os.path.join(OUTPUT_DIR, "failed_connection_tickers_on_interrupt.csv"),
+                    index=False,
+                    encoding='utf-8-sig'
+                )
             if failed_other_tickers:
-                pd.DataFrame(failed_other_tickers).to_csv(os.path.join(OUTPUT_DIR, "failed_other_tickers_on_interrupt.csv"), index=False, encoding='utf-8-sig')
+                pd.DataFrame(failed_other_tickers).to_csv(
+                    os.path.join(OUTPUT_DIR, "failed_other_tickers_on_interrupt.csv"),
+                    index=False,
+                    encoding='utf-8-sig'
+                )
             return
+        time.sleep(REQUEST_DELAY)
     logger.info("Main pass completed.")
     logger.info(f"  Successfully processed: {total_tickers - len(failed_connection_tickers) - len(failed_other_tickers)}")
     logger.info(f"  Connection errors: {len(failed_connection_tickers)}")
@@ -184,10 +208,19 @@ def main():
             except KeyboardInterrupt:
                 logger.warning(f"\nProcessing interrupted by user on ticker {secid}.")
                 if next_failed_connection_tickers:
-                    pd.DataFrame(next_failed_connection_tickers).to_csv(os.path.join(OUTPUT_DIR, "failed_connection_tickers_on_interrupt.csv"), index=False, encoding='utf-8-sig')
+                    pd.DataFrame(next_failed_connection_tickers).to_csv(
+                        os.path.join(OUTPUT_DIR, "failed_connection_tickers_on_interrupt.csv"),
+                        index=False,
+                        encoding='utf-8-sig'
+                    )
                 if failed_other_tickers:
-                    pd.DataFrame(failed_other_tickers).to_csv(os.path.join(OUTPUT_DIR, "failed_other_tickers_on_interrupt.csv"), index=False, encoding='utf-8-sig')
+                    pd.DataFrame(failed_other_tickers).to_csv(
+                        os.path.join(OUTPUT_DIR, "failed_other_tickers_on_interrupt.csv"),
+                        index=False,
+                        encoding='utf-8-sig'
+                    )
                 return
+            time.sleep(REQUEST_DELAY)
         connection_retry_df = pd.DataFrame(next_failed_connection_tickers)
         attempt += 1
         if not connection_retry_df.empty and attempt <= max_attempts:

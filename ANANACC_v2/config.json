@@ -1,0 +1,15 @@
+{
+    "data_dir": "data",
+    "models_dir": "models",
+    "scalers_dir": "scalers",
+    "logs_dir": "logs",
+    "plots_dir": "plots",
+    "historical_data_full_dir": "historical_data_full",
+    "historical_data_indices_dir": "historical_data_indices",
+    "historical_data_currency_dir": "historical_data_currency",
+    "historical_data_oil_dir": "historical_data_oil",
+    "historical_data_other_dir": "historical_data_other",
+    "start_date": "2023-01-01",
+    "end_date": "2025-09-26",
+    "model_type": "PassiveAggressiveClassifier"
+}

@@ -1,4 +1,3 @@
-# get_moex_stocks.py (полная прокачанная версия)
 import requests
 import pandas as pd
 import time
@@ -7,22 +6,38 @@ import json
 import logging
 import argparse
 
+# Настройка аргументов командной строки
 parser = argparse.ArgumentParser()
 parser.add_argument('--config', default='config.json', help='Path to config file')
 args = parser.parse_args()
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', handlers=[logging.FileHandler('get_moex_stocks.log'), logging.StreamHandler()])
-logger = logging.getLogger(__name__)
-
 def load_config(config_file):
+    """Загружает конфигурационный файл."""
     if not os.path.exists(config_file):
         logger.error(f"Config file {config_file} not found.")
-        raise FileNotFoundError
+        raise FileNotFoundError(f"Config file {config_file} not found.")
     with open(config_file, 'r') as f:
         return json.load(f)
 
+# Загрузка конфигурации
 config = load_config(args.config)
 
+# Создание необходимых директорий
+os.makedirs(config['logs_dir'], exist_ok=True)
+
+# Настройка логирования
+log_file = os.path.join(config['logs_dir'], 'get_moex_stocks.log')
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler(log_file, encoding='utf-8'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
+
+# Конфигурация
 MOEX_BASE_URL = "https://iss.moex.com/iss"
 MARKET = "shares"
 ENGINE = "stock"
@@ -32,7 +47,9 @@ REQUEST_PARAMS = {
     "securities.columns": "SECID,BOARDID,SHORTNAME,INSTRID,MARKETCODE",
     "marketdata.columns": "SECID,BOARDID,VALTODAY"
 }
-CSV_OUTPUT_FILE = "moex_stocks_liquid_boards.csv"
+CSV_OUTPUT_FILE = "moex_stocks_liquid_boards.csv"  # Сохранение в корневую директорию
+# Альтернативный путь для сохранения в data_dir (раскомментировать при необходимости):
+# CSV_OUTPUT_FILE = os.path.join(config['data_dir'], 'moex_stocks_liquid_boards.csv')
 
 def get_all_securities_with_marketdata():
     """Получает данные о всех инструментах и рыночной информации с MOEX ISS."""
@@ -91,6 +108,8 @@ def save_to_csv(df, filename):
         logger.error("DataFrame is empty, file will not be created.")
         return
     try:
+        # Создание директории для файла, если используется data_dir
+        os.makedirs(os.path.dirname(filename) or '.', exist_ok=True)
         df.to_csv(filename, index=False, encoding='utf-8-sig')
         logger.info(f"Stocks list successfully saved to {filename}")
     except IOError as e:

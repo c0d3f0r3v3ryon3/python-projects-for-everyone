@@ -1,4 +1,3 @@
-# combine_datasets.py (полная прокачанная версия)
 import pandas as pd
 import numpy as np
 import os
@@ -8,22 +7,47 @@ import json
 import logging
 import argparse
 
+# Настройка аргументов командной строки
 parser = argparse.ArgumentParser()
 parser.add_argument('--config', default='config.json', help='Path to config file')
 args = parser.parse_args()
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', handlers=[logging.FileHandler('combine_datasets.log'), logging.StreamHandler()])
-logger = logging.getLogger(__name__)
-
 def load_config(config_file):
+    """Загружает конфигурационный файл."""
     if not os.path.exists(config_file):
         logger.error(f"Config file {config_file} not found.")
-        raise FileNotFoundError
-    with open(config_file, 'r') as f:
+        raise FileNotFoundError(f"Config file {config_file} not found.")
+    with open(config_file, 'r', encoding='utf-8') as f:
         return json.load(f)
 
+# Загрузка конфигурации
 config = load_config(args.config)
 
+# Создание необходимых директорий
+for dir_path in [
+    config['logs_dir'],
+    config['historical_data_full_dir'],
+    config['historical_data_indices_dir'],
+    config['historical_data_currency_dir'],
+    config['historical_data_oil_dir'],
+    config['historical_data_other_dir'],
+    config['data_dir']
+]:
+    os.makedirs(dir_path, exist_ok=True)
+
+# Настройка логирования
+log_file = os.path.join(config['logs_dir'], 'combine_datasets.log')
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler(log_file, encoding='utf-8'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
+
+# Конфигурация
 HISTORICAL_DATA_DIR = {
     'stocks': config['historical_data_full_dir'],
     'indices': config['historical_data_indices_dir'],
@@ -160,7 +184,6 @@ def main():
         else:
             logger.warning(f"\nTarget stock {target_ticker} not found in combined dataset. Target variable not created.")
         logger.info(f"\nSaving combined dataset to {OUTPUT_FILE}...")
-        os.makedirs(os.path.dirname(OUTPUT_FILE), exist_ok=True)  # Создаем директорию
         combined_df.to_csv(OUTPUT_FILE, index=False, encoding='utf-8-sig')
         logger.info("Data combining completed.")
         sys.exit(0)
