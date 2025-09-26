@@ -1,0 +1,19 @@
+2025-09-26 16:15:23,381 - INFO - Requesting indices list from https://iss.moex.com/iss/engines/stock/markets/index/securities.json
+2025-09-26 16:15:23,747 - INFO - Total instruments on market 'index': 791
+2025-09-26 16:15:23,747 - INFO - First few rows:
+2025-09-26 16:15:23,748 - INFO -    SECID BOARDID  ... CURRENCYID      CALCMODE
+0  2xEQT    INAV  ...        RUB            IE
+1  2xOFZ    INAV  ...        RUB            IF
+2  AKAIA    INAV  ...        RUB            MX
+3  AKBCA    INAV  ...        RUB            IE
+4  AKCBI    RTSI  ...        RUB  Совокупный д
+
+[5 rows x 9 columns]
+2025-09-26 16:15:23,772 - INFO - 
+Found indices ['IMOEX', 'RTSI']:
+2025-09-26 16:15:23,773 - INFO -      SECID        SHORTNAME BOARDID
+182  IMOEX  Индекс МосБиржи    SNDX
+380   RTSI       Индекс РТС    RTSI
+2025-09-26 16:15:23,778 - INFO - 
+Indices tickers found. Proceed to history collection.
+2025-09-26 16:15:23,784 - INFO - Indices list saved to 'moex_indices_list.csv'.

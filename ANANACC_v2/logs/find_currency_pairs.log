@@ -1,0 +1,30 @@
+2025-09-26 16:15:45,962 - INFO - Requesting currency instruments list from https://iss.moex.com/iss/engines/currency/markets/selt/securities.json
+2025-09-26 16:15:47,687 - INFO - Total instruments on market 'selt': 727
+2025-09-26 16:15:47,688 - INFO - First few rows:
+2025-09-26 16:15:47,688 - INFO -           SECID BOARDID  ...                    LATNAME  LOTDIVIDER
+0  EUR000TODTOM    AUCB  ...  EUR_TODTOM - SWAP EUR/RUB           1
+1    EURRUB_SPT    AUCB  ...       EURRUB_SPT - EUR/RUB           1
+2  EURRUB_TOD1D    AUCB  ...        TOD_1D SWAP EUR/RUB           1
+3  EUR_RUB__TOD    AUCB  ...       EURRUB_TOD - EUR/RUB           1
+4  EUR_RUB__TOM    AUCB  ...       EURRUB_TOM - EUR/RUB           1
+5  USD000000TOD    AUCB  ...       USDRUB_TOD - USD/RUB           1
+6  USD000TODTOM    AUCB  ...  USD_TODTOM - SWAP USD/RUB           1
+7  USD000UTSTOM    AUCB  ...       USDRUB_TOM - USD/RUB           1
+8    USDRUB_SPT    AUCB  ...       USDRUB_SPT - USD/RUB           1
+9  USDRUB_TOD1D    AUCB  ...        TOD_1D SWAP USD/RUB           1
+
+[10 rows x 19 columns]
+2025-09-26 16:15:47,713 - INFO - 
+Found currency pairs matching ['USD000UTSTOM', 'EUR_RUB__TOM']:
+2025-09-26 16:15:47,713 - INFO -             SECID   SHORTNAME BOARDID
+4    EUR_RUB__TOM  EURRUB_TOM    AUCB
+7    USD000UTSTOM  USDRUB_TOM    AUCB
+66   EUR_RUB__TOM  EURRUB_TOM    CETS
+150  USD000UTSTOM  USDRUB_TOM    CETS
+282  EUR_RUB__TOM  EURRUB_TOM    CNGD
+376  USD000UTSTOM  USDRUB_TOM    CNGD
+529  EUR_RUB__TOM  EURRUB_TOM    LICU
+635  USD000UTSTOM  USDRUB_TOM    LICU
+2025-09-26 16:15:47,718 - INFO - 
+Currency pair tickers found. Proceed to history collection.
+2025-09-26 16:15:47,722 - INFO - Currency pairs list saved to 'moex_currency_pairs_list.csv'.

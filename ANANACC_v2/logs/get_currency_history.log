@@ -1,0 +1,34 @@
+2025-09-26 16:16:03,618 - INFO - Starting collection of historical data for currency pairs...
+2025-09-26 16:16:03,622 - INFO - Loaded 8 currency pairs from moex_currency_pairs_list.csv
+2025-09-26 16:16:03,623 - INFO - Starting processing of 8 currency pairs...
+2025-09-26 16:16:03,623 - INFO - Processing 1/8: EUR_RUB__TOM (AUCB)
+2025-09-26 16:16:03,623 - INFO - Requesting history for currency pair EUR_RUB__TOM (AUCB) from https://iss.moex.com/iss/history/engines/currency/markets/selt/boards/AUCB/securities/EUR_RUB__TOM.json
+2025-09-26 16:16:24,681 - ERROR - Connection error requesting history for currency pair EUR_RUB__TOM (AUCB): HTTPSConnectionPool(host='iss.moex.com', port=443): Max retries exceeded with url: /iss/history/engines/currency/markets/selt/boards/AUCB/securities/EUR_RUB__TOM.json?from=2023-01-01&iss.meta=off (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x00000269DB76CDC0>: Failed to establish a new connection: [WinError 10060] Попытка установить соединение была безуспешной, т.к. от другого компьютера за требуемое время не получен нужный отклик, или было разорвано уже установленное соединение из-за неверного отклика уже подключенного компьютера'))
+2025-09-26 16:16:25,696 - INFO - Processing 2/8: USD000UTSTOM (AUCB)
+2025-09-26 16:16:25,696 - INFO - Requesting history for currency pair USD000UTSTOM (AUCB) from https://iss.moex.com/iss/history/engines/currency/markets/selt/boards/AUCB/securities/USD000UTSTOM.json
+2025-09-26 16:16:26,440 - INFO - Received 100 rows of history for USD000UTSTOM. Columns: ['BOARDID', 'TRADEDATE', 'SHORTNAME', 'SECID', 'OPEN', 'LOW', 'HIGH', 'CLOSE', 'NUMTRADES', 'VOLRUR', 'WAPRICE']
+2025-09-26 16:16:26,443 - INFO - History for currency pair USD000UTSTOM saved to historical_data_currency\USD000UTSTOM_history.csv
+2025-09-26 16:16:27,456 - INFO - Processing 3/8: EUR_RUB__TOM (CETS)
+2025-09-26 16:16:27,456 - INFO - Requesting history for currency pair EUR_RUB__TOM (CETS) from https://iss.moex.com/iss/history/engines/currency/markets/selt/boards/CETS/securities/EUR_RUB__TOM.json
+2025-09-26 16:16:48,508 - ERROR - Connection error requesting history for currency pair EUR_RUB__TOM (CETS): HTTPSConnectionPool(host='iss.moex.com', port=443): Max retries exceeded with url: /iss/history/engines/currency/markets/selt/boards/CETS/securities/EUR_RUB__TOM.json?from=2023-01-01&iss.meta=off (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x00000269DB786340>: Failed to establish a new connection: [WinError 10060] Попытка установить соединение была безуспешной, т.к. от другого компьютера за требуемое время не получен нужный отклик, или было разорвано уже установленное соединение из-за неверного отклика уже подключенного компьютера'))
+2025-09-26 16:16:49,516 - INFO - Processing 4/8: USD000UTSTOM (CETS)
+2025-09-26 16:16:49,516 - INFO - Requesting history for currency pair USD000UTSTOM (CETS) from https://iss.moex.com/iss/history/engines/currency/markets/selt/boards/CETS/securities/USD000UTSTOM.json
+2025-09-26 16:16:50,285 - INFO - Received 100 rows of history for USD000UTSTOM. Columns: ['BOARDID', 'TRADEDATE', 'SHORTNAME', 'SECID', 'OPEN', 'LOW', 'HIGH', 'CLOSE', 'NUMTRADES', 'VOLRUR', 'WAPRICE']
+2025-09-26 16:16:50,287 - INFO - History for currency pair USD000UTSTOM saved to historical_data_currency\USD000UTSTOM_history.csv
+2025-09-26 16:16:51,290 - INFO - Processing 5/8: EUR_RUB__TOM (CNGD)
+2025-09-26 16:16:51,290 - INFO - Requesting history for currency pair EUR_RUB__TOM (CNGD) from https://iss.moex.com/iss/history/engines/currency/markets/selt/boards/CNGD/securities/EUR_RUB__TOM.json
+2025-09-26 16:16:57,056 - INFO - Received 100 rows of history for EUR_RUB__TOM. Columns: ['BOARDID', 'TRADEDATE', 'SHORTNAME', 'SECID', 'OPEN', 'LOW', 'HIGH', 'CLOSE', 'NUMTRADES', 'VOLRUR', 'WAPRICE']
+2025-09-26 16:16:57,059 - INFO - History for currency pair EUR_RUB__TOM saved to historical_data_currency\EUR_RUB__TOM_history.csv
+2025-09-26 16:16:58,073 - INFO - Processing 6/8: USD000UTSTOM (CNGD)
+2025-09-26 16:16:58,073 - INFO - Requesting history for currency pair USD000UTSTOM (CNGD) from https://iss.moex.com/iss/history/engines/currency/markets/selt/boards/CNGD/securities/USD000UTSTOM.json
+2025-09-26 16:16:58,796 - INFO - Received 100 rows of history for USD000UTSTOM. Columns: ['BOARDID', 'TRADEDATE', 'SHORTNAME', 'SECID', 'OPEN', 'LOW', 'HIGH', 'CLOSE', 'NUMTRADES', 'VOLRUR', 'WAPRICE']
+2025-09-26 16:16:58,799 - INFO - History for currency pair USD000UTSTOM saved to historical_data_currency\USD000UTSTOM_history.csv
+2025-09-26 16:16:59,814 - INFO - Processing 7/8: EUR_RUB__TOM (LICU)
+2025-09-26 16:16:59,814 - INFO - Requesting history for currency pair EUR_RUB__TOM (LICU) from https://iss.moex.com/iss/history/engines/currency/markets/selt/boards/LICU/securities/EUR_RUB__TOM.json
+2025-09-26 16:17:00,500 - INFO - Received 100 rows of history for EUR_RUB__TOM. Columns: ['BOARDID', 'TRADEDATE', 'SHORTNAME', 'SECID', 'OPEN', 'LOW', 'HIGH', 'CLOSE', 'NUMTRADES', 'VOLRUR', 'WAPRICE']
+2025-09-26 16:17:00,503 - INFO - History for currency pair EUR_RUB__TOM saved to historical_data_currency\EUR_RUB__TOM_history.csv
+2025-09-26 16:17:01,507 - INFO - Processing 8/8: USD000UTSTOM (LICU)
+2025-09-26 16:17:01,508 - INFO - Requesting history for currency pair USD000UTSTOM (LICU) from https://iss.moex.com/iss/history/engines/currency/markets/selt/boards/LICU/securities/USD000UTSTOM.json
+2025-09-26 16:17:02,329 - INFO - Received 100 rows of history for USD000UTSTOM. Columns: ['BOARDID', 'TRADEDATE', 'SHORTNAME', 'SECID', 'OPEN', 'LOW', 'HIGH', 'CLOSE', 'NUMTRADES', 'VOLRUR', 'WAPRICE']
+2025-09-26 16:17:02,330 - INFO - History for currency pair USD000UTSTOM saved to historical_data_currency\USD000UTSTOM_history.csv
+2025-09-26 16:17:03,345 - INFO - Collection of historical data for currency pairs completed.

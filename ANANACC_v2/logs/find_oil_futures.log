@@ -1,0 +1,20 @@
+2025-09-26 16:18:31,483 - INFO - Requesting futures list from https://iss.moex.com/iss/engines/futures/markets/forts/securities.json
+2025-09-26 16:18:52,550 - WARNING - Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x000001AC5FB84700>: Failed to establish a new connection: [WinError 10060] Попытка установить соединение была безуспешной, т.к. от другого компьютера за требуемое время не получен нужный отклик, или было разорвано уже установленное соединение из-за неверного отклика уже подключенного компьютера')': /iss/engines/futures/markets/forts/securities.json?iss.meta=off&iss.only=securities
+2025-09-26 16:19:15,608 - WARNING - Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x000001AC5FBCD580>: Failed to establish a new connection: [WinError 10060] Попытка установить соединение была безуспешной, т.к. от другого компьютера за требуемое время не получен нужный отклик, или было разорвано уже установленное соединение из-за неверного отклика уже подключенного компьютера')': /iss/engines/futures/markets/forts/securities.json?iss.meta=off&iss.only=securities
+2025-09-26 16:19:40,678 - WARNING - Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x000001AC5FBCD760>: Failed to establish a new connection: [WinError 10060] Попытка установить соединение была безуспешной, т.к. от другого компьютера за требуемое время не получен нужный отклик, или было разорвано уже установленное соединение из-за неверного отклика уже подключенного компьютера')': /iss/engines/futures/markets/forts/securities.json?iss.meta=off&iss.only=securities
+2025-09-26 16:19:44,044 - INFO - Total futures on market 'forts': 400
+2025-09-26 16:19:44,048 - INFO - 
+Found oil futures (BR):
+2025-09-26 16:19:44,049 - INFO -    SECID SHORTNAME BOARDID LASTDELDATE
+32  BRF6   BR-1.26    RFUD  2026-01-05
+33  BRG6   BR-2.26    RFUD  2026-02-02
+34  BRH6   BR-3.26    RFUD  2026-03-02
+35  BRJ6   BR-4.26    RFUD  2026-04-01
+36  BRK6   BR-5.26    RFUD  2026-05-04
+2025-09-26 16:19:44,056 - INFO - 
+--- Determining current and next contracts ---
+2025-09-26 16:19:44,066 - INFO - Current oil future (nearest >= today): BRV5 (expiration: 2025-10-01)
+2025-09-26 16:19:44,066 - INFO - Next oil future: BRX5
+2025-09-26 16:19:44,066 - INFO - 
+For further history collection, current contract will be used: BRV5
+2025-09-26 16:19:44,067 - INFO - Current futures ticker saved to 'current_oil_future_contract.txt'.

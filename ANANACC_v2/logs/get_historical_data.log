@@ -1,0 +1,1138 @@
+2025-09-26 15:58:15,192 - INFO - Starting collection of historical data (full list, retry only connection errors)...
+2025-09-26 15:58:15,218 - INFO - Loaded 258 tickers from moex_stocks_liquid_boards.csv
+2025-09-26 15:58:15,218 - INFO - Starting processing of 258 tickers...
+2025-09-26 15:58:15,218 - INFO - 
+--- Main pass ---
+2025-09-26 15:58:15,219 - INFO - Processing: ABIO (TQBR)
+2025-09-26 15:58:15,219 - INFO - Requesting history for ABIO (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/ABIO/candles.json
+2025-09-26 15:58:15,661 - INFO - History for ABIO saved to historical_data_full\ABIO_history.csv (500 rows)
+2025-09-26 15:58:15,661 - INFO -     Successfully processed: ABIO
+2025-09-26 15:58:16,663 - INFO - Processing: ABRD (TQBR)
+2025-09-26 15:58:16,663 - INFO - Requesting history for ABRD (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/ABRD/candles.json
+2025-09-26 15:58:18,165 - INFO - History for ABRD saved to historical_data_full\ABRD_history.csv (500 rows)
+2025-09-26 15:58:18,165 - INFO -     Successfully processed: ABRD
+2025-09-26 15:58:19,179 - INFO - Processing: AFKS (TQBR)
+2025-09-26 15:58:19,179 - INFO - Requesting history for AFKS (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/AFKS/candles.json
+2025-09-26 15:58:19,807 - INFO - History for AFKS saved to historical_data_full\AFKS_history.csv (500 rows)
+2025-09-26 15:58:19,807 - INFO -     Successfully processed: AFKS
+2025-09-26 15:58:20,811 - INFO - Processing: AFLT (TQBR)
+2025-09-26 15:58:20,813 - INFO - Requesting history for AFLT (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/AFLT/candles.json
+2025-09-26 15:58:21,152 - INFO - History for AFLT saved to historical_data_full\AFLT_history.csv (500 rows)
+2025-09-26 15:58:21,152 - INFO -     Successfully processed: AFLT
+2025-09-26 15:58:22,159 - INFO - Processing: AKRN (TQBR)
+2025-09-26 15:58:22,161 - INFO - Requesting history for AKRN (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/AKRN/candles.json
+2025-09-26 15:58:22,668 - INFO - History for AKRN saved to historical_data_full\AKRN_history.csv (500 rows)
+2025-09-26 15:58:22,668 - INFO -     Successfully processed: AKRN
+2025-09-26 15:58:23,680 - INFO - Processing: ALRS (TQBR)
+2025-09-26 15:58:23,681 - INFO - Requesting history for ALRS (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/ALRS/candles.json
+2025-09-26 15:58:24,018 - INFO - History for ALRS saved to historical_data_full\ALRS_history.csv (500 rows)
+2025-09-26 15:58:24,018 - INFO -     Successfully processed: ALRS
+2025-09-26 15:58:25,025 - INFO - Processing: AMEZ (SMAL)
+2025-09-26 15:58:25,025 - INFO - Requesting history for AMEZ (SMAL) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/SMAL/securities/AMEZ/candles.json
+2025-09-26 15:58:46,069 - ERROR - Connection error requesting history for AMEZ (SMAL): HTTPSConnectionPool(host='iss.moex.com', port=443): Max retries exceeded with url: /iss/engines/stock/markets/shares/boards/SMAL/securities/AMEZ/candles.json?from=2023-01-01&interval=24&iss.meta=off&iss.only=candles&candles.columns=begin%2Cend%2Copen%2Chigh%2Clow%2Cclose%2Cvolume (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x000002227AF7F400>: Failed to establish a new connection: [WinError 10060] Попытка установить соединение была безуспешной, т.к. от другого компьютера за требуемое время не получен нужный отклик, или было разорвано уже установленное соединение из-за неверного отклика уже подключенного компьютера'))
+2025-09-26 15:58:46,069 - INFO -     Connection error for AMEZ, added to retry list.
+2025-09-26 15:58:47,075 - INFO - Processing: APRI (TQBR)
+2025-09-26 15:58:47,075 - INFO - Requesting history for APRI (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/APRI/candles.json
+2025-09-26 15:58:47,371 - INFO - History for APRI saved to historical_data_full\APRI_history.csv (302 rows)
+2025-09-26 15:58:47,371 - INFO -     Successfully processed: APRI
+2025-09-26 15:58:48,380 - INFO - Processing: APTK (TQBR)
+2025-09-26 15:58:48,380 - INFO - Requesting history for APTK (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/APTK/candles.json
+2025-09-26 15:58:50,072 - INFO - History for APTK saved to historical_data_full\APTK_history.csv (500 rows)
+2025-09-26 15:58:50,073 - INFO -     Successfully processed: APTK
+2025-09-26 15:58:51,087 - INFO - Processing: AQUA (TQBR)
+2025-09-26 15:58:51,087 - INFO - Requesting history for AQUA (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/AQUA/candles.json
+2025-09-26 15:58:53,820 - INFO - History for AQUA saved to historical_data_full\AQUA_history.csv (500 rows)
+2025-09-26 15:58:53,820 - INFO -     Successfully processed: AQUA
+2025-09-26 15:58:54,835 - INFO - Processing: ARSA (TQBR)
+2025-09-26 15:58:54,835 - INFO - Requesting history for ARSA (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/ARSA/candles.json
+2025-09-26 15:58:55,208 - INFO - History for ARSA saved to historical_data_full\ARSA_history.csv (500 rows)
+2025-09-26 15:58:55,208 - INFO -     Successfully processed: ARSA
+2025-09-26 15:58:56,221 - INFO - Processing: ASSB (TQBR)
+2025-09-26 15:58:56,221 - INFO - Requesting history for ASSB (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/ASSB/candles.json
+2025-09-26 15:58:56,544 - INFO - History for ASSB saved to historical_data_full\ASSB_history.csv (500 rows)
+2025-09-26 15:58:56,544 - INFO -     Successfully processed: ASSB
+2025-09-26 15:58:57,555 - INFO - Processing: ASTR (TQBR)
+2025-09-26 15:58:57,555 - INFO - Requesting history for ASTR (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/ASTR/candles.json
+2025-09-26 15:59:01,154 - INFO - History for ASTR saved to historical_data_full\ASTR_history.csv (500 rows)
+2025-09-26 15:59:01,154 - INFO -     Successfully processed: ASTR
+2025-09-26 15:59:02,166 - INFO - Processing: AVAN (TQBR)
+2025-09-26 15:59:02,167 - INFO - Requesting history for AVAN (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/AVAN/candles.json
+2025-09-26 15:59:02,451 - INFO - History for AVAN saved to historical_data_full\AVAN_history.csv (500 rows)
+2025-09-26 15:59:02,451 - INFO -     Successfully processed: AVAN
+2025-09-26 15:59:03,457 - INFO - Processing: BANE (TQBR)
+2025-09-26 15:59:03,458 - INFO - Requesting history for BANE (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/BANE/candles.json
+2025-09-26 15:59:03,742 - INFO - History for BANE saved to historical_data_full\BANE_history.csv (500 rows)
+2025-09-26 15:59:03,742 - INFO -     Successfully processed: BANE
+2025-09-26 15:59:04,749 - INFO - Processing: BANEP (TQBR)
+2025-09-26 15:59:04,749 - INFO - Requesting history for BANEP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/BANEP/candles.json
+2025-09-26 15:59:25,796 - ERROR - Connection error requesting history for BANEP (TQBR): HTTPSConnectionPool(host='iss.moex.com', port=443): Max retries exceeded with url: /iss/engines/stock/markets/shares/boards/TQBR/securities/BANEP/candles.json?from=2023-01-01&interval=24&iss.meta=off&iss.only=candles&candles.columns=begin%2Cend%2Copen%2Chigh%2Clow%2Cclose%2Cvolume (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x000002227AF7FAF0>: Failed to establish a new connection: [WinError 10060] Попытка установить соединение была безуспешной, т.к. от другого компьютера за требуемое время не получен нужный отклик, или было разорвано уже установленное соединение из-за неверного отклика уже подключенного компьютера'))
+2025-09-26 15:59:25,796 - INFO -     Connection error for BANEP, added to retry list.
+2025-09-26 15:59:26,809 - INFO - Processing: BELU (TQBR)
+2025-09-26 15:59:26,809 - INFO - Requesting history for BELU (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/BELU/candles.json
+2025-09-26 15:59:27,107 - INFO - History for BELU saved to historical_data_full\BELU_history.csv (500 rows)
+2025-09-26 15:59:27,107 - INFO -     Successfully processed: BELU
+2025-09-26 15:59:28,115 - INFO - Processing: BISVP (TQBR)
+2025-09-26 15:59:28,116 - INFO - Requesting history for BISVP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/BISVP/candles.json
+2025-09-26 15:59:28,397 - INFO - History for BISVP saved to historical_data_full\BISVP_history.csv (500 rows)
+2025-09-26 15:59:28,397 - INFO -     Successfully processed: BISVP
+2025-09-26 15:59:29,407 - INFO - Processing: BLNG (TQBR)
+2025-09-26 15:59:29,407 - INFO - Requesting history for BLNG (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/BLNG/candles.json
+2025-09-26 15:59:50,469 - ERROR - Connection error requesting history for BLNG (TQBR): HTTPSConnectionPool(host='iss.moex.com', port=443): Max retries exceeded with url: /iss/engines/stock/markets/shares/boards/TQBR/securities/BLNG/candles.json?from=2023-01-01&interval=24&iss.meta=off&iss.only=candles&candles.columns=begin%2Cend%2Copen%2Chigh%2Clow%2Cclose%2Cvolume (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x000002227AF7F100>: Failed to establish a new connection: [WinError 10060] Попытка установить соединение была безуспешной, т.к. от другого компьютера за требуемое время не получен нужный отклик, или было разорвано уже установленное соединение из-за неверного отклика уже подключенного компьютера'))
+2025-09-26 15:59:50,470 - INFO -     Connection error for BLNG, added to retry list.
+2025-09-26 15:59:51,477 - INFO - Processing: BRZL (TQBR)
+2025-09-26 15:59:51,477 - INFO - Requesting history for BRZL (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/BRZL/candles.json
+2025-09-26 15:59:51,725 - INFO - History for BRZL saved to historical_data_full\BRZL_history.csv (500 rows)
+2025-09-26 15:59:51,725 - INFO -     Successfully processed: BRZL
+2025-09-26 15:59:52,735 - INFO - Processing: BSPB (TQBR)
+2025-09-26 15:59:52,735 - INFO - Requesting history for BSPB (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/BSPB/candles.json
+2025-09-26 15:59:52,991 - INFO - History for BSPB saved to historical_data_full\BSPB_history.csv (500 rows)
+2025-09-26 15:59:52,991 - INFO -     Successfully processed: BSPB
+2025-09-26 15:59:54,000 - INFO - Processing: BSPBP (TQBR)
+2025-09-26 15:59:54,000 - INFO - Requesting history for BSPBP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/BSPBP/candles.json
+2025-09-26 15:59:55,499 - INFO - History for BSPBP saved to historical_data_full\BSPBP_history.csv (500 rows)
+2025-09-26 15:59:55,500 - INFO -     Successfully processed: BSPBP
+2025-09-26 15:59:56,503 - INFO - Processing: CARM (TQBR)
+2025-09-26 15:59:56,503 - INFO - Requesting history for CARM (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/CARM/candles.json
+2025-09-26 15:59:59,399 - INFO - History for CARM saved to historical_data_full\CARM_history.csv (500 rows)
+2025-09-26 15:59:59,399 - INFO -     Successfully processed: CARM
+2025-09-26 16:00:00,413 - INFO - Processing: CBOM (TQBR)
+2025-09-26 16:00:00,413 - INFO - Requesting history for CBOM (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/CBOM/candles.json
+2025-09-26 16:00:00,742 - INFO - History for CBOM saved to historical_data_full\CBOM_history.csv (500 rows)
+2025-09-26 16:00:00,742 - INFO -     Successfully processed: CBOM
+2025-09-26 16:00:01,751 - INFO - Processing: CHGZ (TQBR)
+2025-09-26 16:00:01,751 - INFO - Requesting history for CHGZ (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/CHGZ/candles.json
+2025-09-26 16:00:02,028 - INFO - History for CHGZ saved to historical_data_full\CHGZ_history.csv (500 rows)
+2025-09-26 16:00:02,028 - INFO -     Successfully processed: CHGZ
+2025-09-26 16:00:03,043 - INFO - Processing: CHKZ (TQBR)
+2025-09-26 16:00:03,043 - INFO - Requesting history for CHKZ (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/CHKZ/candles.json
+2025-09-26 16:00:03,333 - INFO - History for CHKZ saved to historical_data_full\CHKZ_history.csv (500 rows)
+2025-09-26 16:00:03,333 - INFO -     Successfully processed: CHKZ
+2025-09-26 16:00:04,335 - INFO - Processing: CHMF (TQBR)
+2025-09-26 16:00:04,336 - INFO - Requesting history for CHMF (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/CHMF/candles.json
+2025-09-26 16:00:04,593 - INFO - History for CHMF saved to historical_data_full\CHMF_history.csv (500 rows)
+2025-09-26 16:00:04,594 - INFO -     Successfully processed: CHMF
+2025-09-26 16:00:05,598 - INFO - Processing: CHMK (TQBR)
+2025-09-26 16:00:05,598 - INFO - Requesting history for CHMK (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/CHMK/candles.json
+2025-09-26 16:00:06,122 - INFO - History for CHMK saved to historical_data_full\CHMK_history.csv (500 rows)
+2025-09-26 16:00:06,122 - INFO -     Successfully processed: CHMK
+2025-09-26 16:00:07,137 - INFO - Processing: CNRU (TQBR)
+2025-09-26 16:00:07,137 - INFO - Requesting history for CNRU (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/CNRU/candles.json
+2025-09-26 16:00:08,688 - INFO - History for CNRU saved to historical_data_full\CNRU_history.csv (148 rows)
+2025-09-26 16:00:08,688 - INFO -     Successfully processed: CNRU
+2025-09-26 16:00:09,701 - INFO - Processing: CNTL (TQBR)
+2025-09-26 16:00:09,701 - INFO - Requesting history for CNTL (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/CNTL/candles.json
+2025-09-26 16:00:12,567 - INFO - History for CNTL saved to historical_data_full\CNTL_history.csv (500 rows)
+2025-09-26 16:00:12,567 - INFO -     Successfully processed: CNTL
+2025-09-26 16:00:13,568 - INFO - Processing: CNTLP (TQBR)
+2025-09-26 16:00:13,568 - INFO - Requesting history for CNTLP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/CNTLP/candles.json
+2025-09-26 16:00:14,975 - INFO - History for CNTLP saved to historical_data_full\CNTLP_history.csv (500 rows)
+2025-09-26 16:00:14,975 - INFO -     Successfully processed: CNTLP
+2025-09-26 16:00:15,983 - INFO - Processing: DATA (TQBR)
+2025-09-26 16:00:15,983 - INFO - Requesting history for DATA (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/DATA/candles.json
+2025-09-26 16:00:37,026 - ERROR - Connection error requesting history for DATA (TQBR): HTTPSConnectionPool(host='iss.moex.com', port=443): Max retries exceeded with url: /iss/engines/stock/markets/shares/boards/TQBR/securities/DATA/candles.json?from=2023-01-01&interval=24&iss.meta=off&iss.only=candles&candles.columns=begin%2Cend%2Copen%2Chigh%2Clow%2Cclose%2Cvolume (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x000002227AF7F610>: Failed to establish a new connection: [WinError 10060] Попытка установить соединение была безуспешной, т.к. от другого компьютера за требуемое время не получен нужный отклик, или было разорвано уже установленное соединение из-за неверного отклика уже подключенного компьютера'))
+2025-09-26 16:00:37,027 - INFO -     Connection error for DATA, added to retry list.
+2025-09-26 16:00:38,035 - INFO - Processing: DELI (TQBR)
+2025-09-26 16:00:38,035 - INFO - Requesting history for DELI (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/DELI/candles.json
+2025-09-26 16:00:39,629 - INFO - History for DELI saved to historical_data_full\DELI_history.csv (452 rows)
+2025-09-26 16:00:39,630 - INFO -     Successfully processed: DELI
+2025-09-26 16:00:40,640 - INFO - Processing: DIAS (TQBR)
+2025-09-26 16:00:40,640 - INFO - Requesting history for DIAS (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/DIAS/candles.json
+2025-09-26 16:00:41,991 - INFO - History for DIAS saved to historical_data_full\DIAS_history.csv (448 rows)
+2025-09-26 16:00:41,991 - INFO -     Successfully processed: DIAS
+2025-09-26 16:00:43,004 - INFO - Processing: DIOD (TQBR)
+2025-09-26 16:00:43,004 - INFO - Requesting history for DIOD (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/DIOD/candles.json
+2025-09-26 16:00:43,256 - INFO - History for DIOD saved to historical_data_full\DIOD_history.csv (500 rows)
+2025-09-26 16:00:43,256 - INFO -     Successfully processed: DIOD
+2025-09-26 16:00:44,264 - INFO - Processing: DVEC (TQBR)
+2025-09-26 16:00:44,264 - INFO - Requesting history for DVEC (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/DVEC/candles.json
+2025-09-26 16:00:44,661 - INFO - History for DVEC saved to historical_data_full\DVEC_history.csv (500 rows)
+2025-09-26 16:00:44,661 - INFO -     Successfully processed: DVEC
+2025-09-26 16:00:45,665 - INFO - Processing: DZRD (TQBR)
+2025-09-26 16:00:45,665 - INFO - Requesting history for DZRD (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/DZRD/candles.json
+2025-09-26 16:00:45,901 - INFO - History for DZRD saved to historical_data_full\DZRD_history.csv (500 rows)
+2025-09-26 16:00:45,901 - INFO -     Successfully processed: DZRD
+2025-09-26 16:00:46,904 - INFO - Processing: DZRDP (TQBR)
+2025-09-26 16:00:46,905 - INFO - Requesting history for DZRDP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/DZRDP/candles.json
+2025-09-26 16:00:47,124 - INFO - History for DZRDP saved to historical_data_full\DZRDP_history.csv (500 rows)
+2025-09-26 16:00:47,124 - INFO -     Successfully processed: DZRDP
+2025-09-26 16:00:48,136 - INFO - Processing: EELT (TQBR)
+2025-09-26 16:00:48,136 - INFO - Requesting history for EELT (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/EELT/candles.json
+2025-09-26 16:00:48,460 - INFO - History for EELT saved to historical_data_full\EELT_history.csv (500 rows)
+2025-09-26 16:00:48,460 - INFO -     Successfully processed: EELT
+2025-09-26 16:00:49,468 - INFO - Processing: ELFV (TQBR)
+2025-09-26 16:00:49,468 - INFO - Requesting history for ELFV (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/ELFV/candles.json
+2025-09-26 16:00:52,139 - INFO - History for ELFV saved to historical_data_full\ELFV_history.csv (500 rows)
+2025-09-26 16:00:52,139 - INFO -     Successfully processed: ELFV
+2025-09-26 16:00:53,153 - INFO - Processing: ELMT (TQBR)
+2025-09-26 16:00:53,153 - INFO - Requesting history for ELMT (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/ELMT/candles.json
+2025-09-26 16:00:53,598 - INFO - History for ELMT saved to historical_data_full\ELMT_history.csv (377 rows)
+2025-09-26 16:00:53,598 - INFO -     Successfully processed: ELMT
+2025-09-26 16:00:54,598 - INFO - Processing: ENPG (TQBR)
+2025-09-26 16:00:54,599 - INFO - Requesting history for ENPG (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/ENPG/candles.json
+2025-09-26 16:00:54,919 - INFO - History for ENPG saved to historical_data_full\ENPG_history.csv (500 rows)
+2025-09-26 16:00:54,919 - INFO -     Successfully processed: ENPG
+2025-09-26 16:00:55,924 - INFO - Processing: ETLN (TQBR)
+2025-09-26 16:00:55,924 - INFO - Requesting history for ETLN (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/ETLN/candles.json
+2025-09-26 16:00:56,204 - INFO - History for ETLN saved to historical_data_full\ETLN_history.csv (500 rows)
+2025-09-26 16:00:56,204 - INFO -     Successfully processed: ETLN
+2025-09-26 16:00:57,213 - INFO - Processing: EUTR (TQBR)
+2025-09-26 16:00:57,213 - INFO - Requesting history for EUTR (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/EUTR/candles.json
+2025-09-26 16:00:57,536 - INFO - History for EUTR saved to historical_data_full\EUTR_history.csv (500 rows)
+2025-09-26 16:00:57,537 - INFO -     Successfully processed: EUTR
+2025-09-26 16:00:58,549 - INFO - Processing: FEES (TQBR)
+2025-09-26 16:00:58,550 - INFO - Requesting history for FEES (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/FEES/candles.json
+2025-09-26 16:00:58,835 - INFO - History for FEES saved to historical_data_full\FEES_history.csv (500 rows)
+2025-09-26 16:00:58,835 - INFO -     Successfully processed: FEES
+2025-09-26 16:00:59,843 - INFO - Processing: FESH (TQBR)
+2025-09-26 16:00:59,843 - INFO - Requesting history for FESH (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/FESH/candles.json
+2025-09-26 16:01:00,150 - INFO - History for FESH saved to historical_data_full\FESH_history.csv (500 rows)
+2025-09-26 16:01:00,150 - INFO -     Successfully processed: FESH
+2025-09-26 16:01:01,151 - INFO - Processing: FIXR (TQBR)
+2025-09-26 16:01:01,152 - INFO - Requesting history for FIXR (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/FIXR/candles.json
+2025-09-26 16:01:01,379 - INFO - History for FIXR saved to historical_data_full\FIXR_history.csv (34 rows)
+2025-09-26 16:01:01,379 - INFO -     Successfully processed: FIXR
+2025-09-26 16:01:02,382 - INFO - Processing: FLOT (TQBR)
+2025-09-26 16:01:02,383 - INFO - Requesting history for FLOT (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/FLOT/candles.json
+2025-09-26 16:01:02,678 - INFO - History for FLOT saved to historical_data_full\FLOT_history.csv (500 rows)
+2025-09-26 16:01:02,678 - INFO -     Successfully processed: FLOT
+2025-09-26 16:01:03,688 - INFO - Processing: GAZA (TQBR)
+2025-09-26 16:01:03,689 - INFO - Requesting history for GAZA (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/GAZA/candles.json
+2025-09-26 16:01:03,957 - INFO - History for GAZA saved to historical_data_full\GAZA_history.csv (490 rows)
+2025-09-26 16:01:03,957 - INFO -     Successfully processed: GAZA
+2025-09-26 16:01:04,962 - INFO - Processing: GAZAP (TQBR)
+2025-09-26 16:01:04,963 - INFO - Requesting history for GAZAP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/GAZAP/candles.json
+2025-09-26 16:01:05,314 - INFO - History for GAZAP saved to historical_data_full\GAZAP_history.csv (489 rows)
+2025-09-26 16:01:05,314 - INFO -     Successfully processed: GAZAP
+2025-09-26 16:01:06,329 - INFO - Processing: GAZC (SMAL)
+2025-09-26 16:01:06,330 - INFO - Requesting history for GAZC (SMAL) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/SMAL/securities/GAZC/candles.json
+2025-09-26 16:01:12,310 - WARNING - No historical data for GAZC, file not created.
+2025-09-26 16:01:12,311 - INFO -     Final error for GAZC (reason: NO_DATA), added to final failed list.
+2025-09-26 16:01:13,323 - INFO - Processing: GAZP (TQBR)
+2025-09-26 16:01:13,323 - INFO - Requesting history for GAZP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/GAZP/candles.json
+2025-09-26 16:01:13,562 - INFO - History for GAZP saved to historical_data_full\GAZP_history.csv (500 rows)
+2025-09-26 16:01:13,562 - INFO -     Successfully processed: GAZP
+2025-09-26 16:01:14,569 - INFO - Processing: GAZS (SMAL)
+2025-09-26 16:01:14,569 - INFO - Requesting history for GAZS (SMAL) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/SMAL/securities/GAZS/candles.json
+2025-09-26 16:01:14,768 - WARNING - No historical data for GAZS, file not created.
+2025-09-26 16:01:14,769 - INFO -     Final error for GAZS (reason: NO_DATA), added to final failed list.
+2025-09-26 16:01:15,773 - INFO - Processing: GAZT (SMAL)
+2025-09-26 16:01:15,773 - INFO - Requesting history for GAZT (SMAL) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/SMAL/securities/GAZT/candles.json
+2025-09-26 16:01:36,836 - ERROR - Connection error requesting history for GAZT (SMAL): HTTPSConnectionPool(host='iss.moex.com', port=443): Max retries exceeded with url: /iss/engines/stock/markets/shares/boards/SMAL/securities/GAZT/candles.json?from=2023-01-01&interval=24&iss.meta=off&iss.only=candles&candles.columns=begin%2Cend%2Copen%2Chigh%2Clow%2Cclose%2Cvolume (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x000002227AF7F220>: Failed to establish a new connection: [WinError 10060] Попытка установить соединение была безуспешной, т.к. от другого компьютера за требуемое время не получен нужный отклик, или было разорвано уже установленное соединение из-за неверного отклика уже подключенного компьютера'))
+2025-09-26 16:01:36,836 - INFO -     Connection error for GAZT, added to retry list.
+2025-09-26 16:01:37,843 - INFO - Processing: GCHE (TQBR)
+2025-09-26 16:01:37,843 - INFO - Requesting history for GCHE (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/GCHE/candles.json
+2025-09-26 16:01:38,237 - INFO - History for GCHE saved to historical_data_full\GCHE_history.csv (500 rows)
+2025-09-26 16:01:38,237 - INFO -     Successfully processed: GCHE
+2025-09-26 16:01:39,241 - INFO - Processing: GECO (TQBR)
+2025-09-26 16:01:39,242 - INFO - Requesting history for GECO (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/GECO/candles.json
+2025-09-26 16:02:00,301 - ERROR - Connection error requesting history for GECO (TQBR): HTTPSConnectionPool(host='iss.moex.com', port=443): Max retries exceeded with url: /iss/engines/stock/markets/shares/boards/TQBR/securities/GECO/candles.json?from=2023-01-01&interval=24&iss.meta=off&iss.only=candles&candles.columns=begin%2Cend%2Copen%2Chigh%2Clow%2Cclose%2Cvolume (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x000002227AF7F310>: Failed to establish a new connection: [WinError 10060] Попытка установить соединение была безуспешной, т.к. от другого компьютера за требуемое время не получен нужный отклик, или было разорвано уже установленное соединение из-за неверного отклика уже подключенного компьютера'))
+2025-09-26 16:02:00,302 - INFO -     Connection error for GECO, added to retry list.
+2025-09-26 16:02:01,309 - INFO - Processing: GEMA (TQBR)
+2025-09-26 16:02:01,309 - INFO - Requesting history for GEMA (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/GEMA/candles.json
+2025-09-26 16:02:03,444 - INFO - History for GEMA saved to historical_data_full\GEMA_history.csv (500 rows)
+2025-09-26 16:02:03,444 - INFO -     Successfully processed: GEMA
+2025-09-26 16:02:04,447 - INFO - Processing: GEMC (TQBR)
+2025-09-26 16:02:04,448 - INFO - Requesting history for GEMC (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/GEMC/candles.json
+2025-09-26 16:02:05,963 - INFO - History for GEMC saved to historical_data_full\GEMC_history.csv (500 rows)
+2025-09-26 16:02:05,963 - INFO -     Successfully processed: GEMC
+2025-09-26 16:02:06,974 - INFO - Processing: GMKN (TQBR)
+2025-09-26 16:02:06,974 - INFO - Requesting history for GMKN (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/GMKN/candles.json
+2025-09-26 16:02:08,975 - INFO - History for GMKN saved to historical_data_full\GMKN_history.csv (500 rows)
+2025-09-26 16:02:08,976 - INFO -     Successfully processed: GMKN
+2025-09-26 16:02:09,977 - INFO - Processing: GTRK (TQBR)
+2025-09-26 16:02:09,978 - INFO - Requesting history for GTRK (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/GTRK/candles.json
+2025-09-26 16:02:11,498 - INFO - History for GTRK saved to historical_data_full\GTRK_history.csv (500 rows)
+2025-09-26 16:02:11,498 - INFO -     Successfully processed: GTRK
+2025-09-26 16:02:12,501 - INFO - Processing: HEAD (TQBR)
+2025-09-26 16:02:12,501 - INFO - Requesting history for HEAD (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/HEAD/candles.json
+2025-09-26 16:02:14,556 - INFO - History for HEAD saved to historical_data_full\HEAD_history.csv (300 rows)
+2025-09-26 16:02:14,556 - INFO -     Successfully processed: HEAD
+2025-09-26 16:02:15,561 - INFO - Processing: HIMCP (TQBR)
+2025-09-26 16:02:15,561 - INFO - Requesting history for HIMCP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/HIMCP/candles.json
+2025-09-26 16:02:16,908 - INFO - History for HIMCP saved to historical_data_full\HIMCP_history.csv (500 rows)
+2025-09-26 16:02:16,908 - INFO -     Successfully processed: HIMCP
+2025-09-26 16:02:17,910 - INFO - Processing: HNFG (TQBR)
+2025-09-26 16:02:17,910 - INFO - Requesting history for HNFG (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/HNFG/candles.json
+2025-09-26 16:02:18,271 - INFO - History for HNFG saved to historical_data_full\HNFG_history.csv (500 rows)
+2025-09-26 16:02:18,272 - INFO -     Successfully processed: HNFG
+2025-09-26 16:02:19,276 - INFO - Processing: HYDR (TQBR)
+2025-09-26 16:02:19,276 - INFO - Requesting history for HYDR (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/HYDR/candles.json
+2025-09-26 16:02:19,908 - INFO - History for HYDR saved to historical_data_full\HYDR_history.csv (500 rows)
+2025-09-26 16:02:19,908 - INFO -     Successfully processed: HYDR
+2025-09-26 16:02:20,908 - INFO - Processing: IGST (TQBR)
+2025-09-26 16:02:20,908 - INFO - Requesting history for IGST (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/IGST/candles.json
+2025-09-26 16:02:25,317 - INFO - History for IGST saved to historical_data_full\IGST_history.csv (500 rows)
+2025-09-26 16:02:25,317 - INFO -     Successfully processed: IGST
+2025-09-26 16:02:26,321 - INFO - Processing: IGSTP (TQBR)
+2025-09-26 16:02:26,321 - INFO - Requesting history for IGSTP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/IGSTP/candles.json
+2025-09-26 16:02:28,065 - INFO - History for IGSTP saved to historical_data_full\IGSTP_history.csv (500 rows)
+2025-09-26 16:02:28,065 - INFO -     Successfully processed: IGSTP
+2025-09-26 16:02:29,077 - INFO - Processing: IRAO (TQBR)
+2025-09-26 16:02:29,077 - INFO - Requesting history for IRAO (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/IRAO/candles.json
+2025-09-26 16:02:30,125 - INFO - History for IRAO saved to historical_data_full\IRAO_history.csv (500 rows)
+2025-09-26 16:02:30,125 - INFO -     Successfully processed: IRAO
+2025-09-26 16:02:31,128 - INFO - Processing: IRKT (TQBR)
+2025-09-26 16:02:31,128 - INFO - Requesting history for IRKT (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/IRKT/candles.json
+2025-09-26 16:02:31,462 - INFO - History for IRKT saved to historical_data_full\IRKT_history.csv (500 rows)
+2025-09-26 16:02:31,462 - INFO -     Successfully processed: IRKT
+2025-09-26 16:02:32,467 - INFO - Processing: IVAT (TQBR)
+2025-09-26 16:02:32,467 - INFO - Requesting history for IVAT (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/IVAT/candles.json
+2025-09-26 16:02:32,834 - INFO - History for IVAT saved to historical_data_full\IVAT_history.csv (371 rows)
+2025-09-26 16:02:32,834 - INFO -     Successfully processed: IVAT
+2025-09-26 16:02:33,845 - INFO - Processing: JNOS (TQBR)
+2025-09-26 16:02:33,845 - INFO - Requesting history for JNOS (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/JNOS/candles.json
+2025-09-26 16:02:38,543 - INFO - History for JNOS saved to historical_data_full\JNOS_history.csv (500 rows)
+2025-09-26 16:02:38,543 - INFO -     Successfully processed: JNOS
+2025-09-26 16:02:39,557 - INFO - Processing: JNOSP (TQBR)
+2025-09-26 16:02:39,558 - INFO - Requesting history for JNOSP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/JNOSP/candles.json
+2025-09-26 16:02:42,834 - INFO - History for JNOSP saved to historical_data_full\JNOSP_history.csv (500 rows)
+2025-09-26 16:02:42,834 - INFO -     Successfully processed: JNOSP
+2025-09-26 16:02:43,839 - INFO - Processing: KAZT (TQBR)
+2025-09-26 16:02:43,839 - INFO - Requesting history for KAZT (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/KAZT/candles.json
+2025-09-26 16:02:46,393 - INFO - History for KAZT saved to historical_data_full\KAZT_history.csv (500 rows)
+2025-09-26 16:02:46,393 - INFO -     Successfully processed: KAZT
+2025-09-26 16:02:47,407 - INFO - Processing: KAZTP (TQBR)
+2025-09-26 16:02:47,407 - INFO - Requesting history for KAZTP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/KAZTP/candles.json
+2025-09-26 16:03:08,454 - ERROR - Connection error requesting history for KAZTP (TQBR): HTTPSConnectionPool(host='iss.moex.com', port=443): Max retries exceeded with url: /iss/engines/stock/markets/shares/boards/TQBR/securities/KAZTP/candles.json?from=2023-01-01&interval=24&iss.meta=off&iss.only=candles&candles.columns=begin%2Cend%2Copen%2Chigh%2Clow%2Cclose%2Cvolume (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x000002227AF7F6D0>: Failed to establish a new connection: [WinError 10060] Попытка установить соединение была безуспешной, т.к. от другого компьютера за требуемое время не получен нужный отклик, или было разорвано уже установленное соединение из-за неверного отклика уже подключенного компьютера'))
+2025-09-26 16:03:08,454 - INFO -     Connection error for KAZTP, added to retry list.
+2025-09-26 16:03:09,456 - INFO - Processing: KBSB (TQBR)
+2025-09-26 16:03:09,456 - INFO - Requesting history for KBSB (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/KBSB/candles.json
+2025-09-26 16:03:09,781 - INFO - History for KBSB saved to historical_data_full\KBSB_history.csv (500 rows)
+2025-09-26 16:03:09,781 - INFO -     Successfully processed: KBSB
+2025-09-26 16:03:10,783 - INFO - Processing: KCHE (TQBR)
+2025-09-26 16:03:10,783 - INFO - Requesting history for KCHE (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/KCHE/candles.json
+2025-09-26 16:03:11,069 - INFO - History for KCHE saved to historical_data_full\KCHE_history.csv (500 rows)
+2025-09-26 16:03:11,069 - INFO -     Successfully processed: KCHE
+2025-09-26 16:03:12,078 - INFO - Processing: KCHEP (SMAL)
+2025-09-26 16:03:12,078 - INFO - Requesting history for KCHEP (SMAL) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/SMAL/securities/KCHEP/candles.json
+2025-09-26 16:03:12,553 - INFO - History for KCHEP saved to historical_data_full\KCHEP_history.csv (69 rows)
+2025-09-26 16:03:12,553 - INFO -     Successfully processed: KCHEP
+2025-09-26 16:03:13,556 - INFO - Processing: KFBA (TQBR)
+2025-09-26 16:03:13,556 - INFO - Requesting history for KFBA (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/KFBA/candles.json
+2025-09-26 16:03:13,814 - INFO - History for KFBA saved to historical_data_full\KFBA_history.csv (74 rows)
+2025-09-26 16:03:13,814 - INFO -     Successfully processed: KFBA
+2025-09-26 16:03:14,819 - INFO - Processing: KGKC (SMAL)
+2025-09-26 16:03:14,819 - INFO - Requesting history for KGKC (SMAL) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/SMAL/securities/KGKC/candles.json
+2025-09-26 16:03:15,048 - INFO - History for KGKC saved to historical_data_full\KGKC_history.csv (17 rows)
+2025-09-26 16:03:15,048 - INFO -     Successfully processed: KGKC
+2025-09-26 16:03:16,052 - INFO - Processing: KGKCP (SMAL)
+2025-09-26 16:03:16,052 - INFO - Requesting history for KGKCP (SMAL) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/SMAL/securities/KGKCP/candles.json
+2025-09-26 16:03:16,739 - INFO - History for KGKCP saved to historical_data_full\KGKCP_history.csv (24 rows)
+2025-09-26 16:03:16,739 - INFO -     Successfully processed: KGKCP
+2025-09-26 16:03:17,752 - INFO - Processing: KLSB (TQBR)
+2025-09-26 16:03:17,752 - INFO - Requesting history for KLSB (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/KLSB/candles.json
+2025-09-26 16:03:21,806 - INFO - History for KLSB saved to historical_data_full\KLSB_history.csv (500 rows)
+2025-09-26 16:03:21,806 - INFO -     Successfully processed: KLSB
+2025-09-26 16:03:22,814 - INFO - Processing: KLVZ (TQBR)
+2025-09-26 16:03:22,814 - INFO - Requesting history for KLVZ (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/KLVZ/candles.json
+2025-09-26 16:03:23,281 - INFO - History for KLVZ saved to historical_data_full\KLVZ_history.csv (425 rows)
+2025-09-26 16:03:23,281 - INFO -     Successfully processed: KLVZ
+2025-09-26 16:03:24,295 - INFO - Processing: KMAZ (TQBR)
+2025-09-26 16:03:24,295 - INFO - Requesting history for KMAZ (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/KMAZ/candles.json
+2025-09-26 16:03:24,597 - INFO - History for KMAZ saved to historical_data_full\KMAZ_history.csv (500 rows)
+2025-09-26 16:03:24,597 - INFO -     Successfully processed: KMAZ
+2025-09-26 16:03:25,608 - INFO - Processing: KMEZ (TQBR)
+2025-09-26 16:03:25,608 - INFO - Requesting history for KMEZ (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/KMEZ/candles.json
+2025-09-26 16:03:25,922 - INFO - History for KMEZ saved to historical_data_full\KMEZ_history.csv (500 rows)
+2025-09-26 16:03:25,922 - INFO -     Successfully processed: KMEZ
+2025-09-26 16:03:26,934 - INFO - Processing: KOGK (TQBR)
+2025-09-26 16:03:26,934 - INFO - Requesting history for KOGK (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/KOGK/candles.json
+2025-09-26 16:03:27,195 - INFO - History for KOGK saved to historical_data_full\KOGK_history.csv (500 rows)
+2025-09-26 16:03:27,195 - INFO -     Successfully processed: KOGK
+2025-09-26 16:03:28,207 - INFO - Processing: KRKN (TQBR)
+2025-09-26 16:03:28,207 - INFO - Requesting history for KRKN (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/KRKN/candles.json
+2025-09-26 16:03:28,464 - INFO - History for KRKN saved to historical_data_full\KRKN_history.csv (500 rows)
+2025-09-26 16:03:28,464 - INFO -     Successfully processed: KRKN
+2025-09-26 16:03:29,471 - INFO - Processing: KRKNP (TQBR)
+2025-09-26 16:03:29,471 - INFO - Requesting history for KRKNP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/KRKNP/candles.json
+2025-09-26 16:03:29,796 - INFO - History for KRKNP saved to historical_data_full\KRKNP_history.csv (500 rows)
+2025-09-26 16:03:29,796 - INFO -     Successfully processed: KRKNP
+2025-09-26 16:03:30,799 - INFO - Processing: KRKOP (TQBR)
+2025-09-26 16:03:30,799 - INFO - Requesting history for KRKOP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/KRKOP/candles.json
+2025-09-26 16:03:31,307 - INFO - History for KRKOP saved to historical_data_full\KRKOP_history.csv (500 rows)
+2025-09-26 16:03:31,307 - INFO -     Successfully processed: KRKOP
+2025-09-26 16:03:32,322 - INFO - Processing: KROT (TQBR)
+2025-09-26 16:03:32,322 - INFO - Requesting history for KROT (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/KROT/candles.json
+2025-09-26 16:03:32,566 - INFO - History for KROT saved to historical_data_full\KROT_history.csv (500 rows)
+2025-09-26 16:03:32,567 - INFO -     Successfully processed: KROT
+2025-09-26 16:03:33,568 - INFO - Processing: KROTP (TQBR)
+2025-09-26 16:03:33,568 - INFO - Requesting history for KROTP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/KROTP/candles.json
+2025-09-26 16:03:38,917 - INFO - History for KROTP saved to historical_data_full\KROTP_history.csv (500 rows)
+2025-09-26 16:03:38,917 - INFO -     Successfully processed: KROTP
+2025-09-26 16:03:39,919 - INFO - Processing: KRSB (TQBR)
+2025-09-26 16:03:39,919 - INFO - Requesting history for KRSB (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/KRSB/candles.json
+2025-09-26 16:04:00,969 - ERROR - Connection error requesting history for KRSB (TQBR): HTTPSConnectionPool(host='iss.moex.com', port=443): Max retries exceeded with url: /iss/engines/stock/markets/shares/boards/TQBR/securities/KRSB/candles.json?from=2023-01-01&interval=24&iss.meta=off&iss.only=candles&candles.columns=begin%2Cend%2Copen%2Chigh%2Clow%2Cclose%2Cvolume (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x000002227AF7F670>: Failed to establish a new connection: [WinError 10060] Попытка установить соединение была безуспешной, т.к. от другого компьютера за требуемое время не получен нужный отклик, или было разорвано уже установленное соединение из-за неверного отклика уже подключенного компьютера'))
+2025-09-26 16:04:00,969 - INFO -     Connection error for KRSB, added to retry list.
+2025-09-26 16:04:01,981 - INFO - Processing: KRSBP (TQBR)
+2025-09-26 16:04:01,981 - INFO - Requesting history for KRSBP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/KRSBP/candles.json
+2025-09-26 16:04:02,666 - INFO - History for KRSBP saved to historical_data_full\KRSBP_history.csv (500 rows)
+2025-09-26 16:04:02,667 - INFO -     Successfully processed: KRSBP
+2025-09-26 16:04:03,673 - INFO - Processing: KUZB (TQBR)
+2025-09-26 16:04:03,673 - INFO - Requesting history for KUZB (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/KUZB/candles.json
+2025-09-26 16:04:05,152 - INFO - History for KUZB saved to historical_data_full\KUZB_history.csv (500 rows)
+2025-09-26 16:04:05,152 - INFO -     Successfully processed: KUZB
+2025-09-26 16:04:06,161 - INFO - Processing: KZOS (TQBR)
+2025-09-26 16:04:06,162 - INFO - Requesting history for KZOS (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/KZOS/candles.json
+2025-09-26 16:04:06,967 - INFO - History for KZOS saved to historical_data_full\KZOS_history.csv (500 rows)
+2025-09-26 16:04:06,967 - INFO -     Successfully processed: KZOS
+2025-09-26 16:04:07,980 - INFO - Processing: KZOSP (TQBR)
+2025-09-26 16:04:07,980 - INFO - Requesting history for KZOSP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/KZOSP/candles.json
+2025-09-26 16:04:13,902 - INFO - History for KZOSP saved to historical_data_full\KZOSP_history.csv (500 rows)
+2025-09-26 16:04:13,902 - INFO -     Successfully processed: KZOSP
+2025-09-26 16:04:14,915 - INFO - Processing: LEAS (TQBR)
+2025-09-26 16:04:14,915 - INFO - Requesting history for LEAS (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/LEAS/candles.json
+2025-09-26 16:04:16,556 - INFO - History for LEAS saved to historical_data_full\LEAS_history.csv (427 rows)
+2025-09-26 16:04:16,556 - INFO -     Successfully processed: LEAS
+2025-09-26 16:04:17,566 - INFO - Processing: LENT (TQBR)
+2025-09-26 16:04:17,566 - INFO - Requesting history for LENT (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/LENT/candles.json
+2025-09-26 16:04:18,020 - INFO - History for LENT saved to historical_data_full\LENT_history.csv (500 rows)
+2025-09-26 16:04:18,020 - INFO -     Successfully processed: LENT
+2025-09-26 16:04:19,027 - INFO - Processing: LIFE (TQBR)
+2025-09-26 16:04:19,027 - INFO - Requesting history for LIFE (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/LIFE/candles.json
+2025-09-26 16:04:19,324 - INFO - History for LIFE saved to historical_data_full\LIFE_history.csv (490 rows)
+2025-09-26 16:04:19,325 - INFO -     Successfully processed: LIFE
+2025-09-26 16:04:20,334 - INFO - Processing: LKOH (TQBR)
+2025-09-26 16:04:20,334 - INFO - Requesting history for LKOH (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/LKOH/candles.json
+2025-09-26 16:04:22,008 - INFO - History for LKOH saved to historical_data_full\LKOH_history.csv (500 rows)
+2025-09-26 16:04:22,008 - INFO -     Successfully processed: LKOH
+2025-09-26 16:04:23,012 - INFO - Processing: LMBZ (TQBR)
+2025-09-26 16:04:23,012 - INFO - Requesting history for LMBZ (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/LMBZ/candles.json
+2025-09-26 16:04:25,090 - INFO - History for LMBZ saved to historical_data_full\LMBZ_history.csv (236 rows)
+2025-09-26 16:04:25,090 - INFO -     Successfully processed: LMBZ
+2025-09-26 16:04:26,095 - INFO - Processing: LNZL (TQBR)
+2025-09-26 16:04:26,095 - INFO - Requesting history for LNZL (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/LNZL/candles.json
+2025-09-26 16:04:26,402 - INFO - History for LNZL saved to historical_data_full\LNZL_history.csv (500 rows)
+2025-09-26 16:04:26,402 - INFO -     Successfully processed: LNZL
+2025-09-26 16:04:27,402 - INFO - Processing: LNZLP (TQBR)
+2025-09-26 16:04:27,404 - INFO - Requesting history for LNZLP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/LNZLP/candles.json
+2025-09-26 16:04:27,975 - INFO - History for LNZLP saved to historical_data_full\LNZLP_history.csv (500 rows)
+2025-09-26 16:04:27,975 - INFO -     Successfully processed: LNZLP
+2025-09-26 16:04:28,990 - INFO - Processing: LPSB (TQBR)
+2025-09-26 16:04:28,990 - INFO - Requesting history for LPSB (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/LPSB/candles.json
+2025-09-26 16:04:31,636 - INFO - History for LPSB saved to historical_data_full\LPSB_history.csv (354 rows)
+2025-09-26 16:04:31,636 - INFO -     Successfully processed: LPSB
+2025-09-26 16:04:32,643 - INFO - Processing: LSNG (TQBR)
+2025-09-26 16:04:32,643 - INFO - Requesting history for LSNG (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/LSNG/candles.json
+2025-09-26 16:04:35,390 - INFO - History for LSNG saved to historical_data_full\LSNG_history.csv (500 rows)
+2025-09-26 16:04:35,390 - INFO -     Successfully processed: LSNG
+2025-09-26 16:04:36,390 - INFO - Processing: LSNGP (TQBR)
+2025-09-26 16:04:36,390 - INFO - Requesting history for LSNGP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/LSNGP/candles.json
+2025-09-26 16:04:38,242 - INFO - History for LSNGP saved to historical_data_full\LSNGP_history.csv (500 rows)
+2025-09-26 16:04:38,243 - INFO -     Successfully processed: LSNGP
+2025-09-26 16:04:39,255 - INFO - Processing: LSRG (TQBR)
+2025-09-26 16:04:39,255 - INFO - Requesting history for LSRG (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/LSRG/candles.json
+2025-09-26 16:04:39,539 - INFO - History for LSRG saved to historical_data_full\LSRG_history.csv (500 rows)
+2025-09-26 16:04:39,540 - INFO -     Successfully processed: LSRG
+2025-09-26 16:04:40,549 - INFO - Processing: LVHK (TQBR)
+2025-09-26 16:04:40,549 - INFO - Requesting history for LVHK (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/LVHK/candles.json
+2025-09-26 16:04:40,896 - INFO - History for LVHK saved to historical_data_full\LVHK_history.csv (500 rows)
+2025-09-26 16:04:40,896 - INFO -     Successfully processed: LVHK
+2025-09-26 16:04:41,905 - INFO - Processing: MAGE (TQBR)
+2025-09-26 16:04:41,905 - INFO - Requesting history for MAGE (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/MAGE/candles.json
+2025-09-26 16:04:42,213 - INFO - History for MAGE saved to historical_data_full\MAGE_history.csv (500 rows)
+2025-09-26 16:04:42,213 - INFO -     Successfully processed: MAGE
+2025-09-26 16:04:43,223 - INFO - Processing: MAGEP (TQBR)
+2025-09-26 16:04:43,223 - INFO - Requesting history for MAGEP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/MAGEP/candles.json
+2025-09-26 16:04:43,485 - INFO - History for MAGEP saved to historical_data_full\MAGEP_history.csv (500 rows)
+2025-09-26 16:04:43,485 - INFO -     Successfully processed: MAGEP
+2025-09-26 16:04:44,486 - INFO - Processing: MAGN (TQBR)
+2025-09-26 16:04:44,487 - INFO - Requesting history for MAGN (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/MAGN/candles.json
+2025-09-26 16:04:44,776 - INFO - History for MAGN saved to historical_data_full\MAGN_history.csv (500 rows)
+2025-09-26 16:04:44,776 - INFO -     Successfully processed: MAGN
+2025-09-26 16:04:45,792 - INFO - Processing: MBNK (TQBR)
+2025-09-26 16:04:45,792 - INFO - Requesting history for MBNK (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/MBNK/candles.json
+2025-09-26 16:04:47,374 - INFO - History for MBNK saved to historical_data_full\MBNK_history.csv (399 rows)
+2025-09-26 16:04:47,374 - INFO -     Successfully processed: MBNK
+2025-09-26 16:04:48,381 - INFO - Processing: MDMG (TQBR)
+2025-09-26 16:04:48,381 - INFO - Requesting history for MDMG (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/MDMG/candles.json
+2025-09-26 16:04:48,860 - INFO - History for MDMG saved to historical_data_full\MDMG_history.csv (500 rows)
+2025-09-26 16:04:48,860 - INFO -     Successfully processed: MDMG
+2025-09-26 16:04:49,862 - INFO - Processing: MFGS (TQBR)
+2025-09-26 16:04:49,862 - INFO - Requesting history for MFGS (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/MFGS/candles.json
+2025-09-26 16:04:51,520 - INFO - History for MFGS saved to historical_data_full\MFGS_history.csv (500 rows)
+2025-09-26 16:04:51,520 - INFO -     Successfully processed: MFGS
+2025-09-26 16:04:52,528 - INFO - Processing: MFGSP (TQBR)
+2025-09-26 16:04:52,528 - INFO - Requesting history for MFGSP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/MFGSP/candles.json
+2025-09-26 16:04:53,067 - INFO - History for MFGSP saved to historical_data_full\MFGSP_history.csv (500 rows)
+2025-09-26 16:04:53,067 - INFO -     Successfully processed: MFGSP
+2025-09-26 16:04:54,069 - INFO - Processing: MGKL (TQBR)
+2025-09-26 16:04:54,069 - INFO - Requesting history for MGKL (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/MGKL/candles.json
+2025-09-26 16:04:55,439 - INFO - History for MGKL saved to historical_data_full\MGKL_history.csv (484 rows)
+2025-09-26 16:04:55,439 - INFO -     Successfully processed: MGKL
+2025-09-26 16:04:56,447 - INFO - Processing: MGNT (TQBR)
+2025-09-26 16:04:56,448 - INFO - Requesting history for MGNT (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/MGNT/candles.json
+2025-09-26 16:04:59,007 - INFO - History for MGNT saved to historical_data_full\MGNT_history.csv (500 rows)
+2025-09-26 16:04:59,007 - INFO -     Successfully processed: MGNT
+2025-09-26 16:05:00,016 - INFO - Processing: MGNZ (TQBR)
+2025-09-26 16:05:00,016 - INFO - Requesting history for MGNZ (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/MGNZ/candles.json
+2025-09-26 16:05:00,215 - WARNING - No historical data for MGNZ, file not created.
+2025-09-26 16:05:00,215 - INFO -     Final error for MGNZ (reason: NO_DATA), added to final failed list.
+2025-09-26 16:05:01,216 - INFO - Processing: MGTS (TQBR)
+2025-09-26 16:05:01,216 - INFO - Requesting history for MGTS (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/MGTS/candles.json
+2025-09-26 16:05:01,657 - INFO - History for MGTS saved to historical_data_full\MGTS_history.csv (500 rows)
+2025-09-26 16:05:01,657 - INFO -     Successfully processed: MGTS
+2025-09-26 16:05:02,661 - INFO - Processing: MGTSP (TQBR)
+2025-09-26 16:05:02,662 - INFO - Requesting history for MGTSP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/MGTSP/candles.json
+2025-09-26 16:05:04,515 - INFO - History for MGTSP saved to historical_data_full\MGTSP_history.csv (500 rows)
+2025-09-26 16:05:04,515 - INFO -     Successfully processed: MGTSP
+2025-09-26 16:05:05,523 - INFO - Processing: MISB (TQBR)
+2025-09-26 16:05:05,523 - INFO - Requesting history for MISB (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/MISB/candles.json
+2025-09-26 16:05:07,912 - INFO - History for MISB saved to historical_data_full\MISB_history.csv (500 rows)
+2025-09-26 16:05:07,912 - INFO -     Successfully processed: MISB
+2025-09-26 16:05:08,914 - INFO - Processing: MISBP (TQBR)
+2025-09-26 16:05:08,915 - INFO - Requesting history for MISBP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/MISBP/candles.json
+2025-09-26 16:05:10,430 - INFO - History for MISBP saved to historical_data_full\MISBP_history.csv (500 rows)
+2025-09-26 16:05:10,430 - INFO -     Successfully processed: MISBP
+2025-09-26 16:05:11,438 - INFO - Processing: MOEX (TQBR)
+2025-09-26 16:05:11,439 - INFO - Requesting history for MOEX (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/MOEX/candles.json
+2025-09-26 16:05:13,060 - INFO - History for MOEX saved to historical_data_full\MOEX_history.csv (500 rows)
+2025-09-26 16:05:13,060 - INFO -     Successfully processed: MOEX
+2025-09-26 16:05:14,068 - INFO - Processing: MRKC (TQBR)
+2025-09-26 16:05:14,068 - INFO - Requesting history for MRKC (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/MRKC/candles.json
+2025-09-26 16:05:14,344 - INFO - History for MRKC saved to historical_data_full\MRKC_history.csv (500 rows)
+2025-09-26 16:05:14,344 - INFO -     Successfully processed: MRKC
+2025-09-26 16:05:15,357 - INFO - Processing: MRKK (TQBR)
+2025-09-26 16:05:15,357 - INFO - Requesting history for MRKK (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/MRKK/candles.json
+2025-09-26 16:05:15,823 - INFO - History for MRKK saved to historical_data_full\MRKK_history.csv (500 rows)
+2025-09-26 16:05:15,823 - INFO -     Successfully processed: MRKK
+2025-09-26 16:05:16,838 - INFO - Processing: MRKP (TQBR)
+2025-09-26 16:05:16,838 - INFO - Requesting history for MRKP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/MRKP/candles.json
+2025-09-26 16:05:17,093 - INFO - History for MRKP saved to historical_data_full\MRKP_history.csv (500 rows)
+2025-09-26 16:05:17,093 - INFO -     Successfully processed: MRKP
+2025-09-26 16:05:18,100 - INFO - Processing: MRKS (TQBR)
+2025-09-26 16:05:18,100 - INFO - Requesting history for MRKS (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/MRKS/candles.json
+2025-09-26 16:05:18,464 - INFO - History for MRKS saved to historical_data_full\MRKS_history.csv (500 rows)
+2025-09-26 16:05:18,464 - INFO -     Successfully processed: MRKS
+2025-09-26 16:05:19,469 - INFO - Processing: MRKU (TQBR)
+2025-09-26 16:05:19,469 - INFO - Requesting history for MRKU (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/MRKU/candles.json
+2025-09-26 16:05:22,336 - INFO - History for MRKU saved to historical_data_full\MRKU_history.csv (500 rows)
+2025-09-26 16:05:22,336 - INFO -     Successfully processed: MRKU
+2025-09-26 16:05:23,342 - INFO - Processing: MRKV (TQBR)
+2025-09-26 16:05:23,343 - INFO - Requesting history for MRKV (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/MRKV/candles.json
+2025-09-26 16:05:44,375 - ERROR - Connection error requesting history for MRKV (TQBR): HTTPSConnectionPool(host='iss.moex.com', port=443): Max retries exceeded with url: /iss/engines/stock/markets/shares/boards/TQBR/securities/MRKV/candles.json?from=2023-01-01&interval=24&iss.meta=off&iss.only=candles&candles.columns=begin%2Cend%2Copen%2Chigh%2Clow%2Cclose%2Cvolume (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x000002227AF7FAC0>: Failed to establish a new connection: [WinError 10060] Попытка установить соединение была безуспешной, т.к. от другого компьютера за требуемое время не получен нужный отклик, или было разорвано уже установленное соединение из-за неверного отклика уже подключенного компьютера'))
+2025-09-26 16:05:44,375 - INFO -     Connection error for MRKV, added to retry list.
+2025-09-26 16:05:45,384 - INFO - Processing: MRKY (TQBR)
+2025-09-26 16:05:45,384 - INFO - Requesting history for MRKY (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/MRKY/candles.json
+2025-09-26 16:05:45,972 - INFO - History for MRKY saved to historical_data_full\MRKY_history.csv (500 rows)
+2025-09-26 16:05:45,972 - INFO -     Successfully processed: MRKY
+2025-09-26 16:05:46,983 - INFO - Processing: MRKZ (TQBR)
+2025-09-26 16:05:46,983 - INFO - Requesting history for MRKZ (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/MRKZ/candles.json
+2025-09-26 16:05:47,470 - INFO - History for MRKZ saved to historical_data_full\MRKZ_history.csv (500 rows)
+2025-09-26 16:05:47,470 - INFO -     Successfully processed: MRKZ
+2025-09-26 16:05:48,475 - INFO - Processing: MRSB (TQBR)
+2025-09-26 16:05:48,475 - INFO - Requesting history for MRSB (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/MRSB/candles.json
+2025-09-26 16:05:49,062 - INFO - History for MRSB saved to historical_data_full\MRSB_history.csv (500 rows)
+2025-09-26 16:05:49,062 - INFO -     Successfully processed: MRSB
+2025-09-26 16:05:50,075 - INFO - Processing: MSNG (TQBR)
+2025-09-26 16:05:50,075 - INFO - Requesting history for MSNG (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/MSNG/candles.json
+2025-09-26 16:06:11,135 - ERROR - Connection error requesting history for MSNG (TQBR): HTTPSConnectionPool(host='iss.moex.com', port=443): Max retries exceeded with url: /iss/engines/stock/markets/shares/boards/TQBR/securities/MSNG/candles.json?from=2023-01-01&interval=24&iss.meta=off&iss.only=candles&candles.columns=begin%2Cend%2Copen%2Chigh%2Clow%2Cclose%2Cvolume (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x000002227AEC7D90>: Failed to establish a new connection: [WinError 10060] Попытка установить соединение была безуспешной, т.к. от другого компьютера за требуемое время не получен нужный отклик, или было разорвано уже установленное соединение из-за неверного отклика уже подключенного компьютера'))
+2025-09-26 16:06:11,136 - INFO -     Connection error for MSNG, added to retry list.
+2025-09-26 16:06:12,144 - INFO - Processing: MSRS (TQBR)
+2025-09-26 16:06:12,144 - INFO - Requesting history for MSRS (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/MSRS/candles.json
+2025-09-26 16:06:12,513 - INFO - History for MSRS saved to historical_data_full\MSRS_history.csv (500 rows)
+2025-09-26 16:06:12,514 - INFO -     Successfully processed: MSRS
+2025-09-26 16:06:13,528 - INFO - Processing: MSTT (TQBR)
+2025-09-26 16:06:13,528 - INFO - Requesting history for MSTT (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/MSTT/candles.json
+2025-09-26 16:06:13,955 - INFO - History for MSTT saved to historical_data_full\MSTT_history.csv (500 rows)
+2025-09-26 16:06:13,956 - INFO -     Successfully processed: MSTT
+2025-09-26 16:06:14,957 - INFO - Processing: MTLR (TQBR)
+2025-09-26 16:06:14,958 - INFO - Requesting history for MTLR (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/MTLR/candles.json
+2025-09-26 16:06:36,005 - ERROR - Connection error requesting history for MTLR (TQBR): HTTPSConnectionPool(host='iss.moex.com', port=443): Max retries exceeded with url: /iss/engines/stock/markets/shares/boards/TQBR/securities/MTLR/candles.json?from=2023-01-01&interval=24&iss.meta=off&iss.only=candles&candles.columns=begin%2Cend%2Copen%2Chigh%2Clow%2Cclose%2Cvolume (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x000002227AEC7D90>: Failed to establish a new connection: [WinError 10060] Попытка установить соединение была безуспешной, т.к. от другого компьютера за требуемое время не получен нужный отклик, или было разорвано уже установленное соединение из-за неверного отклика уже подключенного компьютера'))
+2025-09-26 16:06:36,005 - INFO -     Connection error for MTLR, added to retry list.
+2025-09-26 16:06:37,014 - INFO - Processing: MTLRP (TQBR)
+2025-09-26 16:06:37,014 - INFO - Requesting history for MTLRP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/MTLRP/candles.json
+2025-09-26 16:06:38,638 - INFO - History for MTLRP saved to historical_data_full\MTLRP_history.csv (500 rows)
+2025-09-26 16:06:38,638 - INFO -     Successfully processed: MTLRP
+2025-09-26 16:06:39,639 - INFO - Processing: MTSS (TQBR)
+2025-09-26 16:06:39,639 - INFO - Requesting history for MTSS (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/MTSS/candles.json
+2025-09-26 16:06:39,955 - INFO - History for MTSS saved to historical_data_full\MTSS_history.csv (500 rows)
+2025-09-26 16:06:39,955 - INFO -     Successfully processed: MTSS
+2025-09-26 16:06:40,959 - INFO - Processing: MVID (TQBR)
+2025-09-26 16:06:40,960 - INFO - Requesting history for MVID (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/MVID/candles.json
+2025-09-26 16:06:41,280 - INFO - History for MVID saved to historical_data_full\MVID_history.csv (500 rows)
+2025-09-26 16:06:41,280 - INFO -     Successfully processed: MVID
+2025-09-26 16:06:42,281 - INFO - Processing: NAUK (TQBR)
+2025-09-26 16:06:42,282 - INFO - Requesting history for NAUK (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/NAUK/candles.json
+2025-09-26 16:06:42,915 - INFO - History for NAUK saved to historical_data_full\NAUK_history.csv (500 rows)
+2025-09-26 16:06:42,915 - INFO -     Successfully processed: NAUK
+2025-09-26 16:06:43,932 - INFO - Processing: NFAZ (TQBR)
+2025-09-26 16:06:43,932 - INFO - Requesting history for NFAZ (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/NFAZ/candles.json
+2025-09-26 16:06:44,217 - INFO - History for NFAZ saved to historical_data_full\NFAZ_history.csv (500 rows)
+2025-09-26 16:06:44,217 - INFO -     Successfully processed: NFAZ
+2025-09-26 16:06:45,224 - INFO - Processing: NKHP (TQBR)
+2025-09-26 16:06:45,224 - INFO - Requesting history for NKHP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/NKHP/candles.json
+2025-09-26 16:06:45,562 - INFO - History for NKHP saved to historical_data_full\NKHP_history.csv (500 rows)
+2025-09-26 16:06:45,563 - INFO -     Successfully processed: NKHP
+2025-09-26 16:06:46,576 - INFO - Processing: NKNC (TQBR)
+2025-09-26 16:06:46,577 - INFO - Requesting history for NKNC (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/NKNC/candles.json
+2025-09-26 16:06:50,344 - INFO - History for NKNC saved to historical_data_full\NKNC_history.csv (500 rows)
+2025-09-26 16:06:50,344 - INFO -     Successfully processed: NKNC
+2025-09-26 16:06:51,347 - INFO - Processing: NKNCP (TQBR)
+2025-09-26 16:06:51,347 - INFO - Requesting history for NKNCP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/NKNCP/candles.json
+2025-09-26 16:06:51,895 - INFO - History for NKNCP saved to historical_data_full\NKNCP_history.csv (500 rows)
+2025-09-26 16:06:51,895 - INFO -     Successfully processed: NKNCP
+2025-09-26 16:06:52,898 - INFO - Processing: NKSH (TQBR)
+2025-09-26 16:06:52,898 - INFO - Requesting history for NKSH (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/NKSH/candles.json
+2025-09-26 16:06:54,912 - INFO - History for NKSH saved to historical_data_full\NKSH_history.csv (500 rows)
+2025-09-26 16:06:54,912 - INFO -     Successfully processed: NKSH
+2025-09-26 16:06:55,913 - INFO - Processing: NLMK (TQBR)
+2025-09-26 16:06:55,913 - INFO - Requesting history for NLMK (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/NLMK/candles.json
+2025-09-26 16:07:01,170 - INFO - History for NLMK saved to historical_data_full\NLMK_history.csv (500 rows)
+2025-09-26 16:07:01,170 - INFO -     Successfully processed: NLMK
+2025-09-26 16:07:02,178 - INFO - Processing: NMTP (TQBR)
+2025-09-26 16:07:02,178 - INFO - Requesting history for NMTP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/NMTP/candles.json
+2025-09-26 16:07:04,105 - INFO - History for NMTP saved to historical_data_full\NMTP_history.csv (500 rows)
+2025-09-26 16:07:04,105 - INFO -     Successfully processed: NMTP
+2025-09-26 16:07:05,114 - INFO - Processing: NNSB (TQBR)
+2025-09-26 16:07:05,114 - INFO - Requesting history for NNSB (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/NNSB/candles.json
+2025-09-26 16:07:05,570 - INFO - History for NNSB saved to historical_data_full\NNSB_history.csv (500 rows)
+2025-09-26 16:07:05,570 - INFO -     Successfully processed: NNSB
+2025-09-26 16:07:06,577 - INFO - Processing: NNSBP (TQBR)
+2025-09-26 16:07:06,577 - INFO - Requesting history for NNSBP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/NNSBP/candles.json
+2025-09-26 16:07:07,015 - INFO - History for NNSBP saved to historical_data_full\NNSBP_history.csv (500 rows)
+2025-09-26 16:07:07,015 - INFO -     Successfully processed: NNSBP
+2025-09-26 16:07:08,022 - INFO - Processing: NSVZ (TQBR)
+2025-09-26 16:07:08,022 - INFO - Requesting history for NSVZ (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/NSVZ/candles.json
+2025-09-26 16:07:08,449 - INFO - History for NSVZ saved to historical_data_full\NSVZ_history.csv (500 rows)
+2025-09-26 16:07:08,449 - INFO -     Successfully processed: NSVZ
+2025-09-26 16:07:09,452 - INFO - Processing: NVTK (TQBR)
+2025-09-26 16:07:09,452 - INFO - Requesting history for NVTK (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/NVTK/candles.json
+2025-09-26 16:07:11,098 - INFO - History for NVTK saved to historical_data_full\NVTK_history.csv (500 rows)
+2025-09-26 16:07:11,098 - INFO -     Successfully processed: NVTK
+2025-09-26 16:07:12,112 - INFO - Processing: OGKB (TQBR)
+2025-09-26 16:07:12,112 - INFO - Requesting history for OGKB (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/OGKB/candles.json
+2025-09-26 16:07:12,431 - INFO - History for OGKB saved to historical_data_full\OGKB_history.csv (500 rows)
+2025-09-26 16:07:12,431 - INFO -     Successfully processed: OGKB
+2025-09-26 16:07:13,432 - INFO - Processing: OKEY (TQBR)
+2025-09-26 16:07:13,432 - INFO - Requesting history for OKEY (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/OKEY/candles.json
+2025-09-26 16:07:21,418 - INFO - History for OKEY saved to historical_data_full\OKEY_history.csv (500 rows)
+2025-09-26 16:07:21,418 - INFO -     Successfully processed: OKEY
+2025-09-26 16:07:22,421 - INFO - Processing: OMZZP (TQBR)
+2025-09-26 16:07:22,421 - INFO - Requesting history for OMZZP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/OMZZP/candles.json
+2025-09-26 16:07:24,303 - INFO - History for OMZZP saved to historical_data_full\OMZZP_history.csv (500 rows)
+2025-09-26 16:07:24,303 - INFO -     Successfully processed: OMZZP
+2025-09-26 16:07:25,311 - INFO - Processing: OZON (TQBR)
+2025-09-26 16:07:25,312 - INFO - Requesting history for OZON (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/OZON/candles.json
+2025-09-26 16:07:31,651 - INFO - History for OZON saved to historical_data_full\OZON_history.csv (500 rows)
+2025-09-26 16:07:31,651 - INFO -     Successfully processed: OZON
+2025-09-26 16:07:32,665 - INFO - Processing: OZPH (TQBR)
+2025-09-26 16:07:32,665 - INFO - Requesting history for OZPH (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/OZPH/candles.json
+2025-09-26 16:07:33,114 - INFO - History for OZPH saved to historical_data_full\OZPH_history.csv (277 rows)
+2025-09-26 16:07:33,114 - INFO -     Successfully processed: OZPH
+2025-09-26 16:07:34,128 - INFO - Processing: PAZA (TQBR)
+2025-09-26 16:07:34,128 - INFO - Requesting history for PAZA (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/PAZA/candles.json
+2025-09-26 16:07:34,710 - INFO - History for PAZA saved to historical_data_full\PAZA_history.csv (490 rows)
+2025-09-26 16:07:34,710 - INFO -     Successfully processed: PAZA
+2025-09-26 16:07:35,716 - INFO - Processing: PHOR (TQBR)
+2025-09-26 16:07:35,717 - INFO - Requesting history for PHOR (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/PHOR/candles.json
+2025-09-26 16:07:56,763 - ERROR - Connection error requesting history for PHOR (TQBR): HTTPSConnectionPool(host='iss.moex.com', port=443): Max retries exceeded with url: /iss/engines/stock/markets/shares/boards/TQBR/securities/PHOR/candles.json?from=2023-01-01&interval=24&iss.meta=off&iss.only=candles&candles.columns=begin%2Cend%2Copen%2Chigh%2Clow%2Cclose%2Cvolume (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x000002227AE7B940>: Failed to establish a new connection: [WinError 10060] Попытка установить соединение была безуспешной, т.к. от другого компьютера за требуемое время не получен нужный отклик, или было разорвано уже установленное соединение из-за неверного отклика уже подключенного компьютера'))
+2025-09-26 16:07:56,763 - INFO -     Connection error for PHOR, added to retry list.
+2025-09-26 16:07:57,774 - INFO - Processing: PIKK (TQBR)
+2025-09-26 16:07:57,775 - INFO - Requesting history for PIKK (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/PIKK/candles.json
+2025-09-26 16:07:58,103 - INFO - History for PIKK saved to historical_data_full\PIKK_history.csv (500 rows)
+2025-09-26 16:07:58,103 - INFO -     Successfully processed: PIKK
+2025-09-26 16:07:59,106 - INFO - Processing: PLZL (TQBR)
+2025-09-26 16:07:59,106 - INFO - Requesting history for PLZL (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/PLZL/candles.json
+2025-09-26 16:08:02,125 - INFO - History for PLZL saved to historical_data_full\PLZL_history.csv (500 rows)
+2025-09-26 16:08:02,125 - INFO -     Successfully processed: PLZL
+2025-09-26 16:08:03,127 - INFO - Processing: PMSB (TQBR)
+2025-09-26 16:08:03,127 - INFO - Requesting history for PMSB (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/PMSB/candles.json
+2025-09-26 16:08:06,181 - INFO - History for PMSB saved to historical_data_full\PMSB_history.csv (500 rows)
+2025-09-26 16:08:06,181 - INFO -     Successfully processed: PMSB
+2025-09-26 16:08:07,192 - INFO - Processing: PMSBP (TQBR)
+2025-09-26 16:08:07,192 - INFO - Requesting history for PMSBP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/PMSBP/candles.json
+2025-09-26 16:08:07,508 - INFO - History for PMSBP saved to historical_data_full\PMSBP_history.csv (500 rows)
+2025-09-26 16:08:07,508 - INFO -     Successfully processed: PMSBP
+2025-09-26 16:08:08,513 - INFO - Processing: POSI (TQBR)
+2025-09-26 16:08:08,513 - INFO - Requesting history for POSI (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/POSI/candles.json
+2025-09-26 16:08:08,828 - INFO - History for POSI saved to historical_data_full\POSI_history.csv (500 rows)
+2025-09-26 16:08:08,829 - INFO -     Successfully processed: POSI
+2025-09-26 16:08:09,837 - INFO - Processing: PRFN (TQBR)
+2025-09-26 16:08:09,837 - INFO - Requesting history for PRFN (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/PRFN/candles.json
+2025-09-26 16:08:10,157 - INFO - History for PRFN saved to historical_data_full\PRFN_history.csv (500 rows)
+2025-09-26 16:08:10,157 - INFO -     Successfully processed: PRFN
+2025-09-26 16:08:11,160 - INFO - Processing: PRMB (TQBR)
+2025-09-26 16:08:11,160 - INFO - Requesting history for PRMB (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/PRMB/candles.json
+2025-09-26 16:08:12,023 - INFO - History for PRMB saved to historical_data_full\PRMB_history.csv (500 rows)
+2025-09-26 16:08:12,023 - INFO -     Successfully processed: PRMB
+2025-09-26 16:08:13,024 - INFO - Processing: PRMD (TQBR)
+2025-09-26 16:08:13,024 - INFO - Requesting history for PRMD (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/PRMD/candles.json
+2025-09-26 16:08:14,342 - INFO - History for PRMD saved to historical_data_full\PRMD_history.csv (346 rows)
+2025-09-26 16:08:14,343 - INFO -     Successfully processed: PRMD
+2025-09-26 16:08:15,344 - INFO - Processing: QIWI (TQBR)
+2025-09-26 16:08:15,344 - INFO - Requesting history for QIWI (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/QIWI/candles.json
+2025-09-26 16:08:15,646 - INFO - History for QIWI saved to historical_data_full\QIWI_history.csv (500 rows)
+2025-09-26 16:08:15,646 - INFO -     Successfully processed: QIWI
+2025-09-26 16:08:16,661 - INFO - Processing: RAGR (TQBR)
+2025-09-26 16:08:16,662 - INFO - Requesting history for RAGR (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/RAGR/candles.json
+2025-09-26 16:08:17,199 - INFO - History for RAGR saved to historical_data_full\RAGR_history.csv (193 rows)
+2025-09-26 16:08:17,199 - INFO -     Successfully processed: RAGR
+2025-09-26 16:08:18,215 - INFO - Processing: RASP (TQBR)
+2025-09-26 16:08:18,215 - INFO - Requesting history for RASP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/RASP/candles.json
+2025-09-26 16:08:18,597 - INFO - History for RASP saved to historical_data_full\RASP_history.csv (500 rows)
+2025-09-26 16:08:18,597 - INFO -     Successfully processed: RASP
+2025-09-26 16:08:19,598 - INFO - Processing: RBCM (TQBR)
+2025-09-26 16:08:19,598 - INFO - Requesting history for RBCM (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/RBCM/candles.json
+2025-09-26 16:08:21,940 - INFO - History for RBCM saved to historical_data_full\RBCM_history.csv (500 rows)
+2025-09-26 16:08:21,940 - INFO -     Successfully processed: RBCM
+2025-09-26 16:08:22,944 - INFO - Processing: RDRB (TQBR)
+2025-09-26 16:08:22,949 - INFO - Requesting history for RDRB (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/RDRB/candles.json
+2025-09-26 16:08:25,847 - INFO - History for RDRB saved to historical_data_full\RDRB_history.csv (500 rows)
+2025-09-26 16:08:25,847 - INFO -     Successfully processed: RDRB
+2025-09-26 16:08:26,849 - INFO - Processing: RENI (TQBR)
+2025-09-26 16:08:26,850 - INFO - Requesting history for RENI (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/RENI/candles.json
+2025-09-26 16:08:27,425 - INFO - History for RENI saved to historical_data_full\RENI_history.csv (500 rows)
+2025-09-26 16:08:27,425 - INFO -     Successfully processed: RENI
+2025-09-26 16:08:28,432 - INFO - Processing: RGSS (TQBR)
+2025-09-26 16:08:28,432 - INFO - Requesting history for RGSS (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/RGSS/candles.json
+2025-09-26 16:08:30,221 - INFO - History for RGSS saved to historical_data_full\RGSS_history.csv (500 rows)
+2025-09-26 16:08:30,221 - INFO -     Successfully processed: RGSS
+2025-09-26 16:08:31,231 - INFO - Processing: RKKE (TQBR)
+2025-09-26 16:08:31,231 - INFO - Requesting history for RKKE (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/RKKE/candles.json
+2025-09-26 16:08:31,538 - INFO - History for RKKE saved to historical_data_full\RKKE_history.csv (500 rows)
+2025-09-26 16:08:31,538 - INFO -     Successfully processed: RKKE
+2025-09-26 16:08:32,550 - INFO - Processing: RNFT (TQBR)
+2025-09-26 16:08:32,551 - INFO - Requesting history for RNFT (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/RNFT/candles.json
+2025-09-26 16:08:34,315 - INFO - History for RNFT saved to historical_data_full\RNFT_history.csv (500 rows)
+2025-09-26 16:08:34,315 - INFO -     Successfully processed: RNFT
+2025-09-26 16:08:35,319 - INFO - Processing: ROLO (TQBR)
+2025-09-26 16:08:35,319 - INFO - Requesting history for ROLO (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/ROLO/candles.json
+2025-09-26 16:08:35,913 - INFO - History for ROLO saved to historical_data_full\ROLO_history.csv (500 rows)
+2025-09-26 16:08:35,913 - INFO -     Successfully processed: ROLO
+2025-09-26 16:08:36,921 - INFO - Processing: ROSN (TQBR)
+2025-09-26 16:08:36,921 - INFO - Requesting history for ROSN (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/ROSN/candles.json
+2025-09-26 16:08:40,715 - INFO - History for ROSN saved to historical_data_full\ROSN_history.csv (500 rows)
+2025-09-26 16:08:40,715 - INFO -     Successfully processed: ROSN
+2025-09-26 16:08:41,725 - INFO - Processing: ROST (TQBR)
+2025-09-26 16:08:41,725 - INFO - Requesting history for ROST (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/ROST/candles.json
+2025-09-26 16:08:42,293 - INFO - History for ROST saved to historical_data_full\ROST_history.csv (500 rows)
+2025-09-26 16:08:42,294 - INFO -     Successfully processed: ROST
+2025-09-26 16:08:43,296 - INFO - Processing: RTGZ (TQBR)
+2025-09-26 16:08:43,296 - INFO - Requesting history for RTGZ (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/RTGZ/candles.json
+2025-09-26 16:08:45,025 - INFO - History for RTGZ saved to historical_data_full\RTGZ_history.csv (500 rows)
+2025-09-26 16:08:45,025 - INFO -     Successfully processed: RTGZ
+2025-09-26 16:08:46,029 - INFO - Processing: RTKM (TQBR)
+2025-09-26 16:08:46,029 - INFO - Requesting history for RTKM (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/RTKM/candles.json
+2025-09-26 16:08:46,377 - INFO - History for RTKM saved to historical_data_full\RTKM_history.csv (500 rows)
+2025-09-26 16:08:46,377 - INFO -     Successfully processed: RTKM
+2025-09-26 16:08:47,379 - INFO - Processing: RTKMP (TQBR)
+2025-09-26 16:08:47,380 - INFO - Requesting history for RTKMP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/RTKMP/candles.json
+2025-09-26 16:08:49,382 - INFO - History for RTKMP saved to historical_data_full\RTKMP_history.csv (500 rows)
+2025-09-26 16:08:49,382 - INFO -     Successfully processed: RTKMP
+2025-09-26 16:08:50,396 - INFO - Processing: RTSB (TQBR)
+2025-09-26 16:08:50,397 - INFO - Requesting history for RTSB (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/RTSB/candles.json
+2025-09-26 16:08:50,704 - INFO - History for RTSB saved to historical_data_full\RTSB_history.csv (500 rows)
+2025-09-26 16:08:50,705 - INFO -     Successfully processed: RTSB
+2025-09-26 16:08:51,713 - INFO - Processing: RTSBP (TQBR)
+2025-09-26 16:08:51,713 - INFO - Requesting history for RTSBP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/RTSBP/candles.json
+2025-09-26 16:08:52,112 - INFO - History for RTSBP saved to historical_data_full\RTSBP_history.csv (500 rows)
+2025-09-26 16:08:52,112 - INFO -     Successfully processed: RTSBP
+2025-09-26 16:08:53,115 - INFO - Processing: RUAL (TQBR)
+2025-09-26 16:08:53,115 - INFO - Requesting history for RUAL (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/RUAL/candles.json
+2025-09-26 16:08:53,668 - INFO - History for RUAL saved to historical_data_full\RUAL_history.csv (500 rows)
+2025-09-26 16:08:53,668 - INFO -     Successfully processed: RUAL
+2025-09-26 16:08:54,673 - INFO - Processing: RUSI (TQBR)
+2025-09-26 16:08:54,673 - INFO - Requesting history for RUSI (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/RUSI/candles.json
+2025-09-26 16:08:55,128 - INFO - History for RUSI saved to historical_data_full\RUSI_history.csv (500 rows)
+2025-09-26 16:08:55,129 - INFO -     Successfully processed: RUSI
+2025-09-26 16:08:56,133 - INFO - Processing: RZSB (TQBR)
+2025-09-26 16:08:56,133 - INFO - Requesting history for RZSB (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/RZSB/candles.json
+2025-09-26 16:08:56,366 - INFO - History for RZSB saved to historical_data_full\RZSB_history.csv (500 rows)
+2025-09-26 16:08:56,366 - INFO -     Successfully processed: RZSB
+2025-09-26 16:08:57,367 - INFO - Processing: SAGO (TQBR)
+2025-09-26 16:08:57,367 - INFO - Requesting history for SAGO (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/SAGO/candles.json
+2025-09-26 16:08:59,134 - INFO - History for SAGO saved to historical_data_full\SAGO_history.csv (500 rows)
+2025-09-26 16:08:59,134 - INFO -     Successfully processed: SAGO
+2025-09-26 16:09:00,147 - INFO - Processing: SAGOP (TQBR)
+2025-09-26 16:09:00,147 - INFO - Requesting history for SAGOP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/SAGOP/candles.json
+2025-09-26 16:09:02,978 - INFO - History for SAGOP saved to historical_data_full\SAGOP_history.csv (500 rows)
+2025-09-26 16:09:02,979 - INFO -     Successfully processed: SAGOP
+2025-09-26 16:09:03,990 - INFO - Processing: SARE (TQBR)
+2025-09-26 16:09:03,991 - INFO - Requesting history for SARE (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/SARE/candles.json
+2025-09-26 16:09:05,359 - INFO - History for SARE saved to historical_data_full\SARE_history.csv (500 rows)
+2025-09-26 16:09:05,359 - INFO -     Successfully processed: SARE
+2025-09-26 16:09:06,371 - INFO - Processing: SAREP (TQBR)
+2025-09-26 16:09:06,371 - INFO - Requesting history for SAREP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/SAREP/candles.json
+2025-09-26 16:09:07,515 - INFO - History for SAREP saved to historical_data_full\SAREP_history.csv (500 rows)
+2025-09-26 16:09:07,515 - INFO -     Successfully processed: SAREP
+2025-09-26 16:09:08,528 - INFO - Processing: SBER (TQBR)
+2025-09-26 16:09:08,528 - INFO - Requesting history for SBER (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/SBER/candles.json
+2025-09-26 16:09:08,838 - INFO - History for SBER saved to historical_data_full\SBER_history.csv (500 rows)
+2025-09-26 16:09:08,839 - INFO -     Successfully processed: SBER
+2025-09-26 16:09:09,851 - INFO - Processing: SBERP (TQBR)
+2025-09-26 16:09:09,851 - INFO - Requesting history for SBERP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/SBERP/candles.json
+2025-09-26 16:09:10,167 - INFO - History for SBERP saved to historical_data_full\SBERP_history.csv (500 rows)
+2025-09-26 16:09:10,167 - INFO -     Successfully processed: SBERP
+2025-09-26 16:09:11,175 - INFO - Processing: SELG (TQBR)
+2025-09-26 16:09:11,175 - INFO - Requesting history for SELG (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/SELG/candles.json
+2025-09-26 16:09:11,662 - INFO - History for SELG saved to historical_data_full\SELG_history.csv (500 rows)
+2025-09-26 16:09:11,662 - INFO -     Successfully processed: SELG
+2025-09-26 16:09:12,669 - INFO - Processing: SFIN (TQBR)
+2025-09-26 16:09:12,669 - INFO - Requesting history for SFIN (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/SFIN/candles.json
+2025-09-26 16:09:12,910 - INFO - History for SFIN saved to historical_data_full\SFIN_history.csv (500 rows)
+2025-09-26 16:09:12,910 - INFO -     Successfully processed: SFIN
+2025-09-26 16:09:13,912 - INFO - Processing: SGZH (TQBR)
+2025-09-26 16:09:13,912 - INFO - Requesting history for SGZH (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/SGZH/candles.json
+2025-09-26 16:09:14,379 - INFO - History for SGZH saved to historical_data_full\SGZH_history.csv (500 rows)
+2025-09-26 16:09:14,379 - INFO -     Successfully processed: SGZH
+2025-09-26 16:09:15,390 - INFO - Processing: SIBN (TQBR)
+2025-09-26 16:09:15,390 - INFO - Requesting history for SIBN (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/SIBN/candles.json
+2025-09-26 16:09:15,600 - INFO - History for SIBN saved to historical_data_full\SIBN_history.csv (500 rows)
+2025-09-26 16:09:15,600 - INFO -     Successfully processed: SIBN
+2025-09-26 16:09:16,603 - INFO - Processing: SLEN (TQBR)
+2025-09-26 16:09:16,604 - INFO - Requesting history for SLEN (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/SLEN/candles.json
+2025-09-26 16:09:16,949 - INFO - History for SLEN saved to historical_data_full\SLEN_history.csv (500 rows)
+2025-09-26 16:09:16,949 - INFO -     Successfully processed: SLEN
+2025-09-26 16:09:17,958 - INFO - Processing: SMLT (TQBR)
+2025-09-26 16:09:17,959 - INFO - Requesting history for SMLT (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/SMLT/candles.json
+2025-09-26 16:09:18,410 - INFO - History for SMLT saved to historical_data_full\SMLT_history.csv (500 rows)
+2025-09-26 16:09:18,410 - INFO -     Successfully processed: SMLT
+2025-09-26 16:09:19,424 - INFO - Processing: SNGS (TQBR)
+2025-09-26 16:09:19,424 - INFO - Requesting history for SNGS (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/SNGS/candles.json
+2025-09-26 16:09:21,367 - INFO - History for SNGS saved to historical_data_full\SNGS_history.csv (500 rows)
+2025-09-26 16:09:21,367 - INFO -     Successfully processed: SNGS
+2025-09-26 16:09:22,377 - INFO - Processing: SNGSP (TQBR)
+2025-09-26 16:09:22,377 - INFO - Requesting history for SNGSP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/SNGSP/candles.json
+2025-09-26 16:09:43,436 - ERROR - Connection error requesting history for SNGSP (TQBR): HTTPSConnectionPool(host='iss.moex.com', port=443): Max retries exceeded with url: /iss/engines/stock/markets/shares/boards/TQBR/securities/SNGSP/candles.json?from=2023-01-01&interval=24&iss.meta=off&iss.only=candles&candles.columns=begin%2Cend%2Copen%2Chigh%2Clow%2Cclose%2Cvolume (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x000002227AF7F040>: Failed to establish a new connection: [WinError 10060] Попытка установить соединение была безуспешной, т.к. от другого компьютера за требуемое время не получен нужный отклик, или было разорвано уже установленное соединение из-за неверного отклика уже подключенного компьютера'))
+2025-09-26 16:09:43,437 - INFO -     Connection error for SNGSP, added to retry list.
+2025-09-26 16:09:44,449 - INFO - Processing: SOFL (TQBR)
+2025-09-26 16:09:44,450 - INFO - Requesting history for SOFL (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/SOFL/candles.json
+2025-09-26 16:09:44,815 - INFO - History for SOFL saved to historical_data_full\SOFL_history.csv (500 rows)
+2025-09-26 16:09:44,815 - INFO -     Successfully processed: SOFL
+2025-09-26 16:09:45,820 - INFO - Processing: SPBE (TQBR)
+2025-09-26 16:09:45,820 - INFO - Requesting history for SPBE (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/SPBE/candles.json
+2025-09-26 16:09:46,141 - INFO - History for SPBE saved to historical_data_full\SPBE_history.csv (500 rows)
+2025-09-26 16:09:46,141 - INFO -     Successfully processed: SPBE
+2025-09-26 16:09:47,156 - INFO - Processing: STSB (TQBR)
+2025-09-26 16:09:47,156 - INFO - Requesting history for STSB (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/STSB/candles.json
+2025-09-26 16:09:47,489 - INFO - History for STSB saved to historical_data_full\STSB_history.csv (500 rows)
+2025-09-26 16:09:47,489 - INFO -     Successfully processed: STSB
+2025-09-26 16:09:48,492 - INFO - Processing: STSBP (TQBR)
+2025-09-26 16:09:48,492 - INFO - Requesting history for STSBP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/STSBP/candles.json
+2025-09-26 16:09:51,325 - INFO - History for STSBP saved to historical_data_full\STSBP_history.csv (500 rows)
+2025-09-26 16:09:51,325 - INFO -     Successfully processed: STSBP
+2025-09-26 16:09:52,337 - INFO - Processing: SVAV (TQBR)
+2025-09-26 16:09:52,337 - INFO - Requesting history for SVAV (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/SVAV/candles.json
+2025-09-26 16:09:58,700 - INFO - History for SVAV saved to historical_data_full\SVAV_history.csv (500 rows)
+2025-09-26 16:09:58,700 - INFO -     Successfully processed: SVAV
+2025-09-26 16:09:59,712 - INFO - Processing: SVCB (TQBR)
+2025-09-26 16:09:59,713 - INFO - Requesting history for SVCB (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/SVCB/candles.json
+2025-09-26 16:10:00,845 - INFO - History for SVCB saved to historical_data_full\SVCB_history.csv (498 rows)
+2025-09-26 16:10:00,845 - INFO -     Successfully processed: SVCB
+2025-09-26 16:10:01,845 - INFO - Processing: SVET (TQBR)
+2025-09-26 16:10:01,845 - INFO - Requesting history for SVET (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/SVET/candles.json
+2025-09-26 16:10:02,354 - INFO - History for SVET saved to historical_data_full\SVET_history.csv (500 rows)
+2025-09-26 16:10:02,355 - INFO -     Successfully processed: SVET
+2025-09-26 16:10:03,364 - INFO - Processing: SVETP (TQBR)
+2025-09-26 16:10:03,364 - INFO - Requesting history for SVETP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/SVETP/candles.json
+2025-09-26 16:10:11,002 - INFO - History for SVETP saved to historical_data_full\SVETP_history.csv (347 rows)
+2025-09-26 16:10:11,002 - INFO -     Successfully processed: SVETP
+2025-09-26 16:10:12,005 - INFO - Processing: T (TQBR)
+2025-09-26 16:10:12,006 - INFO - Requesting history for T (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/T/candles.json
+2025-09-26 16:10:19,623 - INFO - History for T saved to historical_data_full\T_history.csv (500 rows)
+2025-09-26 16:10:19,623 - INFO -     Successfully processed: T
+2025-09-26 16:10:20,636 - INFO - Processing: TASB (TQBR)
+2025-09-26 16:10:20,637 - INFO - Requesting history for TASB (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/TASB/candles.json
+2025-09-26 16:10:20,915 - INFO - History for TASB saved to historical_data_full\TASB_history.csv (500 rows)
+2025-09-26 16:10:20,915 - INFO -     Successfully processed: TASB
+2025-09-26 16:10:21,927 - INFO - Processing: TASBP (TQBR)
+2025-09-26 16:10:21,927 - INFO - Requesting history for TASBP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/TASBP/candles.json
+2025-09-26 16:10:22,529 - INFO - History for TASBP saved to historical_data_full\TASBP_history.csv (500 rows)
+2025-09-26 16:10:22,529 - INFO -     Successfully processed: TASBP
+2025-09-26 16:10:23,532 - INFO - Processing: TATN (TQBR)
+2025-09-26 16:10:23,532 - INFO - Requesting history for TATN (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/TATN/candles.json
+2025-09-26 16:10:23,869 - INFO - History for TATN saved to historical_data_full\TATN_history.csv (500 rows)
+2025-09-26 16:10:23,869 - INFO -     Successfully processed: TATN
+2025-09-26 16:10:24,871 - INFO - Processing: TATNP (TQBR)
+2025-09-26 16:10:24,875 - INFO - Requesting history for TATNP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/TATNP/candles.json
+2025-09-26 16:10:25,168 - INFO - History for TATNP saved to historical_data_full\TATNP_history.csv (500 rows)
+2025-09-26 16:10:25,168 - INFO -     Successfully processed: TATNP
+2025-09-26 16:10:26,179 - INFO - Processing: TGKA (TQBR)
+2025-09-26 16:10:26,179 - INFO - Requesting history for TGKA (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/TGKA/candles.json
+2025-09-26 16:10:26,506 - INFO - History for TGKA saved to historical_data_full\TGKA_history.csv (500 rows)
+2025-09-26 16:10:26,506 - INFO -     Successfully processed: TGKA
+2025-09-26 16:10:27,517 - INFO - Processing: TGKB (TQBR)
+2025-09-26 16:10:27,517 - INFO - Requesting history for TGKB (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/TGKB/candles.json
+2025-09-26 16:10:28,398 - INFO - History for TGKB saved to historical_data_full\TGKB_history.csv (500 rows)
+2025-09-26 16:10:28,398 - INFO -     Successfully processed: TGKB
+2025-09-26 16:10:29,401 - INFO - Processing: TGKBP (TQBR)
+2025-09-26 16:10:29,401 - INFO - Requesting history for TGKBP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/TGKBP/candles.json
+2025-09-26 16:10:29,756 - INFO - History for TGKBP saved to historical_data_full\TGKBP_history.csv (500 rows)
+2025-09-26 16:10:29,756 - INFO -     Successfully processed: TGKBP
+2025-09-26 16:10:30,770 - INFO - Processing: TGKN (TQBR)
+2025-09-26 16:10:30,770 - INFO - Requesting history for TGKN (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/TGKN/candles.json
+2025-09-26 16:10:31,070 - INFO - History for TGKN saved to historical_data_full\TGKN_history.csv (500 rows)
+2025-09-26 16:10:31,070 - INFO -     Successfully processed: TGKN
+2025-09-26 16:10:32,076 - INFO - Processing: TNSE (TQBR)
+2025-09-26 16:10:32,076 - INFO - Requesting history for TNSE (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/TNSE/candles.json
+2025-09-26 16:10:32,387 - INFO - History for TNSE saved to historical_data_full\TNSE_history.csv (500 rows)
+2025-09-26 16:10:32,388 - INFO -     Successfully processed: TNSE
+2025-09-26 16:10:33,394 - INFO - Processing: TORS (TQBR)
+2025-09-26 16:10:33,394 - INFO - Requesting history for TORS (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/TORS/candles.json
+2025-09-26 16:10:33,728 - INFO - History for TORS saved to historical_data_full\TORS_history.csv (500 rows)
+2025-09-26 16:10:33,728 - INFO -     Successfully processed: TORS
+2025-09-26 16:10:34,733 - INFO - Processing: TORSP (TQBR)
+2025-09-26 16:10:34,733 - INFO - Requesting history for TORSP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/TORSP/candles.json
+2025-09-26 16:10:35,011 - INFO - History for TORSP saved to historical_data_full\TORSP_history.csv (500 rows)
+2025-09-26 16:10:35,012 - INFO -     Successfully processed: TORSP
+2025-09-26 16:10:36,021 - INFO - Processing: TRMK (TQBR)
+2025-09-26 16:10:36,022 - INFO - Requesting history for TRMK (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/TRMK/candles.json
+2025-09-26 16:10:36,517 - INFO - History for TRMK saved to historical_data_full\TRMK_history.csv (500 rows)
+2025-09-26 16:10:36,517 - INFO -     Successfully processed: TRMK
+2025-09-26 16:10:37,532 - INFO - Processing: TRNFP (TQBR)
+2025-09-26 16:10:37,532 - INFO - Requesting history for TRNFP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/TRNFP/candles.json
+2025-09-26 16:10:37,866 - INFO - History for TRNFP saved to historical_data_full\TRNFP_history.csv (500 rows)
+2025-09-26 16:10:37,866 - INFO -     Successfully processed: TRNFP
+2025-09-26 16:10:38,880 - INFO - Processing: TTLK (TQBR)
+2025-09-26 16:10:38,880 - INFO - Requesting history for TTLK (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/TTLK/candles.json
+2025-09-26 16:10:39,367 - INFO - History for TTLK saved to historical_data_full\TTLK_history.csv (500 rows)
+2025-09-26 16:10:39,367 - INFO -     Successfully processed: TTLK
+2025-09-26 16:10:40,376 - INFO - Processing: TUZA (TQBR)
+2025-09-26 16:10:40,376 - INFO - Requesting history for TUZA (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/TUZA/candles.json
+2025-09-26 16:10:40,648 - INFO - History for TUZA saved to historical_data_full\TUZA_history.csv (500 rows)
+2025-09-26 16:10:40,648 - INFO -     Successfully processed: TUZA
+2025-09-26 16:10:41,663 - INFO - Processing: UGLD (TQBR)
+2025-09-26 16:10:41,663 - INFO - Requesting history for UGLD (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/UGLD/candles.json
+2025-09-26 16:11:02,714 - ERROR - Connection error requesting history for UGLD (TQBR): HTTPSConnectionPool(host='iss.moex.com', port=443): Max retries exceeded with url: /iss/engines/stock/markets/shares/boards/TQBR/securities/UGLD/candles.json?from=2023-01-01&interval=24&iss.meta=off&iss.only=candles&candles.columns=begin%2Cend%2Copen%2Chigh%2Clow%2Cclose%2Cvolume (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x000002227AEAF0A0>: Failed to establish a new connection: [WinError 10060] Попытка установить соединение была безуспешной, т.к. от другого компьютера за требуемое время не получен нужный отклик, или было разорвано уже установленное соединение из-за неверного отклика уже подключенного компьютера'))
+2025-09-26 16:11:02,715 - INFO -     Connection error for UGLD, added to retry list.
+2025-09-26 16:11:03,724 - INFO - Processing: UKUZ (TQBR)
+2025-09-26 16:11:03,724 - INFO - Requesting history for UKUZ (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/UKUZ/candles.json
+2025-09-26 16:11:05,362 - INFO - History for UKUZ saved to historical_data_full\UKUZ_history.csv (500 rows)
+2025-09-26 16:11:05,362 - INFO -     Successfully processed: UKUZ
+2025-09-26 16:11:06,369 - INFO - Processing: UNAC (TQBR)
+2025-09-26 16:11:06,369 - INFO - Requesting history for UNAC (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/UNAC/candles.json
+2025-09-26 16:11:08,146 - INFO - History for UNAC saved to historical_data_full\UNAC_history.csv (500 rows)
+2025-09-26 16:11:08,148 - INFO -     Successfully processed: UNAC
+2025-09-26 16:11:09,153 - INFO - Processing: UNKL (TQBR)
+2025-09-26 16:11:09,154 - INFO - Requesting history for UNKL (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/UNKL/candles.json
+2025-09-26 16:11:09,521 - INFO - History for UNKL saved to historical_data_full\UNKL_history.csv (500 rows)
+2025-09-26 16:11:09,521 - INFO -     Successfully processed: UNKL
+2025-09-26 16:11:10,527 - INFO - Processing: UPRO (TQBR)
+2025-09-26 16:11:10,527 - INFO - Requesting history for UPRO (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/UPRO/candles.json
+2025-09-26 16:11:12,088 - INFO - History for UPRO saved to historical_data_full\UPRO_history.csv (500 rows)
+2025-09-26 16:11:12,088 - INFO -     Successfully processed: UPRO
+2025-09-26 16:11:13,093 - INFO - Processing: URKZ (TQBR)
+2025-09-26 16:11:13,093 - INFO - Requesting history for URKZ (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/URKZ/candles.json
+2025-09-26 16:11:19,174 - INFO - History for URKZ saved to historical_data_full\URKZ_history.csv (500 rows)
+2025-09-26 16:11:19,175 - INFO -     Successfully processed: URKZ
+2025-09-26 16:11:20,189 - INFO - Processing: USBN (TQBR)
+2025-09-26 16:11:20,189 - INFO - Requesting history for USBN (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/USBN/candles.json
+2025-09-26 16:11:22,132 - INFO - History for USBN saved to historical_data_full\USBN_history.csv (500 rows)
+2025-09-26 16:11:22,132 - INFO -     Successfully processed: USBN
+2025-09-26 16:11:23,141 - INFO - Processing: UTAR (TQBR)
+2025-09-26 16:11:23,141 - INFO - Requesting history for UTAR (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/UTAR/candles.json
+2025-09-26 16:11:23,883 - INFO - History for UTAR saved to historical_data_full\UTAR_history.csv (500 rows)
+2025-09-26 16:11:23,883 - INFO -     Successfully processed: UTAR
+2025-09-26 16:11:24,897 - INFO - Processing: UWGN (TQBR)
+2025-09-26 16:11:24,898 - INFO - Requesting history for UWGN (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/UWGN/candles.json
+2025-09-26 16:11:26,452 - INFO - History for UWGN saved to historical_data_full\UWGN_history.csv (222 rows)
+2025-09-26 16:11:26,452 - INFO -     Successfully processed: UWGN
+2025-09-26 16:11:27,462 - INFO - Processing: VEON-RX (TQBR)
+2025-09-26 16:11:27,463 - INFO - Requesting history for VEON-RX (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/VEON-RX/candles.json
+2025-09-26 16:11:28,734 - INFO - History for VEON-RX saved to historical_data_full\VEON-RX_history.csv (500 rows)
+2025-09-26 16:11:28,734 - INFO -     Successfully processed: VEON-RX
+2025-09-26 16:11:29,749 - INFO - Processing: VGSB (TQBR)
+2025-09-26 16:11:29,750 - INFO - Requesting history for VGSB (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/VGSB/candles.json
+2025-09-26 16:11:33,838 - INFO - History for VGSB saved to historical_data_full\VGSB_history.csv (500 rows)
+2025-09-26 16:11:33,838 - INFO -     Successfully processed: VGSB
+2025-09-26 16:11:34,853 - INFO - Processing: VGSBP (TQBR)
+2025-09-26 16:11:34,853 - INFO - Requesting history for VGSBP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/VGSBP/candles.json
+2025-09-26 16:11:35,602 - INFO - History for VGSBP saved to historical_data_full\VGSBP_history.csv (500 rows)
+2025-09-26 16:11:35,602 - INFO -     Successfully processed: VGSBP
+2025-09-26 16:11:36,610 - INFO - Processing: VJGZ (TQBR)
+2025-09-26 16:11:36,611 - INFO - Requesting history for VJGZ (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/VJGZ/candles.json
+2025-09-26 16:11:36,878 - INFO - History for VJGZ saved to historical_data_full\VJGZ_history.csv (500 rows)
+2025-09-26 16:11:36,878 - INFO -     Successfully processed: VJGZ
+2025-09-26 16:11:37,885 - INFO - Processing: VJGZP (TQBR)
+2025-09-26 16:11:37,885 - INFO - Requesting history for VJGZP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/VJGZP/candles.json
+2025-09-26 16:11:38,215 - INFO - History for VJGZP saved to historical_data_full\VJGZP_history.csv (500 rows)
+2025-09-26 16:11:38,215 - INFO -     Successfully processed: VJGZP
+2025-09-26 16:11:39,227 - INFO - Processing: VKCO (TQBR)
+2025-09-26 16:11:39,227 - INFO - Requesting history for VKCO (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/VKCO/candles.json
+2025-09-26 16:11:39,976 - INFO - History for VKCO saved to historical_data_full\VKCO_history.csv (500 rows)
+2025-09-26 16:11:39,976 - INFO -     Successfully processed: VKCO
+2025-09-26 16:11:40,987 - INFO - Processing: VLHZ (TQBR)
+2025-09-26 16:11:40,988 - INFO - Requesting history for VLHZ (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/VLHZ/candles.json
+2025-09-26 16:12:02,028 - ERROR - Connection error requesting history for VLHZ (TQBR): HTTPSConnectionPool(host='iss.moex.com', port=443): Max retries exceeded with url: /iss/engines/stock/markets/shares/boards/TQBR/securities/VLHZ/candles.json?from=2023-01-01&interval=24&iss.meta=off&iss.only=candles&candles.columns=begin%2Cend%2Copen%2Chigh%2Clow%2Cclose%2Cvolume (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x000002227AF7F610>: Failed to establish a new connection: [WinError 10060] Попытка установить соединение была безуспешной, т.к. от другого компьютера за требуемое время не получен нужный отклик, или было разорвано уже установленное соединение из-за неверного отклика уже подключенного компьютера'))
+2025-09-26 16:12:02,028 - INFO -     Connection error for VLHZ, added to retry list.
+2025-09-26 16:12:03,041 - INFO - Processing: VRSB (TQBR)
+2025-09-26 16:12:03,041 - INFO - Requesting history for VRSB (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/VRSB/candles.json
+2025-09-26 16:12:03,781 - INFO - History for VRSB saved to historical_data_full\VRSB_history.csv (500 rows)
+2025-09-26 16:12:03,781 - INFO -     Successfully processed: VRSB
+2025-09-26 16:12:04,783 - INFO - Processing: VRSBP (TQBR)
+2025-09-26 16:12:04,783 - INFO - Requesting history for VRSBP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/VRSBP/candles.json
+2025-09-26 16:12:25,840 - ERROR - Connection error requesting history for VRSBP (TQBR): HTTPSConnectionPool(host='iss.moex.com', port=443): Max retries exceeded with url: /iss/engines/stock/markets/shares/boards/TQBR/securities/VRSBP/candles.json?from=2023-01-01&interval=24&iss.meta=off&iss.only=candles&candles.columns=begin%2Cend%2Copen%2Chigh%2Clow%2Cclose%2Cvolume (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x000002227AF0D250>: Failed to establish a new connection: [WinError 10060] Попытка установить соединение была безуспешной, т.к. от другого компьютера за требуемое время не получен нужный отклик, или было разорвано уже установленное соединение из-за неверного отклика уже подключенного компьютера'))
+2025-09-26 16:12:25,842 - INFO -     Connection error for VRSBP, added to retry list.
+2025-09-26 16:12:26,848 - INFO - Processing: VSEH (TQBR)
+2025-09-26 16:12:26,849 - INFO - Requesting history for VSEH (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/VSEH/candles.json
+2025-09-26 16:12:27,333 - INFO - History for VSEH saved to historical_data_full\VSEH_history.csv (351 rows)
+2025-09-26 16:12:27,333 - INFO -     Successfully processed: VSEH
+2025-09-26 16:12:28,341 - INFO - Processing: VSMO (TQBR)
+2025-09-26 16:12:28,342 - INFO - Requesting history for VSMO (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/VSMO/candles.json
+2025-09-26 16:12:49,375 - ERROR - Connection error requesting history for VSMO (TQBR): HTTPSConnectionPool(host='iss.moex.com', port=443): Max retries exceeded with url: /iss/engines/stock/markets/shares/boards/TQBR/securities/VSMO/candles.json?from=2023-01-01&interval=24&iss.meta=off&iss.only=candles&candles.columns=begin%2Cend%2Copen%2Chigh%2Clow%2Cclose%2Cvolume (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x000002227AF0D100>: Failed to establish a new connection: [WinError 10060] Попытка установить соединение была безуспешной, т.к. от другого компьютера за требуемое время не получен нужный отклик, или было разорвано уже установленное соединение из-за неверного отклика уже подключенного компьютера'))
+2025-09-26 16:12:49,376 - INFO -     Connection error for VSMO, added to retry list.
+2025-09-26 16:12:50,386 - INFO - Processing: VSYD (TQBR)
+2025-09-26 16:12:50,386 - INFO - Requesting history for VSYD (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/VSYD/candles.json
+2025-09-26 16:12:50,655 - INFO - History for VSYD saved to historical_data_full\VSYD_history.csv (500 rows)
+2025-09-26 16:12:50,655 - INFO -     Successfully processed: VSYD
+2025-09-26 16:12:51,665 - INFO - Processing: VSYDP (TQBR)
+2025-09-26 16:12:51,665 - INFO - Requesting history for VSYDP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/VSYDP/candles.json
+2025-09-26 16:12:51,918 - INFO - History for VSYDP saved to historical_data_full\VSYDP_history.csv (500 rows)
+2025-09-26 16:12:51,918 - INFO -     Successfully processed: VSYDP
+2025-09-26 16:12:52,929 - INFO - Processing: VTBR (TQBR)
+2025-09-26 16:12:52,929 - INFO - Requesting history for VTBR (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/VTBR/candles.json
+2025-09-26 16:12:53,511 - INFO - History for VTBR saved to historical_data_full\VTBR_history.csv (500 rows)
+2025-09-26 16:12:53,511 - INFO -     Successfully processed: VTBR
+2025-09-26 16:12:54,513 - INFO - Processing: WTCM (TQBR)
+2025-09-26 16:12:54,513 - INFO - Requesting history for WTCM (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/WTCM/candles.json
+2025-09-26 16:12:58,130 - INFO - History for WTCM saved to historical_data_full\WTCM_history.csv (500 rows)
+2025-09-26 16:12:58,130 - INFO -     Successfully processed: WTCM
+2025-09-26 16:12:59,143 - INFO - Processing: WTCMP (TQBR)
+2025-09-26 16:12:59,144 - INFO - Requesting history for WTCMP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/WTCMP/candles.json
+2025-09-26 16:13:00,836 - INFO - History for WTCMP saved to historical_data_full\WTCMP_history.csv (500 rows)
+2025-09-26 16:13:00,836 - INFO -     Successfully processed: WTCMP
+2025-09-26 16:13:01,846 - INFO - Processing: WUSH (TQBR)
+2025-09-26 16:13:01,847 - INFO - Requesting history for WUSH (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/WUSH/candles.json
+2025-09-26 16:13:04,995 - INFO - History for WUSH saved to historical_data_full\WUSH_history.csv (500 rows)
+2025-09-26 16:13:04,995 - INFO -     Successfully processed: WUSH
+2025-09-26 16:13:06,010 - INFO - Processing: X5 (TQBR)
+2025-09-26 16:13:06,016 - INFO - Requesting history for X5 (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/X5/candles.json
+2025-09-26 16:13:09,134 - INFO - History for X5 saved to historical_data_full\X5_history.csv (228 rows)
+2025-09-26 16:13:09,134 - INFO -     Successfully processed: X5
+2025-09-26 16:13:10,145 - INFO - Processing: YAKG (TQBR)
+2025-09-26 16:13:10,145 - INFO - Requesting history for YAKG (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/YAKG/candles.json
+2025-09-26 16:13:10,428 - INFO - History for YAKG saved to historical_data_full\YAKG_history.csv (500 rows)
+2025-09-26 16:13:10,428 - INFO -     Successfully processed: YAKG
+2025-09-26 16:13:11,434 - INFO - Processing: YDEX (TQBR)
+2025-09-26 16:13:11,435 - INFO - Requesting history for YDEX (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/YDEX/candles.json
+2025-09-26 16:13:11,689 - INFO - History for YDEX saved to historical_data_full\YDEX_history.csv (344 rows)
+2025-09-26 16:13:11,689 - INFO -     Successfully processed: YDEX
+2025-09-26 16:13:12,705 - INFO - Processing: YKEN (TQBR)
+2025-09-26 16:13:12,705 - INFO - Requesting history for YKEN (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/YKEN/candles.json
+2025-09-26 16:13:14,253 - INFO - History for YKEN saved to historical_data_full\YKEN_history.csv (500 rows)
+2025-09-26 16:13:14,253 - INFO -     Successfully processed: YKEN
+2025-09-26 16:13:15,259 - INFO - Processing: YKENP (TQBR)
+2025-09-26 16:13:15,259 - INFO - Requesting history for YKENP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/YKENP/candles.json
+2025-09-26 16:13:15,650 - INFO - History for YKENP saved to historical_data_full\YKENP_history.csv (500 rows)
+2025-09-26 16:13:15,650 - INFO -     Successfully processed: YKENP
+2025-09-26 16:13:16,656 - INFO - Processing: YRSB (TQBR)
+2025-09-26 16:13:16,656 - INFO - Requesting history for YRSB (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/YRSB/candles.json
+2025-09-26 16:13:19,704 - INFO - History for YRSB saved to historical_data_full\YRSB_history.csv (500 rows)
+2025-09-26 16:13:19,704 - INFO -     Successfully processed: YRSB
+2025-09-26 16:13:20,717 - INFO - Processing: YRSBP (TQBR)
+2025-09-26 16:13:20,717 - INFO - Requesting history for YRSBP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/YRSBP/candles.json
+2025-09-26 16:13:21,242 - INFO - History for YRSBP saved to historical_data_full\YRSBP_history.csv (500 rows)
+2025-09-26 16:13:21,242 - INFO -     Successfully processed: YRSBP
+2025-09-26 16:13:22,255 - INFO - Processing: ZAYM (TQBR)
+2025-09-26 16:13:22,255 - INFO - Requesting history for ZAYM (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/ZAYM/candles.json
+2025-09-26 16:13:43,308 - ERROR - Connection error requesting history for ZAYM (TQBR): HTTPSConnectionPool(host='iss.moex.com', port=443): Max retries exceeded with url: /iss/engines/stock/markets/shares/boards/TQBR/securities/ZAYM/candles.json?from=2023-01-01&interval=24&iss.meta=off&iss.only=candles&candles.columns=begin%2Cend%2Copen%2Chigh%2Clow%2Cclose%2Cvolume (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x000002227AF7FA30>: Failed to establish a new connection: [WinError 10060] Попытка установить соединение была безуспешной, т.к. от другого компьютера за требуемое время не получен нужный отклик, или было разорвано уже установленное соединение из-за неверного отклика уже подключенного компьютера'))
+2025-09-26 16:13:43,308 - INFO -     Connection error for ZAYM, added to retry list.
+2025-09-26 16:13:44,317 - INFO - Processing: ZILL (TQBR)
+2025-09-26 16:13:44,317 - INFO - Requesting history for ZILL (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/ZILL/candles.json
+2025-09-26 16:13:45,951 - INFO - History for ZILL saved to historical_data_full\ZILL_history.csv (500 rows)
+2025-09-26 16:13:45,953 - INFO -     Successfully processed: ZILL
+2025-09-26 16:13:46,956 - INFO - Processing: ZVEZ (TQBR)
+2025-09-26 16:13:46,957 - INFO - Requesting history for ZVEZ (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/ZVEZ/candles.json
+2025-09-26 16:14:08,016 - ERROR - Connection error requesting history for ZVEZ (TQBR): HTTPSConnectionPool(host='iss.moex.com', port=443): Max retries exceeded with url: /iss/engines/stock/markets/shares/boards/TQBR/securities/ZVEZ/candles.json?from=2023-01-01&interval=24&iss.meta=off&iss.only=candles&candles.columns=begin%2Cend%2Copen%2Chigh%2Clow%2Cclose%2Cvolume (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x000002227AEC7910>: Failed to establish a new connection: [WinError 10060] Попытка установить соединение была безуспешной, т.к. от другого компьютера за требуемое время не получен нужный отклик, или было разорвано уже установленное соединение из-за неверного отклика уже подключенного компьютера'))
+2025-09-26 16:14:08,016 - INFO -     Connection error for ZVEZ, added to retry list.
+2025-09-26 16:14:09,026 - INFO - Main pass completed.
+2025-09-26 16:14:09,026 - INFO -   Successfully processed: 236
+2025-09-26 16:14:09,026 - INFO -   Connection errors: 19
+2025-09-26 16:14:09,027 - INFO -   Final errors (no data etc.): 3
+2025-09-26 16:14:09,039 - INFO - 
+--- Retry connection - Pass 1 ---
+2025-09-26 16:14:09,039 - INFO - Remaining to process 19 tickers with connection errors.
+2025-09-26 16:14:09,040 - INFO - Retry for: AMEZ (SMAL)
+2025-09-26 16:14:09,040 - INFO - Requesting history for AMEZ (SMAL) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/SMAL/securities/AMEZ/candles.json
+2025-09-26 16:14:09,279 - INFO - History for AMEZ saved to historical_data_full\AMEZ_history.csv (214 rows)
+2025-09-26 16:14:09,279 - INFO -     Successfully processed: AMEZ
+2025-09-26 16:14:10,288 - INFO - Retry for: BANEP (TQBR)
+2025-09-26 16:14:10,288 - INFO - Requesting history for BANEP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/BANEP/candles.json
+2025-09-26 16:14:12,934 - INFO - History for BANEP saved to historical_data_full\BANEP_history.csv (500 rows)
+2025-09-26 16:14:12,934 - INFO -     Successfully processed: BANEP
+2025-09-26 16:14:13,945 - INFO - Retry for: BLNG (TQBR)
+2025-09-26 16:14:13,945 - INFO - Requesting history for BLNG (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/BLNG/candles.json
+2025-09-26 16:14:14,345 - INFO - History for BLNG saved to historical_data_full\BLNG_history.csv (500 rows)
+2025-09-26 16:14:14,345 - INFO -     Successfully processed: BLNG
+2025-09-26 16:14:15,349 - INFO - Retry for: DATA (TQBR)
+2025-09-26 16:14:15,350 - INFO - Requesting history for DATA (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/DATA/candles.json
+2025-09-26 16:14:15,701 - INFO - History for DATA saved to historical_data_full\DATA_history.csv (289 rows)
+2025-09-26 16:14:15,701 - INFO -     Successfully processed: DATA
+2025-09-26 16:14:16,707 - INFO - Retry for: GAZT (SMAL)
+2025-09-26 16:14:16,707 - INFO - Requesting history for GAZT (SMAL) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/SMAL/securities/GAZT/candles.json
+2025-09-26 16:14:16,907 - WARNING - No historical data for GAZT, file not created.
+2025-09-26 16:14:16,907 - INFO -     Final error for GAZT (reason: NO_DATA), moved to final failed.
+2025-09-26 16:14:17,908 - INFO - Retry for: GECO (TQBR)
+2025-09-26 16:14:17,909 - INFO - Requesting history for GECO (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/GECO/candles.json
+2025-09-26 16:14:20,688 - INFO - History for GECO saved to historical_data_full\GECO_history.csv (500 rows)
+2025-09-26 16:14:20,688 - INFO -     Successfully processed: GECO
+2025-09-26 16:14:21,701 - INFO - Retry for: KAZTP (TQBR)
+2025-09-26 16:14:21,701 - INFO - Requesting history for KAZTP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/KAZTP/candles.json
+2025-09-26 16:14:22,038 - INFO - History for KAZTP saved to historical_data_full\KAZTP_history.csv (500 rows)
+2025-09-26 16:14:22,039 - INFO -     Successfully processed: KAZTP
+2025-09-26 16:14:23,041 - INFO - Retry for: KRSB (TQBR)
+2025-09-26 16:14:23,041 - INFO - Requesting history for KRSB (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/KRSB/candles.json
+2025-09-26 16:14:23,316 - INFO - History for KRSB saved to historical_data_full\KRSB_history.csv (500 rows)
+2025-09-26 16:14:23,316 - INFO -     Successfully processed: KRSB
+2025-09-26 16:14:24,316 - INFO - Retry for: MRKV (TQBR)
+2025-09-26 16:14:24,316 - INFO - Requesting history for MRKV (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/MRKV/candles.json
+2025-09-26 16:14:24,600 - INFO - History for MRKV saved to historical_data_full\MRKV_history.csv (500 rows)
+2025-09-26 16:14:24,600 - INFO -     Successfully processed: MRKV
+2025-09-26 16:14:25,613 - INFO - Retry for: MSNG (TQBR)
+2025-09-26 16:14:25,613 - INFO - Requesting history for MSNG (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/MSNG/candles.json
+2025-09-26 16:14:25,893 - INFO - History for MSNG saved to historical_data_full\MSNG_history.csv (500 rows)
+2025-09-26 16:14:25,893 - INFO -     Successfully processed: MSNG
+2025-09-26 16:14:26,902 - INFO - Retry for: MTLR (TQBR)
+2025-09-26 16:14:26,902 - INFO - Requesting history for MTLR (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/MTLR/candles.json
+2025-09-26 16:14:27,202 - INFO - History for MTLR saved to historical_data_full\MTLR_history.csv (500 rows)
+2025-09-26 16:14:27,202 - INFO -     Successfully processed: MTLR
+2025-09-26 16:14:28,212 - INFO - Retry for: PHOR (TQBR)
+2025-09-26 16:14:28,212 - INFO - Requesting history for PHOR (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/PHOR/candles.json
+2025-09-26 16:14:28,437 - INFO - History for PHOR saved to historical_data_full\PHOR_history.csv (500 rows)
+2025-09-26 16:14:28,437 - INFO -     Successfully processed: PHOR
+2025-09-26 16:14:29,445 - INFO - Retry for: SNGSP (TQBR)
+2025-09-26 16:14:29,446 - INFO - Requesting history for SNGSP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/SNGSP/candles.json
+2025-09-26 16:14:29,761 - INFO - History for SNGSP saved to historical_data_full\SNGSP_history.csv (500 rows)
+2025-09-26 16:14:29,761 - INFO -     Successfully processed: SNGSP
+2025-09-26 16:14:30,766 - INFO - Retry for: UGLD (TQBR)
+2025-09-26 16:14:30,766 - INFO - Requesting history for UGLD (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/UGLD/candles.json
+2025-09-26 16:14:31,451 - INFO - History for UGLD saved to historical_data_full\UGLD_history.csv (500 rows)
+2025-09-26 16:14:31,451 - INFO -     Successfully processed: UGLD
+2025-09-26 16:14:32,467 - INFO - Retry for: VLHZ (TQBR)
+2025-09-26 16:14:32,467 - INFO - Requesting history for VLHZ (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/VLHZ/candles.json
+2025-09-26 16:14:33,034 - INFO - History for VLHZ saved to historical_data_full\VLHZ_history.csv (500 rows)
+2025-09-26 16:14:33,034 - INFO -     Successfully processed: VLHZ
+2025-09-26 16:14:34,036 - INFO - Retry for: VRSBP (TQBR)
+2025-09-26 16:14:34,036 - INFO - Requesting history for VRSBP (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/VRSBP/candles.json
+2025-09-26 16:14:34,394 - INFO - History for VRSBP saved to historical_data_full\VRSBP_history.csv (500 rows)
+2025-09-26 16:14:34,394 - INFO -     Successfully processed: VRSBP
+2025-09-26 16:14:35,396 - INFO - Retry for: VSMO (TQBR)
+2025-09-26 16:14:35,396 - INFO - Requesting history for VSMO (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/VSMO/candles.json
+2025-09-26 16:14:40,313 - INFO - History for VSMO saved to historical_data_full\VSMO_history.csv (500 rows)
+2025-09-26 16:14:40,313 - INFO -     Successfully processed: VSMO
+2025-09-26 16:14:41,326 - INFO - Retry for: ZAYM (TQBR)
+2025-09-26 16:14:41,326 - INFO - Requesting history for ZAYM (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/ZAYM/candles.json
+2025-09-26 16:14:44,348 - INFO - History for ZAYM saved to historical_data_full\ZAYM_history.csv (413 rows)
+2025-09-26 16:14:44,349 - INFO -     Successfully processed: ZAYM
+2025-09-26 16:14:45,355 - INFO - Retry for: ZVEZ (TQBR)
+2025-09-26 16:14:45,355 - INFO - Requesting history for ZVEZ (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/ZVEZ/candles.json
+2025-09-26 16:15:06,397 - ERROR - Connection error requesting history for ZVEZ (TQBR): HTTPSConnectionPool(host='iss.moex.com', port=443): Max retries exceeded with url: /iss/engines/stock/markets/shares/boards/TQBR/securities/ZVEZ/candles.json?from=2023-01-01&interval=24&iss.meta=off&iss.only=candles&candles.columns=begin%2Cend%2Copen%2Chigh%2Clow%2Cclose%2Cvolume (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x000002227AF0D3A0>: Failed to establish a new connection: [WinError 10060] Попытка установить соединение была безуспешной, т.к. от другого компьютера за требуемое время не получен нужный отклик, или было разорвано уже установленное соединение из-за неверного отклика уже подключенного компьютера'))
+2025-09-26 16:15:06,397 - INFO -     Connection error for ZVEZ, remains in retry list.
+2025-09-26 16:15:07,404 - INFO - After pass 1, remaining 1 tickers with connection errors.
+2025-09-26 16:15:07,404 - INFO - Waiting before next pass... (1.0 seconds)
+2025-09-26 16:15:08,418 - INFO - 
+--- Retry connection - Pass 2 ---
+2025-09-26 16:15:08,418 - INFO - Remaining to process 1 tickers with connection errors.
+2025-09-26 16:15:08,418 - INFO - Retry for: ZVEZ (TQBR)
+2025-09-26 16:15:08,418 - INFO - Requesting history for ZVEZ (TQBR) from https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/ZVEZ/candles.json
+2025-09-26 16:15:10,467 - INFO - History for ZVEZ saved to historical_data_full\ZVEZ_history.csv (500 rows)
+2025-09-26 16:15:10,467 - INFO -     Successfully processed: ZVEZ
+2025-09-26 16:15:11,485 - INFO - 
+--- Summary ---
+2025-09-26 16:15:11,485 - INFO - All tickers processed (or max retries reached).
+2025-09-26 16:15:11,485 - INFO -   Total tickers: 258
+2025-09-26 16:15:11,485 - INFO -   Successfully processed: 254
+2025-09-26 16:15:11,485 - INFO -   Unresolved connection errors (after 5 retries): 0
+2025-09-26 16:15:11,485 - INFO -   Final errors (no data etc.): 4
+2025-09-26 16:15:11,487 - INFO - Tickers with final errors (no data etc.) saved to historical_data_full\failed_other_tickers_final.csv
+2025-09-26 16:15:11,487 - INFO - Collection of historical data (full list) completed (or interrupted).

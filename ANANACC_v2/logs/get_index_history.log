@@ -1,0 +1,12 @@
+2025-09-26 16:15:26,462 - INFO - Starting collection of historical data for indices...
+2025-09-26 16:15:26,468 - INFO - Loaded 2 indices from moex_indices_list.csv
+2025-09-26 16:15:26,468 - INFO - Starting processing of 2 indices...
+2025-09-26 16:15:26,468 - INFO - Processing 1/2: IMOEX
+2025-09-26 16:15:26,468 - INFO - Requesting history for index IMOEX from https://iss.moex.com/iss/history/engines/stock/markets/index/securities/IMOEX.json
+2025-09-26 16:15:30,009 - INFO - Received 100 rows of history for IMOEX. Columns: ['BOARDID', 'SECID', 'TRADEDATE', 'SHORTNAME', 'NAME', 'CLOSE', 'OPEN', 'HIGH', 'LOW', 'VALUE', 'DURATION', 'YIELD', 'DECIMALS', 'CAPITALIZATION', 'CURRENCYID', 'DIVISOR', 'TRADINGSESSION', 'VOLUME', 'TRADE_SESSION_DATE', 'RECALC_DATE']
+2025-09-26 16:15:30,018 - INFO - History for index IMOEX saved to historical_data_indices\IMOEX_history.csv
+2025-09-26 16:15:31,032 - INFO - Processing 2/2: RTSI
+2025-09-26 16:15:31,032 - INFO - Requesting history for index RTSI from https://iss.moex.com/iss/history/engines/stock/markets/index/securities/RTSI.json
+2025-09-26 16:15:31,363 - INFO - Received 100 rows of history for RTSI. Columns: ['BOARDID', 'SECID', 'TRADEDATE', 'SHORTNAME', 'NAME', 'CLOSE', 'OPEN', 'HIGH', 'LOW', 'VALUE', 'DURATION', 'YIELD', 'DECIMALS', 'CAPITALIZATION', 'CURRENCYID', 'DIVISOR', 'TRADINGSESSION', 'VOLUME', 'TRADE_SESSION_DATE', 'RECALC_DATE']
+2025-09-26 16:15:31,365 - INFO - History for index RTSI saved to historical_data_indices\RTSI_history.csv
+2025-09-26 16:15:32,380 - INFO - Collection of historical data for indices completed.

@@ -1,0 +1,12 @@
+2025-09-26 16:17:27,592 - INFO - Starting collection of historical data for currency pairs (BOARDID=CETS)...
+2025-09-26 16:17:27,596 - INFO - Loaded 8 records from moex_currency_pairs_list.csv
+2025-09-26 16:17:27,598 - INFO - After filtering by BOARDID='CETS': 2 records
+2025-09-26 16:17:27,598 - INFO - Starting processing of 2 currency pairs...
+2025-09-26 16:17:27,598 - INFO - Processing 3/2: EUR_RUB__TOM (CETS)
+2025-09-26 16:17:27,599 - INFO - Requesting history for currency pair EUR_RUB__TOM (CETS) from https://iss.moex.com/iss/history/engines/currency/markets/selt/boards/CETS/securities/EUR_RUB__TOM.json
+2025-09-26 16:17:48,659 - ERROR - Connection error requesting history for currency pair EUR_RUB__TOM (CETS): HTTPSConnectionPool(host='iss.moex.com', port=443): Max retries exceeded with url: /iss/history/engines/currency/markets/selt/boards/CETS/securities/EUR_RUB__TOM.json?from=2023-01-01&iss.meta=off (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x000001AB0532B6A0>: Failed to establish a new connection: [WinError 10060] Попытка установить соединение была безуспешной, т.к. от другого компьютера за требуемое время не получен нужный отклик, или было разорвано уже установленное соединение из-за неверного отклика уже подключенного компьютера'))
+2025-09-26 16:17:49,671 - INFO - Processing 4/2: USD000UTSTOM (CETS)
+2025-09-26 16:17:49,672 - INFO - Requesting history for currency pair USD000UTSTOM (CETS) from https://iss.moex.com/iss/history/engines/currency/markets/selt/boards/CETS/securities/USD000UTSTOM.json
+2025-09-26 16:17:52,572 - INFO - Received 100 rows of history for USD000UTSTOM. Columns: ['BOARDID', 'TRADEDATE', 'SHORTNAME', 'SECID', 'OPEN', 'LOW', 'HIGH', 'CLOSE', 'NUMTRADES', 'VOLRUR', 'WAPRICE']
+2025-09-26 16:17:52,577 - INFO - Adapted history for currency pair USD000UTSTOM saved to historical_data_currency\USD000UTSTOM_history.csv
+2025-09-26 16:17:53,590 - INFO - Collection of historical data for currency pairs completed.

@@ -1,0 +1,6 @@
+2025-09-26 16:20:03,523 - INFO - Starting collection of historical data for oil future...
+2025-09-26 16:20:03,523 - INFO - Loaded futures ticker: BRV5
+2025-09-26 16:20:03,523 - INFO - Requesting history for future BRV5 (RFUD) from https://iss.moex.com/iss/history/engines/futures/markets/forts/boards/RFUD/securities/BRV5.json
+2025-09-26 16:20:03,776 - INFO - Received 100 rows of history for BRV5. Columns: ['BOARDID', 'TRADEDATE', 'SECID', 'OPEN', 'LOW', 'HIGH', 'CLOSE', 'OPENPOSITIONVALUE', 'VALUE', 'VOLUME', 'OPENPOSITION', 'SETTLEPRICE', 'SWAPRATE', 'WAPRICE', 'SETTLEPRICEDAY', 'CHANGE', 'QTY', 'NUMTRADES']
+2025-09-26 16:20:03,783 - INFO - History for future BRV5 saved to historical_data_oil\BRV5_history.csv
+2025-09-26 16:20:03,783 - INFO - Collection of historical data for oil future completed.

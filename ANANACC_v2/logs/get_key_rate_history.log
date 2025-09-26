@@ -1,0 +1,8 @@
+2025-09-26 16:20:08,021 - INFO - Starting collection of historical data for CBR key rate via HTML parsing...
+2025-09-26 16:20:08,021 - INFO - Requesting HTML page with key rate history from https://www.cbr.ru/hd_base/KeyRate/
+2025-09-26 16:20:09,861 - INFO - HTML page successfully received.
+2025-09-26 16:20:09,874 - INFO - Found table with class 'data'.
+2025-09-26 16:20:09,874 - INFO - Table headers: ['Дата', 'Ставка']
+2025-09-26 16:20:09,875 - INFO - Extracted 6 rows of data from HTML table.
+2025-09-26 16:20:09,880 - INFO - Key rate history saved to historical_data_other\cbr_key_rate_history_html.csv
+2025-09-26 16:20:09,880 - INFO - Collection of historical data for CBR key rate (via HTML) completed (or interrupted).
